@@ -1,0 +1,9 @@
+patch:
+  # 使用雙拼進行反查
+  reverse_lookup/prism: double_pinyin
+  reverse_lookup/tips: 〔雙拼〕
+  reverse_lookup/preedit_format: []
+  # 關閉逐鍵提示
+  translator/enable_completion: false
+  # 關閉用戶詞典與字頻調整
+  translator/enable_user_dict: false

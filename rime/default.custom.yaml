@@ -1,0 +1,20 @@
+customization:
+  distribution_code_name: Weasel
+  distribution_version: 0.14.3
+  generator: "Rime::SwitcherSettings"
+  modified_time: "Sun Feb 20 13:36:27 2022"
+  rime_version: 1.5.3
+patch:
+  "ascii_composer/switch_key":
+    Caps_Lock: noop
+    Control_L: noop
+    Control_R: noop
+    Shift_L: commit_code
+    Shift_R: commit_code
+  "menu/page_size": 10
+  schema_list:
+    - {schema: cangjie6}
+    - {schema: double_pinyin}
+    - {schema: luna_pinyin}
+  "switcher/hotkeys":
+    - "Control+F1"

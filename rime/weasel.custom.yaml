@@ -1,0 +1,5 @@
+patch:
+  # 使用 Sarasa Gothic 字體
+  "style/font_face": "Sarasa Gothic TC"
+  "style/font_point": 15
+  "style/color_scheme": "google"
