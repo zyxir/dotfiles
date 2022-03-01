@@ -1,10 +1,4 @@
 patch:
-  "ascii_composer/switch_key":
-    Caps_Lock: noop
-    Control_L: noop
-    Control_R: noop
-    Shift_L: commit_code
-    Shift_R: commit_code
   "menu/page_size": 10
   schema_list:
     - {schema: cangjie6}

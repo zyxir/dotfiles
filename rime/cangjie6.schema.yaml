@@ -19,13 +19,12 @@ schema:
 switches:
   - name: extended_charset
     states: [ 通用, 增廣 ]
-    reset: 1
-# 默認開啓Unihan全字集
+    reset: 0
   - name: simplification
     states: [ 漢字, 汉字 ]
     reset: 0
   - name: ascii_mode
-    reset: 1
+    reset: 0
   - name: full_shape
     states: [ 半角, 全角 ]
     reset: 0
