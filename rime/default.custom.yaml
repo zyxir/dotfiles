@@ -6,3 +6,4 @@ patch:
     - {schema: luna_pinyin}
   "switcher/hotkeys":
     - "Control+F1"
+    - "Control+F4"
