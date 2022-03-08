@@ -118,7 +118,7 @@ fi
 export HOSTIP=$(cat /etc/resolv.conf | grep nameserver | awk '{ print $2; exit;}')
 export http_proxy="http://${HOSTIP}:7890"
 export https_proxy="http://${HOSTIP}:7890"
-git config --global http.https://github.com.proxy "http://${HOSTIP}:7890"
-git config --global https.https://github.com.proxy "http://${HOSTIP}:7890"
+git config --global http.https://github.com.proxy "socks://${HOSTIP}:7890"
+git config --global https.https://github.com.proxy "socks://${HOSTIP}:7890"
 export DISPLAY=${HOSTIP}:0.0
 export PULSE_SERVER=tcp:${HOSTIP}
