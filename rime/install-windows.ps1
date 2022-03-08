@@ -7,6 +7,7 @@ $srcList = @(
     "cangjie5\*"
     "cangjie6\*"
     "double_pinyin\*"
+    "luna_pinyin\*"
     "default.custom.yaml"
     "weasel.custom.yaml"
 )
