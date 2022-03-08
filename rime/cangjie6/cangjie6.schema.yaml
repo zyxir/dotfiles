@@ -172,7 +172,7 @@ pinyin_lookup:
 # 獨用漢語拼音反查在反查鍵「`」之後再鍵入〔大寫〕「D」
   suffix: ;
   prism: double_pinyin
-  dictionary: luna_pinyin
+  dictionary: luna_pinyin.extended
   preedit_format: *pinyin
   tips: 〔雙拼反查〕
   closing_tips: 〔蒼頡〕
