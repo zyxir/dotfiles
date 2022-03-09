@@ -115,6 +115,7 @@ if ! shopt -oq posix; then
     . /etc/bash_completion
   fi
 fi
+export PATH=$PATH:$HOME/.local/bin
 export HOSTIP=$(cat /etc/resolv.conf | grep nameserver | awk '{ print $2; exit;}')
 export http_proxy="socks://${HOSTIP}:7890"
 export https_proxy="socks://${HOSTIP}:7890"
