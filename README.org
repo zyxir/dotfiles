@@ -1,0 +1,8 @@
+#+startup: showeverything
+#+html: <div align="center">
+
+* Dot-Files
+
+My collection of text-based files for configuration or other purposes.
+
+#+html: </div>
