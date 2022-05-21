@@ -6,6 +6,7 @@ SendMode Input  ; Recommended for new scripts due to its superior speed and reli
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 
 SetTitleMatchMode, 1
-#IfWinActive emacs
+#IfWinActive ahk_exe vcxsrv.exe
+#IfWinActive WSL` Emacs
 Shift & AppsKey::Return
 Shift::Send ^\
