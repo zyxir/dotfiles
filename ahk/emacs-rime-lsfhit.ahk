@@ -8,5 +8,6 @@ SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 SetTitleMatchMode, 1
 #IfWinActive ahk_exe vcxsrv.exe
 #IfWinActive WSL` Emacs
+#IfWinActive ZyEmacs` on` WSL
 Shift & AppsKey::Return
 Shift::Send ^\
