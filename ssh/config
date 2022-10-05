@@ -1,0 +1,9 @@
+# 這是 SSH 的配置文件，應放在 ~/.ssh 目錄下。
+
+Host github.com
+    HostName ssh.github.com
+    Port 443
+    User git
+    ProxyCommand nc -v -x 127.0.0.1:7890 %h %p
+    # Windows 下可試用下面一條
+    # ProxyCommand connect -S 127.0.0.1:7890 %h %p
