@@ -7,5 +7,6 @@ SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 
 SetTitleMatchMode, 1
 #IfWinActive ZyEmacs
+#IfWinActive Zyxir's Emacs
 Shift & AppsKey::Return
 ~Shift::Send ^\
