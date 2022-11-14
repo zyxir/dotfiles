@@ -1,0 +1,15 @@
+# Environment variables
+
+export COLORTERM=truecolor
+export EDITOR=vim
+export PATH=$HOME/.cargo/bin:$HOME/.local/bin:$PATH
+
+# Run bashrc if it exists
+
+if [ -f "$HOME/.bashrc" ]; then
+    . "$HOME/.bashrc"
+fi
+
+;; Local Variables:
+;; mode: sh
+;; End:

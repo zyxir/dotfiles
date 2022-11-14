@@ -26,6 +26,14 @@ It's possible to install them with the ~install-windows.ps1~ script on Windows.
 
 Backup file for SwitchyOmega, a browser addon for switching proxies.
 
+*** Unix
+
+Unix dot files.
+
+- dot-bashrc :: Bash configuration.
+- dot-bash_profile :: Bash user profile.
+- gitconfig :: Git configuration.
+
 *** Winscripts
 
 A set of scripts to configure Windows.
