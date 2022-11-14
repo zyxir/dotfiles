@@ -1,9 +1,0 @@
-[user]
-	name = Eric Zhuo Chen
-	email = zyxirchen@outlook.com
-[http "https://github.com"]
-	proxy = socks://127.0.0.1:7890
-[https "https://github.com"]
-	proxy = socks://127.0.0.1:7890
-[core]
-	autocrlf = false

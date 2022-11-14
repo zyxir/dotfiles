@@ -1,8 +1,36 @@
 #+startup: showeverything
 #+html: <div align="center">
 
-* Dot-Files
+* Dotfiles
 
 My collection of text-based files for configuration or other purposes.
 
 #+html: </div>
+
+** List of Files
+
+*** AutoHotkey
+
+AutoHotkey scripts for Windows.  Compile them to exe files and add them to auto start.
+
+- UltimateKEYS-legacy\ :: [[https://github.com/pieter-degroote][Pieter Degroote]]'s UltimateKEYS-legacy keyboard layout, licensed under GPL-3.0.  It's the 2021-07-17 release, and only those AutoHotkey-related files are included.
+- emacs-rime-lshift.ahk :: My own AutoHotkey script, which maps the left Shift key to =C-\= (Control+Backslash) in Emacs.
+
+*** Rime
+
+Configuration file of Rime input method.
+
+It's possible to install them with the ~install-windows.ps1~ script on Windows.
+
+*** SwitchyOmega
+
+Backup file for SwitchyOmega, a browser addon for switching proxies.
+
+*** Winscripts
+
+A set of scripts to configure Windows.
+
+- disable-ctrl-space.reg :: Disable the Ctrl+Space shortcut, so that I can use it in Emacs.
+- start-vcxsrv.bat :: Launch VcXsrv, a X11 server on Windows.  Used by graphical applications on WSL.
+- wsl1-emacs.bat :: Launch graphical Emacs in WSL 1.
+- wsl2-emacs.bat :: Launch graphical Emacs in WSL 2.
