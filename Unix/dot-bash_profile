@@ -1,8 +1,47 @@
-# Environment variables
+# .bash_profile: Bash start-up file.
+#
+# Copyright 2022 Eric Zhuo Chen
+
+# Environment variables.
+
+# There are a lot of places to set environment variables, but by far setting
+# them in .bash_profile (or .zprofile if ZSH is used) is the most consistent
+# way.  It works on any distro, and works on Xorg and Wayland alike.
 
 export COLORTERM=truecolor
 export EDITOR=vim
 export PATH=$HOME/.cargo/bin:$HOME/.local/bin:$PATH
+
+# Mozilla Firefox.
+
+# If Wayland is available, launch Firefox in Wayland.
+if [ $XDG_SESSION_TYPE == "wayland" ]; then
+    export MOZ_ENABLE_WAYLAND=1
+else
+    # Touchscreen features (such as one-finger scroll) doesn't work out of the
+    # box on X11, which is a known BUG of Firefox.  So we have to manually set
+    # this environment variable in order to fix it.
+    export MOZ_USE_XINPUT2=1
+fi
+
+# Setup Fcitx 5 input method.
+
+# You can choose Fcitx 5 as the input method with im-config on Ubuntu, but it
+# does not work properly: it sets GTK_IM_MODULE to fcitx instead of fcitx5,
+# which causes the candidate list being placed abnormally in GTK applications
+# like Firefox (maybe only when Fractional Scaling enabled).
+#
+# To solve this, we launch Fcitx 5 manually, and set the environment variables
+# correctly.
+
+if command -v fcitx5 &> /dev/null; then
+    if ! pgrep fcitx5 &> /dev/null; then
+        nohup fcitx5 > /dev/null 2>&1 &
+    fi
+    export GTK_IM_MODULE=fcitx5
+    export QT_IM_MODULE=fcitx5
+    export XMODIFIERS=@im=fcitx5
+fi
 
 # Run bashrc if it exists
 
@@ -10,6 +49,6 @@ if [ -f "$HOME/.bashrc" ]; then
     . "$HOME/.bashrc"
 fi
 
-;; Local Variables:
-;; mode: sh
-;; End:
+# Local Variables:
+# mode: sh
+# End:

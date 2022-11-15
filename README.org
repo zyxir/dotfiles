@@ -13,14 +13,14 @@ My collection of text-based files for configuration or other purposes.
 
 AutoHotkey scripts for Windows.  Compile them to exe files and add them to auto start.
 
-- UltimateKEYS-legacy\ :: [[https://github.com/pieter-degroote][Pieter Degroote]]'s UltimateKEYS-legacy keyboard layout, licensed under GPL-3.0.  It's the 2021-07-17 release, and only those AutoHotkey-related files are included.
+- UltimateKEYS-legacy/ :: [[https://github.com/pieter-degroote][Pieter Degroote]]'s UltimateKEYS-legacy keyboard layout, licensed under GPL-3.0.  It's the 2021-07-17 release, and only those AutoHotkey-related files are included.
 - emacs-rime-lshift.ahk :: My own AutoHotkey script, which maps the left Shift key to =C-\= (Control+Backslash) in Emacs.
 
 *** Rime
 
 Configuration file of Rime input method.
 
-It's possible to install them with the ~install-windows.ps1~ script on Windows.
+Install them with ~install.ps1~ on Windows, or ~install.sh~ on Linux.
 
 *** SwitchyOmega
 
@@ -28,17 +28,25 @@ Backup file for SwitchyOmega, a browser addon for switching proxies.
 
 *** Unix
 
-Unix dot files.
+Unix configuration files.  Install them with ~install.sh~ on a GNU/Linux machine.
 
+- fcitx/ :: Fcitx 5 configurations.  This includes themes from [[https://github.com/thep0y/fcitx5-themes][this GitHub repo]].
 - dot-bashrc :: Bash configuration.
 - dot-bash_profile :: Bash user profile.
 - gitconfig :: Git configuration.
+- fonts.conf :: Fontconfig configuration.
 
-*** Winscripts
+*** UnixScripts
+
+A set of scripts to configure Linux or other Unix-like systems.
+
+- cfw.sh :: Wrapper script of Clash-for-windows.  Add this to startup if Clash-for-windows is installed in ~$HOME/Applications/Clash-for-windows~.
+
+*** WindowsScripts
 
 A set of scripts to configure Windows.
 
 - disable-ctrl-space.reg :: Disable the Ctrl+Space shortcut, so that I can use it in Emacs.
-- start-vcxsrv.bat :: Launch VcXsrv, a X11 server on Windows.  Used by graphical applications on WSL.
+- start-vcxsrv.bat :: Launch VcXsrv, a X11 server on Windows.  Add this to startup if you want to use X on WSL.
 - wsl1-emacs.bat :: Launch graphical Emacs in WSL 1.
 - wsl2-emacs.bat :: Launch graphical Emacs in WSL 2.

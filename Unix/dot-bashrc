@@ -141,6 +141,6 @@ if grep -qi microsoft /proc/version; then
 fi
 export DISPLAY=$hostip:0
 
-;; Local Variables:
-;; mode: sh
-;; End:
+# Local Variables:
+# mode: sh
+# End:

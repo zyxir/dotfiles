@@ -7,6 +7,6 @@
         auotcrlf = false
 	quotepath = false
 
-;; Local Variables:
-;; mode: conf
-;; End:
+# Local Variables:
+# mode: conf
+# End:
