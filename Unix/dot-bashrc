@@ -138,8 +138,8 @@ if grep -qi microsoft /proc/version; then
     if [ -x "$(command -v git)" ]; then
         git config --global http.https://github.com.proxy $the_proxy
     fi
+    export DISPLAY=$hostip:0
 fi
-export DISPLAY=$hostip:0
 
 # Local Variables:
 # mode: sh
