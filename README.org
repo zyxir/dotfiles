@@ -36,9 +36,9 @@ Unix configuration files.  Install them with ~install.sh~ on a GNU/Linux machine
 - gitconfig :: Git configuration.
 - fonts.conf :: Fontconfig configuration.
 
-*** UnixScripts
+*** LinuxScripts
 
-A set of scripts to configure Linux or other Unix-like systems.
+A set of scripts to configure Linux.
 
 - cfw.sh :: Wrapper script of Clash-for-windows.  Add this to startup if Clash-for-windows is installed in ~$HOME/Applications/Clash-for-windows~.
 

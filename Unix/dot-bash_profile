@@ -29,19 +29,17 @@ fi
 # You can choose Fcitx 5 as the input method with im-config on Ubuntu, but it
 # does not work properly: it sets GTK_IM_MODULE to fcitx instead of fcitx5,
 # which causes the candidate list being placed abnormally in GTK applications
-# like Firefox (maybe only when Fractional Scaling enabled).
+# like Firefox (maybe only when Fractional Scaling enabled).  To solve the
+# problem, we have to set these environment variables explicitly to fcitx5.
 #
-# To solve this, we launch Fcitx 5 manually, and set the environment variables
-# correctly.
+# Besides, to start Fcitx 5 at startup, we can execute fcitx5 here, but the list
+# of candidates will not show in Firefox (maybe because I'm using the snap
+# version of Firefox?).  To solve that, add "Fcitx 5" to Startup Applications
+# with GUI, so that it gets loaded later, which fixes my problem.
 
-if command -v fcitx5 &> /dev/null; then
-    if ! pgrep fcitx5 &> /dev/null; then
-        nohup fcitx5 > /dev/null 2>&1 &
-    fi
-    export GTK_IM_MODULE=fcitx5
-    export QT_IM_MODULE=fcitx5
-    export XMODIFIERS=@im=fcitx5
-fi
+export GTK_IM_MODULE=fcitx5
+export QT_IM_MODULE=fcitx5
+export XMODIFIERS=@im=fcitx5
 
 # Run bashrc if it exists
 
@@ -52,3 +50,4 @@ fi
 # Local Variables:
 # mode: sh
 # End:
+. "$HOME/.cargo/env"
