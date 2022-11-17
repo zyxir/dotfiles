@@ -15,11 +15,10 @@ cp -v $SCRIPTPATH/fonts.conf $HOME/.config/fontconfig/
 
 # Install Fcitx 5 themes and configurations.
 mkdir -vp $HOME/.local/share/fcitx5/themes/
-cp -vr $SCRIPTPATH/fcitx/themes/* $HOME/.local/share/fcitx5/themes/
 mkdir -vp $HOME/.config/fcitx5/conf/
-cp -v $SCRIPTPATH/fcitx/config $HOME/.config/fcitx5/
-cp -v $SCRIPTPATH/fcitx/profile $HOME/.config/fcitx5/
-cp -v $SCRIPTPATH/fcitx/conf/* $HOME/.config/fcitx5/conf/
+cp -v $SCRIPTPATH/fcitx5/config $HOME/.config/fcitx5/
+cp -v $SCRIPTPATH/fcitx5/profile $HOME/.config/fcitx5/
+cp -v $SCRIPTPATH/fcitx5/conf/* $HOME/.config/fcitx5/conf/
 
 # Install Xremap configuration.
 mkdir -vp $HOME/.config/
