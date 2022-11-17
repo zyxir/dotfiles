@@ -14,12 +14,16 @@ CFW_BIN="$HOME/Applications/Clash-for-windows/cfw"
 # is not killed and will block the port CFW is supposed to use.  To solve that,
 # turn off the "Start with Linux" toggle, and launch CFW with this script.
 
-# If CFW is installed, kill all clash-linux processes and launch CFW.
+# If CFW is installed, kill all related processes and launch CFW.
 if [ -f $CFW_BIN ]; then
-    # Kill all existing clash cores.
-    CLASH_CORE_PROCS=$(pgrep clash-linux)
-    if [ ! -z $CLASH_CORE_PROCS ]; then
-        kill $CLASH_CORE_PROCS
+    # Kill all existing CFW-related processes.
+    CLASH_PROCS=$(pgrep clash-linux)
+    if [ ! -z $CLASH_PROCS ]; then
+        kill $CLASH_PROCS
+    fi
+    CFW_PROCS=$(pgrep clash-linux)
+    if [ ! -z $CFW_PROCS ]; then
+        kill $CFW_PROCS
     fi
     # Run CFW.
     nohup $CFW_BIN > /dev/null 2>&1 &
