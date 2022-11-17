@@ -1,0 +1,12 @@
+modmap:
+  - name: CapsLock as Left Control
+    remap:
+      CapsLock: Ctrl_L
+  - name: Shift_L as Control+Backslash in Emacs
+    application:
+      only: emacs
+    remap:
+      Shift_L:
+        alone: F16
+        alone_timeout_millis: 200
+        held: Shift_L

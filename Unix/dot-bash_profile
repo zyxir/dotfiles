@@ -41,6 +41,12 @@ export GTK_IM_MODULE=fcitx5
 export QT_IM_MODULE=fcitx5
 export XMODIFIERS=@im=fcitx5
 
+# Setup Xremap
+
+if command -v xremap &> /dev/null && [ -f $HOME/.config/xremap/config.yml ]; then
+   nohup xremap $HOME/.config/xremap/config.yml &> /dev/null &
+fi
+
 # Run bashrc if it exists
 
 if [ -f "$HOME/.bashrc" ]; then
