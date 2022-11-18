@@ -23,3 +23,7 @@ cp -v $SCRIPTPATH/fcitx5/conf/* $HOME/.config/fcitx5/conf/
 # Install Xremap configuration.
 mkdir -vp $HOME/.config/
 cp -vr $SCRIPTPATH/xremap $HOME/.config/
+
+# Load GNOME dconf files.
+dconf load /org/gnome/desktop/wm/ < $SCRIPTPATH/gnome-dconf/wm.dconf
+dconf load /org/gnome/mutter/ < $SCRIPTPATH/gnome-dconf/mutter.dconf
