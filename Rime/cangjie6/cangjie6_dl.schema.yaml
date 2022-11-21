@@ -24,6 +24,7 @@ switches:
     reset: 0
   - name: ascii_mode
     states: [ 中文, 西文 ]
+    reset: 1
   - name: full_shape
     reset: 0
 

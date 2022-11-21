@@ -14,5 +14,6 @@ $srcList = @(
 foreach ($src in $srcList) {
     Copy-Item -Path $src -Destination $rimeDir -Verbose
 }
+Copy-Item -Path "$rimeDir\cangjie6_dl.schema.yaml" -Destination "$rimeDir\cangjie6.schema.yaml" -Verbose -Force
 
 Pop-Location
