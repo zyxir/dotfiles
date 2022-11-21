@@ -25,5 +25,8 @@ mkdir -vp $HOME/.config/
 cp -vr $SCRIPTPATH/xremap $HOME/.config/
 
 # Load GNOME dconf files.
+echo 'Configureing dconf...'
 dconf load /org/gnome/desktop/wm/ < $SCRIPTPATH/gnome-dconf/wm.dconf
 dconf load /org/gnome/mutter/ < $SCRIPTPATH/gnome-dconf/mutter.dconf
+dconf load /org/gnome/settings-daemon/plugins/media-keys/ < $SCRIPTPATH/gnome-dconf/media-keys.dconf
+echo 'Configureing dconf...done'
