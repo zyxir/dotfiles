@@ -12,16 +12,10 @@ export COLORTERM=truecolor
 export EDITOR=vim
 export PATH=$HOME/.cargo/bin:$HOME/.local/bin:$PATH
 
-# Mozilla Firefox.
+# Cargo
 
-# If Wayland is available, launch Firefox in Wayland.
-if [ $XDG_SESSION_TYPE == "wayland" ]; then
-    export MOZ_ENABLE_WAYLAND=1
-else
-    # Touchscreen features (such as one-finger scroll) doesn't work out of the
-    # box on X11, which is a known BUG of Firefox.  So we have to manually set
-    # this environment variable in order to fix it.
-    export MOZ_USE_XINPUT2=1
+if [ -f "$HOME/.cargo/env" ]; then
+    . "$HOME/.cargo/env"
 fi
 
 # Setup Fcitx 5 input method.
@@ -56,4 +50,3 @@ fi
 # Local Variables:
 # mode: sh
 # End:
-. "$HOME/.cargo/env"
