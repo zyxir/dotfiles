@@ -32,7 +32,7 @@ Unix configuration files.  Install them with ~install.sh~ on a GNU/Linux machine
 
 - fcitx/ :: Fcitx 5 configurations.  This includes themes from [[https://github.com/thep0y/fcitx5-themes][this GitHub repo]].
 - xremap/ :: Xremap configurations.
-- gnome-dconf/ :: GNOME settings about windows and workspaces.
+- gnome-dconf/ :: GNOME settings about windows, workspaces, and some extensions.
 - dot-bashrc :: Bash configuration.
 - dot-bash_profile :: Bash user profile.
 - gitconfig :: Git configuration.

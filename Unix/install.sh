@@ -30,6 +30,7 @@ if [ -x "$(command -v dconf)" ]; then
     dconf load /org/gnome/desktop/wm/ < $SCRIPTPATH/gnome-dconf/wm.dconf
     dconf load /org/gnome/mutter/ < $SCRIPTPATH/gnome-dconf/mutter.dconf
     dconf load /org/gnome/settings-daemon/plugins/media-keys/ < $SCRIPTPATH/gnome-dconf/media-keys.dconf
+    dconf load /org/gnome/shell/extensions/dash-to-panel/ < $SCRIPTPATH/gnome-dconf/dash-to-panel.dconf
     echo 'Configureing dconf...done'
 else
     echo 'Skipping dconf configuration...'
