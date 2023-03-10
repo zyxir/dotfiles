@@ -1,4 +1,4 @@
-# .bash_profile: Bash start-up file.
+I# .bash_profile: Bash start-up file.
 #
 # Copyright 2022 Eric Zhuo Chen
 
@@ -10,12 +10,19 @@
 
 export COLORTERM=truecolor
 export EDITOR=vim
-export PATH=$HOME/.cargo/bin:$HOME/.local/bin:$PATH
+export PATH=$HOME/.local/bin:$PATH
 
-# Cargo
+# Setup Cargo, the Rust package manager.
 
 if [ -f "$HOME/.cargo/env" ]; then
     . "$HOME/.cargo/env"
+    export PATH=$HOME/.cargo/bin:$PATH
+fi
+
+# Setup Coursier, the Scala application and artifact manager.
+
+if [ -f "$HOME/.local/share/coursier/bin" ]; then
+    export PATH=$HOME/.local/share/coursier/bin:$PATH
 fi
 
 # Setup Fcitx 5 input method.
