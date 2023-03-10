@@ -1,6 +1,6 @@
-I# .bash_profile: Bash start-up file.
+# .bash_profile: Bash start-up file.
 #
-# Copyright 2022 Eric Zhuo Chen
+# Copyright 2023 Eric Zhuo Chen
 
 # Environment variables.
 
@@ -21,7 +21,7 @@ fi
 
 # Setup Coursier, the Scala application and artifact manager.
 
-if [ -f "$HOME/.local/share/coursier/bin" ]; then
+if [ -d "$HOME/.local/share/coursier/bin" ]; then
     export PATH=$HOME/.local/share/coursier/bin:$PATH
 fi
 
