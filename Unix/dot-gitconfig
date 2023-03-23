@@ -1,5 +1,7 @@
 [http "https://github.com"]
 	proxy = socks5://127.0.0.1:7890
+[http "https://git.savannah.gnu.org"]
+        proxy = socks5://127.0.0.1:7890
 [user]
 	name = "Eric Zhuo Chen"
 	email = zyxirchen@outlook.com
