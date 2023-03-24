@@ -10,3 +10,11 @@ modmap:
         alone: F16
         alone_timeout_millis: 200
         held: Shift_L
+  - name: Shift_L as Control+Backslash in Emacs (Pure GTK on Wayland)
+    application:
+      only: emacs
+    remap:
+      Shift_L:
+        alone: F16
+        alone_timeout_millis: 1000
+        held: Shift_L
