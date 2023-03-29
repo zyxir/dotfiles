@@ -20,6 +20,10 @@ cp -v $SCRIPTPATH/fcitx5/config $HOME/.config/fcitx5/
 cp -v $SCRIPTPATH/fcitx5/profile $HOME/.config/fcitx5/
 cp -v $SCRIPTPATH/fcitx5/conf/* $HOME/.config/fcitx5/conf/
 
+# Install Mypy configuration.
+mkdir -vp $HOME/.config/mypy/
+cp -v $SCRIPTPATH/mypy/config $HOME/.config/mypy
+
 # Install Xremap configuration.
 mkdir -vp $HOME/.config/
 cp -vr $SCRIPTPATH/xremap $HOME/.config/
