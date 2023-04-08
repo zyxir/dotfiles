@@ -99,6 +99,7 @@ if __name__ == "__main__":
     dry = args.dry
 
     # OS constants.
+    WINDOWS = platform.system() == "Windows"
     LINUX = platform.system() == "Linux"
 
     # Make sure the script is run in the correct directory.
@@ -109,26 +110,32 @@ if __name__ == "__main__":
         sys.exit(1)
 
     # Install dot files.
-    copy("dot-gitconfig", "~/.gitconfig", dry)
-    copy("mypy", "~/.config/mypy", dry)
+    copy("./dot-gitconfig", "~/.gitconfig", dry)
+    copy("./mypy", "~/.config/mypy", dry)
+    if WINDOWS:
+        copy(
+            "./Microsoft.PowerShell_profile.ps1",
+            "~/Documents/WindowsPowerShell/Microsoft.PowerShell_profile.ps1",
+            dry,
+        )
     if LINUX:
-        copy("dot-bashrc", "~/.bashrc", dry)
-        copy("dot-bash_profile", "~/.bash_profile", dry)
-        copy("fonts.conf", "~/.config/fontconfig/fonts.conf", dry)
-        copy("fcitx5", "~/.config/fcitx5", dry)
-        copy("xremap", "~/.config/xremap", dry)
+        copy("./dot-bashrc", "~/.bashrc", dry)
+        copy("./dot-bash_profile", "~/.bash_profile", dry)
+        copy("./fonts.conf", "~/.config/fontconfig/fonts.conf", dry)
+        copy("./fcitx5", "~/.config/fcitx5", dry)
+        copy("./xremap", "~/.config/xremap", dry)
 
     # Load dconf.
     if LINUX and shutil.which("dconf"):
-        dconf_load("gnome-dconf/wm.dconf", "/org/gnome/desktop/wm/", dry)
-        dconf_load("gnome-dconf/mutter.dconf", "/org/gnome/mutter/", dry)
+        dconf_load("./gnome-dconf/wm.dconf", "/org/gnome/desktop/wm/", dry)
+        dconf_load("./gnome-dconf/mutter.dconf", "/org/gnome/mutter/", dry)
         dconf_load(
-            "gnome-dconf/media-keys.dconf",
+            "./gnome-dconf/media-keys.dconf",
             "/org/gnome/settings-daemon/media-keys/",
             dry,
         )
         dconf_load(
-            "gnome-dconf/dash-to-dock.dconf",
+            "./gnome-dconf/dash-to-dock.dconf",
             "/org/gnome/shell/extensions/dash-to-dock/",
             dry,
         )
