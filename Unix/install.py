@@ -6,7 +6,13 @@ import platform
 import shutil
 import subprocess
 import sys
+import typing as t
 from pathlib import Path
+
+
+def cyan(path: t.Union[str, Path]) -> str:
+    """Wrap path in cyan ANSI escape codes."""
+    return "\u001b[36m" + str(path) + "\u001b[0m"
 
 
 class DirectoryError(Exception):
@@ -42,8 +48,8 @@ def copy(src: str, dst: str, dry: bool):
     If dry is True, perform a dry run.
     """
     # Convert to Path objects.
-    src_path = Path(src).expanduser().absolute()
-    dst_path = Path(dst).expanduser().absolute()
+    src_path = Path(src).expanduser()
+    dst_path = Path(dst).expanduser()
 
     # Raise error if src does not exist.
     if not src_path.exists():
@@ -53,12 +59,12 @@ def copy(src: str, dst: str, dry: bool):
     if src_path.is_file():
         if not dst_path.parent.exists():
             dst_path.parent.mkdir()
-        print(f'Copying "{src_path}" to "{dst_path}".')
+        print(f'Copying {cyan(src_path)} to {cyan(dst_path)}.')
         if not dry:
             shutil.copy(src_path, dst_path)
     # Copy a directory recursively.
     if src_path.is_dir():
-        print(f'Copying "{src_path}" to "{dst_path}" recursively.')
+        print(f'Copying {cyan(src_path)} to {cyan(dst_path)} recursively.')
         if not dry:
             shutil.copytree(src_path, dst_path, dirs_exist_ok=True)
 
@@ -71,14 +77,14 @@ def dconf_load(src: str, dst: str, dry: bool):
     Return the return code of the dconf process, or 0 if dry is True.
     """
     # Convert src to Path object.
-    src_path = Path(src).expanduser().absolute()
+    src_path = Path(src).expanduser()
 
     # Raise error if src does not exist.
     if not src_path.exists():
         raise FileNotFoundError
 
     # Load with dconf.
-    print(f'Loading "{src_path}" to dconf path "{dst}".')
+    print(f'Loading {cyan(src_path)} to dconf path {cyan(dst)}.')
     if dry:
         return 0
     with open(src_path, "rb") as src_fd:
