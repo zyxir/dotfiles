@@ -138,6 +138,7 @@ then
     export the_proxy="socks5://$hostip:7890"
     if [ -x "$(command -v git)" ]; then
         git config --global http.https://github.com.proxy $the_proxy
+        git config --global http.https://git.savannah.gnu.org $the_proxy
     fi
     export DISPLAY=:0.0
 else
