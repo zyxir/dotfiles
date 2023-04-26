@@ -14,14 +14,14 @@ export PATH=$HOME/.local/bin:$PATH
 
 # Setup Cargo, the Rust package manager.
 
-if [ -f "$HOME/.cargo/env" ]; then
-    . "$HOME/.cargo/env"
+if [[ -f "$HOME/.cargo/env" ]]; then
+    source "$HOME/.cargo/env"
     export PATH=$HOME/.cargo/bin:$PATH
 fi
 
 # Setup Coursier, the Scala application and artifact manager.
 
-if [ -d "$HOME/.local/share/coursier/bin" ]; then
+if [[ -d "$HOME/.local/share/coursier/bin" ]]; then
     export PATH=$HOME/.local/share/coursier/bin:$PATH
 fi
 
@@ -42,18 +42,22 @@ export GTK_IM_MODULE=fcitx5
 export QT_IM_MODULE=fcitx5
 export XMODIFIERS=@im=fcitx5
 
-# Setup Xremap
+# Setup Xremap if not on SSH.
 
-if command -v xremap &> /dev/null && [ -f $HOME/.config/xremap/config.yml ]; then
-   nohup xremap $HOME/.config/xremap/config.yml &> /dev/null &
+if ! { [[ -n "$SSH_CLIENT" ]] || [[ -n "$SSH_TTY" ]]; } \
+       && { command -v xremap &> /dev/null; } \
+       && [[ -f $HOME/.config/xremap/config.yml ]]
+then
+   nohup xremap "$HOME/.config/xremap/config.yml" &> /dev/null &
 fi
 
 # Run bashrc if it exists
 
-if [ -f "$HOME/.bashrc" ]; then
-    . "$HOME/.bashrc"
+if [[ -f "$HOME/.bashrc" ]]; then
+    source "$HOME/.bashrc"
 fi
 
 # Local Variables:
 # mode: sh
+# flycheck-shellcheck-follow-sources: nil
 # End:

@@ -147,4 +147,5 @@ fi
 
 # Local Variables:
 # mode: sh
+# flycheck-shellcheck-follow-sources: nil
 # End:
