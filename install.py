@@ -32,7 +32,7 @@ def setup_directory():
     if "__file__" in globals():
         os.chdir(Path(__file__).parent)
     else:
-        candidates = list(Path.cwd().rglob("Unix/install.py"))
+        candidates = list(Path.cwd().rglob("install.py"))
         if len(candidates) == 0:
             raise DirectoryError
         else:
@@ -116,7 +116,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     # Install dot files.
-    copy("./dot-gitconfig", "~/.gitconfig", dry)
+    copy("./dot_gitconfig", "~/.gitconfig", dry)
     copy("./mypy", "~/.config/mypy", dry)
     if WINDOWS:
         copy(
@@ -124,24 +124,29 @@ if __name__ == "__main__":
             "~/Documents/WindowsPowerShell/Microsoft.PowerShell_profile.ps1",
             dry,
         )
+        # TODO Install Rime config for Windows, and remove standalone install
+        # scripts.
+        #
+        # TODO Install AutoHotkey scripts.
     if LINUX:
-        copy("./dot-bashrc", "~/.bashrc", dry)
-        copy("./dot-bash_profile", "~/.bash_profile", dry)
+        copy("./dot_bashrc", "~/.bashrc", dry)
+        copy("./dot_bash_profile", "~/.bash_profile", dry)
         copy("./fonts.conf", "~/.config/fontconfig/fonts.conf", dry)
         copy("./fcitx5", "~/.config/fcitx5", dry)
+        copy("./rime", "~/.local/share/fcitx5/rime", dry)
         copy("./xremap", "~/.config/xremap", dry)
 
     # Load dconf.
     if LINUX and shutil.which("dconf"):
-        dconf_load("./gnome-dconf/wm.dconf", "/org/gnome/desktop/wm/", dry)
-        dconf_load("./gnome-dconf/mutter.dconf", "/org/gnome/mutter/", dry)
+        dconf_load("./gnome_dconf/wm.dconf", "/org/gnome/desktop/wm/", dry)
+        dconf_load("./gnome_dconf/mutter.dconf", "/org/gnome/mutter/", dry)
         dconf_load(
-            "./gnome-dconf/media-keys.dconf",
+            "./gnome_dconf/media-keys.dconf",
             "/org/gnome/settings-daemon/media-keys/",
             dry,
         )
         dconf_load(
-            "./gnome-dconf/dash-to-dock.dconf",
+            "./gnome_dconf/dash-to-dock.dconf",
             "/org/gnome/shell/extensions/dash-to-dock/",
             dry,
         )
