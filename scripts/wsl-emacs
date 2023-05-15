@@ -1,0 +1,5 @@
+#!/bin/bash
+# Launch Emacs before loading .bash_profile.
+
+source $HOME/.bash_profile
+emacsclient --create-frame --alternate-editor=emacs
