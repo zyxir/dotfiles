@@ -45,7 +45,9 @@ def copy(src: str, dst: str, dry: bool):
     Work on a file or a directory.  Expand "~" to home directory.  Overwrite
     existing file(s).  Create directories if needed.
 
-    If dry is True, perform a dry run.
+    :param src: The source.
+    :param dst: The destination.
+    :param dry: If True, perform a dry run.
     """
     # Convert to Path objects.
     src_path = Path(src).expanduser()
@@ -59,14 +61,54 @@ def copy(src: str, dst: str, dry: bool):
     if src_path.is_file():
         if not dst_path.parent.exists():
             dst_path.parent.mkdir()
-        print(f'Copying {cyan(src_path)} to {cyan(dst_path)}.')
+        print(f"Copying {cyan(src_path)} to {cyan(dst_path)}.")
         if not dry:
             shutil.copy(src_path, dst_path)
     # Copy a directory recursively.
     if src_path.is_dir():
-        print(f'Copying {cyan(src_path)} to {cyan(dst_path)} recursively.')
+        print(f"Copying {cyan(src_path)} to {cyan(dst_path)} recursively.")
         if not dry:
             shutil.copytree(src_path, dst_path, dirs_exist_ok=True)
+
+
+def symlink(src: str, dst: str, dry: bool):
+    """Symlink `src` to `dst`, printing details.
+
+    Work on a file or a directory.  Expand "~" to home directory.  Overwrite
+    existing file(s).
+
+    On Windows, the user may don't have the privilege to create symbolic links,
+    so instead of symlinking the file is copied.
+
+    :param src: The source.
+    :param dst: The destination.
+    :param dry: If True, perform a dry run.
+    """
+    if platform.system() == "Windows":
+        copy(src, dst, dry)
+    else:
+        _do_symlink(src, dst, dry)
+
+
+def _do_symlink(src: str, dst: str, dry: bool):
+    """Symlink `src` to `dst`, printing details.
+
+    This is used internally in `symlink`.
+    """
+    # Convert to Path objects.
+    src_path = Path(src).expanduser()
+    dst_path = Path(dst).expanduser()
+
+    # Raise error if src does not exist.
+    if not src_path.exists():
+        raise FileNotFoundError
+
+    # Make the simbolic link.
+    print(f"Symlinking {cyan(src_path)} as {cyan(dst_path)}.")
+    if not dry:
+        dst_path.unlink(missing_ok=True)
+        src_path = src_path.absolute()
+        dst_path.symlink_to(src_path, target_is_directory=src_path.is_dir())
 
 
 def dconf_load(src: str, dst: str, dry: bool):
@@ -84,7 +126,7 @@ def dconf_load(src: str, dst: str, dry: bool):
         raise FileNotFoundError
 
     # Load with dconf.
-    print(f'Loading {cyan(src_path)} to dconf path {cyan(dst)}.')
+    print(f"Loading {cyan(src_path)} to dconf path {cyan(dst)}.")
     if dry:
         return 0
     with open(src_path, "rb") as src_fd:
@@ -107,6 +149,7 @@ if __name__ == "__main__":
     # OS constants.
     WINDOWS = platform.system() == "Windows"
     LINUX = platform.system() == "Linux"
+    WSL = "WSL_DISTRO_NAME" in os.environ
 
     # Make sure the script is run in the correct directory.
     try:
@@ -152,3 +195,7 @@ if __name__ == "__main__":
         )
     else:
         print("Skipping dconf configuration.")
+
+    # Symlinking (or copying) scripts.
+    if WSL:
+        symlink("./scripts/wsl-emacs", "~/.local/bin/wsl-emacs", dry)
