@@ -1,0 +1,1 @@
+wsl bash --login -c "setsid emacs"
