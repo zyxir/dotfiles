@@ -225,7 +225,7 @@ if __name__ == "__main__":
         copy("./xremap", "~/.config/xremap", dry)
 
     # Load dconf.
-    if LINUX and shutil.which("dconf"):
+    if LINUX and shutil.which("dconf") and not WSL:
         dconf_load("./gnome_dconf/wm.dconf", "/org/gnome/desktop/wm/", dry)
         dconf_load("./gnome_dconf/mutter.dconf", "/org/gnome/mutter/", dry)
         dconf_load(
@@ -240,7 +240,3 @@ if __name__ == "__main__":
         )
     else:
         print("Skipping dconf configuration.")
-
-    # Symlinking (or copying) scripts.
-    if WSL:
-        symlink("./scripts/wsl-emacs", "~/.local/bin/wsl-emacs", dry)
