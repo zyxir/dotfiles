@@ -138,22 +138,19 @@ def ahk_compile(src: str, dry: bool):
 
 def _ahk_compile(src: Path, dry: bool):
     """Compile one AutoHotkey script and add it to startup."""
-    # Compile the script.
-    if not dry:
-        cmd = [
-            "C:\\Program Files\\AutoHotkey\\Compiler\\Ahk2Exe.exe",
-            "/in",
-            str(src),
-        ]
-        subprocess.run(cmd)
-
     # Move it to startup.
     src_exe = src.parent.joinpath(src.stem + ".exe")
     startup_dir = os.path.expandvars(
         "%appdata%/Microsoft/Windows/Start Menu/Programs/Startup"
     )
     print(f"Adding {cyan(src_exe)} to startup.")
-    if not dry:
+    if not dry and not Path(startup_dir).joinpath(src_exe.name).exists():
+        cmd = [
+            "C:\\Program Files\\AutoHotkey\\Compiler\\Ahk2Exe.exe",
+            "/in",
+            str(src),
+        ]
+        subprocess.run(cmd)
         shutil.move(src_exe, startup_dir)
 
 
@@ -180,6 +177,21 @@ def dconf_load(src: str, dst: str, dry: bool) -> int:
         cmd = ["dconf", "load", dst]
         proc = subprocess.run(cmd, stdin=src_fd)
         return proc.returncode
+
+
+def windows_configure_cangjie6(dry: bool):
+    """Configure the Cangjie6 schema of Rime on Windows.
+
+    If dry is True, perform a dry run.
+    """
+    custom = normalize_path("%appdata%/rime/cangjie6.custom.yaml")
+    content = """patch:
+  "switches/@2/reset": 1
+    """
+    print(f"Creating {cyan(custom)} for Windows.")
+    if not dry:
+        with open(custom, "w") as fp:
+            fp.write(content)
 
 
 if __name__ == "__main__":
@@ -215,6 +227,7 @@ if __name__ == "__main__":
             dry,
         )
         copy("./rime", "%appdata%/rime", dry)
+        windows_configure_cangjie6(dry)
         ahk_compile("./AutoHotkey", dry)
     if LINUX:
         copy("./dot_bashrc", "~/.bashrc", dry)
