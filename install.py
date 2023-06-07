@@ -6,11 +6,11 @@ import platform
 import shutil
 import subprocess
 import sys
-import typing as t
+from typing import Union
 from pathlib import Path
 
 
-def cyan(path: t.Union[str, Path]) -> str:
+def cyan(path: Union[str, Path]) -> str:
     """Wrap path in cyan ANSI escape codes."""
     return "\u001b[36m" + str(path) + "\u001b[0m"
 
@@ -19,6 +19,16 @@ class DirectoryError(Exception):
     """Raised when the script cannot be executed in the correct directory."""
 
     pass
+
+
+def normalize_path(p: Union[str, Path]) -> Path:
+    """Normalize path."""
+    if isinstance(p, str):
+        normalized = Path(os.path.expandvars(p)).expanduser()
+    else:
+        normalized = p.expanduser()
+    normalized = normalized.absolute()
+    return normalized
 
 
 def setup_directory():
@@ -50,8 +60,8 @@ def copy(src: str, dst: str, dry: bool):
     :param dry: If True, perform a dry run.
     """
     # Convert to Path objects.
-    src_path = Path(src).expanduser()
-    dst_path = Path(dst).expanduser()
+    src_path = normalize_path(src)
+    dst_path = normalize_path(dst)
 
     # Raise error if src does not exist.
     if not src_path.exists():
@@ -96,8 +106,8 @@ def _do_symlink(src: str, dst: str, dry: bool):
     This is used internally in `symlink`.
     """
     # Convert to Path objects.
-    src_path = Path(src).expanduser()
-    dst_path = Path(dst).expanduser()
+    src_path = normalize_path(src)
+    dst_path = normalize_path(dst)
 
     # Raise error if src does not exist.
     if not src_path.exists():
@@ -111,7 +121,44 @@ def _do_symlink(src: str, dst: str, dry: bool):
         dst_path.symlink_to(src_path, target_is_directory=src_path.is_dir())
 
 
-def dconf_load(src: str, dst: str, dry: bool):
+def ahk_compile(src: str, dry: bool):
+    """Compile AutoHotkey scripts and add them to startup.
+
+    If dry is True, perform a dry run.
+
+    Return the return code of the dconf process, or 0 if dry is True.
+    """
+    # Convert to Path object.
+    src_path = normalize_path(src)
+
+    # Compile every .ahk file.
+    for f in src_path.glob("*.ahk"):
+        _ahk_compile(f, dry)
+
+
+def _ahk_compile(src: Path, dry: bool):
+    """Compile one AutoHotkey script and add it to startup."""
+    # Compile the script.
+    if not dry:
+        cmd = [
+            "C:\\Program Files\\AutoHotkey\\Compiler\\Ahk2Exe.exe",
+            "/in",
+            str(src),
+        ]
+        subprocess.run(cmd)
+
+    # Move it to startup.
+    src_exe = src.parent.joinpath(src.stem + ".exe")
+    startup_dir = os.path.expandvars(
+        "%appdata%/Microsoft/Windows/Start Menu/Programs/Startup"
+    )
+    print(f"Adding {cyan(src_exe)} to startup.")
+    if not dry:
+        shutil.move(src_exe, startup_dir)
+
+
+
+def dconf_load(src: str, dst: str, dry: bool) -> int:
     """Load dconf configuration from src to dst.
 
     If dry is True, perform a dry run.
@@ -119,7 +166,7 @@ def dconf_load(src: str, dst: str, dry: bool):
     Return the return code of the dconf process, or 0 if dry is True.
     """
     # Convert src to Path object.
-    src_path = Path(src).expanduser()
+    src_path = normalize_path(src)
 
     # Raise error if src does not exist.
     if not src_path.exists():
@@ -167,10 +214,8 @@ if __name__ == "__main__":
             "~/Documents/WindowsPowerShell/Microsoft.PowerShell_profile.ps1",
             dry,
         )
-        # TODO Install Rime config for Windows, and remove standalone install
-        # scripts.
-        #
-        # TODO Install AutoHotkey scripts.
+        copy("./rime", "%appdata%/rime", dry)
+        ahk_compile("./AutoHotkey", dry)
     if LINUX:
         copy("./dot_bashrc", "~/.bashrc", dry)
         copy("./dot_bash_profile", "~/.bash_profile", dry)
