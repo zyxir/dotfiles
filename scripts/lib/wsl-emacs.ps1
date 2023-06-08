@@ -1,3 +1,2 @@
-$wslip = wsl bash -c "cat /etc/resolv.conf | grep -oP '(?<=nameserver\ ).*'"
-
+$wslip = wsl bash -c "ip route show default" | %{ $_.Split(' ')[2]; }
 wsl bash --login -c "export DISPLAY=$wslip`:0.0 export LIBGL_ALWAYS_INDIRECT=1 && setsid emacs"
