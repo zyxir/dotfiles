@@ -25,6 +25,15 @@ if [[ -d "$HOME/.local/share/coursier/bin" ]]; then
     export PATH=$HOME/.local/share/coursier/bin:$PATH
 fi
 
+# Setup path for self-built Python.
+
+if [[ -d "/opt/python/" ]]; then
+    FOO=( /opt/python/*/bin )
+    for dir in $FOO; do
+        export PATH=$dir:$PATH
+    done
+fi
+
 # Setup Fcitx 5 input method.
 
 # You can choose Fcitx 5 as the input method with im-config on Ubuntu, but it
