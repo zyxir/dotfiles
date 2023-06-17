@@ -66,6 +66,12 @@ if [[ -f "$HOME/.bashrc" ]]; then
     source "$HOME/.bashrc"
 fi
 
+# Run machine-specific script if it exists
+
+if [[ -f "$HOME/.bash_local" ]]; then
+    source "$HOME/.bash_local"
+fi
+
 # Local Variables:
 # mode: sh
 # flycheck-shellcheck-follow-sources: nil
