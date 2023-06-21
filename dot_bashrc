@@ -137,14 +137,10 @@ then
     export hostip=$(ip route show default | awk '{print $3}')
     export the_proxy="socks5://$hostip:7890"
     if [ -x "$(command -v git)" ]; then
-        git config --global http.https://github.com.proxy $the_proxy
-        git config --global http.https://git.savannah.gnu.org.proxy $the_proxy
         git config --global credential.helper "/mnt/c/Program\ Files/Git/mingw64/bin/git-credential-manager.exe"
     fi
     export DISPLAY=$hostip:0.0
     export LIBGL_ALWAYS_INDIRECT=1
-else
-    export the_proxy="socks5://127.0.0.1:7890"
 fi
 
 # Local Variables:
