@@ -146,14 +146,13 @@ def _ahk_compile(src: Path, dry: bool):
     )
     print(f"Adding {cyan(src_exe)} to startup.")
     if not dry and not Path(startup_dir).joinpath(src_exe.name).exists():
-        cmd = [
-            "C:\\Program Files\\AutoHotkey\\Compiler\\Ahk2Exe.exe",
-            "/in",
-            str(src),
-        ]
-        subprocess.run(cmd)
-        shutil.move(src_exe, startup_dir)
-
+        compiler_path = "C:\\Program Files\\AutoHotkey\\Compiler\\Ahk2Exe.exe"
+        if Path(compiler_path).exists():
+            cmd = [compiler_path, "/in", str(src)]
+            subprocess.run(cmd)
+            shutil.copy(src_exe, startup_dir)
+        else:
+            shutil.copy(src, startup_dir)
 
 def dconf_load(src: str, dst: str, dry: bool) -> int:
     """Load dconf configuration from src to dst.
