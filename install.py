@@ -3,10 +3,11 @@
 
 import os
 import platform
+import shlex
 import shutil
 import subprocess
 import sys
-from typing import Union
+from typing import Optional, Union
 from pathlib import Path
 
 
@@ -154,7 +155,6 @@ def _ahk_compile(src: Path, dry: bool):
         shutil.move(src_exe, startup_dir)
 
 
-
 def dconf_load(src: str, dst: str, dry: bool) -> int:
     """Load dconf configuration from src to dst.
 
@@ -177,6 +177,40 @@ def dconf_load(src: str, dst: str, dry: bool) -> int:
         cmd = ["dconf", "load", dst]
         proc = subprocess.run(cmd, stdin=src_fd)
         return proc.returncode
+
+
+def run_command(
+    cmd: str,
+    msg: str,
+    dry: bool,
+    workdir: Optional[Path] = None,
+    shell: bool = False,
+) -> int:
+    """Run command cmd and print msg, return the return code.
+
+    If dry is True, perform a dry run.
+
+    Use the current directory by default, or workdir if given.  Argument shell
+    is passed to subprocess.run().
+
+    stdout and stderr are captured and logged.
+    """
+    print(msg)
+    if not dry:
+        # Go to target dir.
+        cwd = normalize_path(workdir if workdir is not None else os.getcwd())
+        if workdir:
+            os.chdir(workdir)
+        # Run command.
+        args = shlex.split(cmd)
+        proc = subprocess.run(args, capture_output=True, text=True, shell=shell)
+        code = proc.returncode
+        # Get back.
+        if workdir:
+            os.chdir(cwd)
+        # Return the return code.
+        return code
+    return 0
 
 
 def windows_configure_cangjie6(dry: bool):
@@ -219,6 +253,12 @@ if __name__ == "__main__":
 
     # Install dot files.
     copy("./dot_gitconfig", "~/.gitconfig", dry)
+    if shutil.which("git-credential-manager"):
+        run_command(
+            "git-credential-manager configure",
+            "Configuring git-credential-manager.",
+            dry,
+        )
     copy("./mypy", "~/.config/mypy", dry)
     if WINDOWS:
         copy(
@@ -243,12 +283,22 @@ if __name__ == "__main__":
         dconf_load("./gnome_dconf/mutter.dconf", "/org/gnome/mutter/", dry)
         dconf_load(
             "./gnome_dconf/media-keys.dconf",
-            "/org/gnome/settings-daemon/media-keys/",
+            "/org/gnome/settings-daemon/plugins/media-keys/",
             dry,
         )
         dconf_load(
-            "./gnome_dconf/dash-to-dock.dconf",
-            "/org/gnome/shell/extensions/dash-to-dock/",
+            "./gnome_dconf/dash-to-panel.dconf",
+            "/org/gnome/shell/extensions/dash-to-panel/",
+            dry,
+        )
+        dconf_load(
+            "./gnome_dconf/improved-workspace-indicator.dconf",
+            "/org/gnome/shell/extensions/improved-workspace-indicator/",
+            dry,
+        )
+        dconf_load(
+            "./gnome_dconf/trayIconsReloaded.dconf",
+            "/org/gnome/shell/extensions/trayIconsReloaded/",
             dry,
         )
     else:

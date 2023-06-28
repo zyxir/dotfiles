@@ -83,7 +83,11 @@ esac
 
 # enable color support of ls and also add handy aliases
 if [ -x /usr/bin/dircolors ]; then
-    test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
+    if test -r ~/.dircolors; then
+        eval "$(dircolors -b ~/.dircolors)"
+    else
+        eval "$(dircolors -b)"
+    fi
     alias ls='ls --color=auto'
     #alias dir='dir --color=auto'
     #alias vdir='vdir --color=auto'
@@ -113,6 +117,7 @@ alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo
 # See /usr/share/doc/bash-doc/examples in the bash-doc package.
 
 if [ -f ~/.bash_aliases ]; then
+    # shellcheck disable=SC1090
     . ~/.bash_aliases
 fi
 
@@ -123,8 +128,10 @@ fi
 # sources /etc/bash.bashrc).
 if ! shopt -oq posix; then
   if [ -f /usr/share/bash-completion/bash_completion ]; then
+    # shellcheck disable=SC1091
     . /usr/share/bash-completion/bash_completion
   elif [ -f /etc/bash_completion ]; then
+    # shellcheck disable=SC1091
     . /etc/bash_completion
   fi
 fi
@@ -134,13 +141,32 @@ fi
 # Set proxy and display to host.
 if grep -qi microsoft /proc/version
 then
-    export hostip=$(ip route show default | awk '{print $3}')
-    export the_proxy="socks5://$hostip:7890"
+    hostip=$(ip route show default | awk '{print $3}')
+    export hostip
     if [ -x "$(command -v git)" ]; then
         git config --global credential.helper "/mnt/c/Program\ Files/Git/mingw64/bin/git-credential-manager.exe"
     fi
     export DISPLAY=$hostip:0.0
     export LIBGL_ALWAYS_INDIRECT=1
+fi
+
+### Python
+
+# Activate Micromamba if available.
+if command -v micromamba &> /dev/null; then
+    export MAMBA_EXE="$HOME/.local/bin/micromamba";
+    export MAMBA_ROOT_PREFIX="$HOME/micromamba";
+    __mamba_setup="$("$MAMBA_EXE" shell hook --shell bash --prefix "$MAMBA_ROOT_PREFIX" 2> /dev/null)"
+    if [ $? -eq 0 ]; then
+        eval "$__mamba_setup"
+    else
+        if [ -f "$HOME/micromamba/etc/profile.d/micromamba.sh" ]; then
+            . "$HOME/micromamba/etc/profile.d/micromamba.sh"
+        else
+            export  PATH="$HOME/micromamba/bin:$PATH"  # extra space after export prevents interference from conda init
+        fi
+    fi
+    unset __mamba_setup
 fi
 
 # Local Variables:

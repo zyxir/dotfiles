@@ -11,12 +11,16 @@
 export COLORTERM=truecolor
 export EDITOR=vim
 export PATH=$HOME/.local/bin:$PATH
+export GCM_CREDENTIAL_STORE=secretservice
 
 # Setup Cargo, the Rust package manager.
 
-if [[ -f "$HOME/.cargo/env" ]]; then
-    source "$HOME/.cargo/env"
+if [[ -d "$HOME/.cargo" ]]; then
     export PATH=$HOME/.cargo/bin:$PATH
+    if [[ -f "$HOME/.cargo/env" ]]; then
+        # shellcheck disable=SC1091
+        source "$HOME/.cargo/env"
+    fi
 fi
 
 # Setup Coursier, the Scala application and artifact manager.
@@ -28,8 +32,7 @@ fi
 # Setup path for self-built Python.
 
 if [[ -d "/opt/python/" ]]; then
-    FOO=( /opt/python/*/bin )
-    for dir in $FOO; do
+    for dir in /opt/python/*/bin; do
         export PATH=$dir:$PATH
     done
 fi
@@ -63,12 +66,14 @@ fi
 # Run bashrc if it exists
 
 if [[ -f "$HOME/.bashrc" ]]; then
+    # shellcheck disable=SC1091
     source "$HOME/.bashrc"
 fi
 
 # Run machine-specific script if it exists
 
 if [[ -f "$HOME/.bash_local" ]]; then
+    # shellcheck disable=SC1091
     source "$HOME/.bash_local"
 fi
 

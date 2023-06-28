@@ -6,5 +6,4 @@ experimental-features=['scale-monitor-framebuffer']
 workspaces-only-on-primary=true
 
 [keybindings]
-toggle-tiled-left=['<Super>h', '<Super>Left']
-toggle-tiled-right=['<Super>l', '<Super>Right']
+toggle-tiled-left=['<Super>Left']
