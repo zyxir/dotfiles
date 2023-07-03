@@ -7,13 +7,20 @@ import shlex
 import shutil
 import subprocess
 import sys
-from typing import Optional, Union
+import tempfile
+import zipfile
 from pathlib import Path
+from typing import List, Optional, Union
 
 
 def cyan(path: Union[str, Path]) -> str:
     """Wrap path in cyan ANSI escape codes."""
     return "\u001b[36m" + str(path) + "\u001b[0m"
+
+
+def red(path: Union[str, Path]) -> str:
+    """Wrap path in red ANSI escape codes."""
+    return "\u001b[31m" + str(path) + "\u001b[0m"
 
 
 class DirectoryError(Exception):
@@ -154,6 +161,7 @@ def _ahk_compile(src: Path, dry: bool):
         else:
             shutil.copy(src, startup_dir)
 
+
 def dconf_load(src: str, dst: str, dry: bool) -> int:
     """Load dconf configuration from src to dst.
 
@@ -227,6 +235,57 @@ def windows_configure_cangjie6(dry: bool):
             fp.write(content)
 
 
+def first_available(*paths: str) -> Optional[str]:
+    """Return the first path available."""
+    for path in paths:
+        if normalize_path(path).exists():
+            return path
+    return None
+
+
+def install_fonts(dry: bool):
+    """Install fonts from font_zip, a zip file containing all fonts wanted.
+
+    If dry is True, perform a dry run.
+    """
+    font_zip_path = first_available(
+        "~/Zyspace/pcsetup/ZyFonts.zip", "~/Downloads/ZyFonts.zip"
+    )
+    if font_zip_path is None:
+        print("Skip font installation as no ZyFonts.zip is found.")
+        return
+    print(f"Installing fonts in {cyan(font_zip_path)}.")
+    if not dry:
+        font_zip = zipfile.ZipFile(normalize_path(font_zip_path), "r")
+        with tempfile.TemporaryDirectory() as tempdirname:
+            tempdir = Path(tempdirname)
+            font_zip.extractall(tempdir)
+            fonts = []
+            for suffix in ["ttc", "ttf", "otc", "otf"]:
+                fonts += list(tempdir.rglob(f"*.{suffix}"))
+            if platform.system() == "Linux":
+                _install_fonts_linux(fonts)
+
+
+def _install_fonts_linux(fonts: List[Path]):
+    """Install a list of fonts on Linux."""
+    # Move all fonts to "~/.fonts".
+    fontdir = Path("~/.fonts").expanduser()
+    for font in fonts:
+        shutil.copy(font, fontdir)
+    run_command("fc-cache -f", "Refreshing font cache.", dry)
+    print(f"{len(fonts)} fonts installed.")
+
+
+def _install_fonts_windows(fonts: List[Path]):
+    """Install a list of fonts on Windows. of
+    fontdir = Path("~/Desktop/FONTS_TO_INSTALL").expanduser()
+    for font in fonts:
+        shutil.copy(font, fontdir)
+    print(f"{len(fonts)} fonts copied to desktop.")
+    print(red("You should install the fonts manually.")) fon"""
+
+
 if __name__ == "__main__":
     # Parse arguments.
     import argparse
@@ -235,8 +294,14 @@ if __name__ == "__main__":
         description="Installation script for Unix dotfiles."
     )
     parser.add_argument("--dry", action="store_true", help="perform a dry run")
+    parser.add_argument(
+        "--complete",
+        action="store_true",
+        help="perform a complete run: also install fonts",
+    )
     args = parser.parse_args()
     dry = args.dry
+    complete = args.complete
 
     # OS constants.
     WINDOWS = platform.system() == "Windows"
@@ -295,10 +360,9 @@ if __name__ == "__main__":
             "/org/gnome/shell/extensions/improved-workspace-indicator/",
             dry,
         )
-        dconf_load(
-            "./gnome_dconf/trayIconsReloaded.dconf",
-            "/org/gnome/shell/extensions/trayIconsReloaded/",
-            dry,
-        )
     else:
         print("Skipping dconf configuration.")
+
+    # Additional steps for a complete run.
+    if complete:
+        install_fonts(dry)
