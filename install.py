@@ -249,7 +249,9 @@ def install_fonts(dry: bool):
     If dry is True, perform a dry run.
     """
     font_zip_path = first_available(
-        "~/Zyspace/pcsetup/ZyFonts.zip", "~/Downloads/ZyFonts.zip"
+        "~/Zyspace/pcsetup/ZyFonts.zip",
+        "~/Downloads/ZyFonts.zip",
+        "/media/zyxir/Zydisk/pcsetup/ZyFonts.zip",
     )
     if font_zip_path is None:
         print("Skip font installation as no ZyFonts.zip is found.")
@@ -272,7 +274,8 @@ def _install_fonts_linux(fonts: List[Path]):
     # Move all fonts to "~/.fonts".
     fontdir = Path("~/.fonts").expanduser()
     for font in fonts:
-        shutil.copy(font, fontdir)
+        dst = fontdir.joinpath(font.name)
+        shutil.copy(font, dst)
     run_command("fc-cache -f", "Refreshing font cache.", dry)
     print(f"{len(fonts)} fonts installed.")
 
