@@ -273,9 +273,9 @@ def _install_fonts_linux(fonts: List[Path]):
     """Install a list of fonts on Linux."""
     # Move all fonts to "~/.fonts".
     fontdir = Path("~/.fonts").expanduser()
+    fontdir.mkdir(exist_ok=True)
     for font in fonts:
-        dst = fontdir.joinpath(font.name)
-        shutil.copy(font, dst)
+        shutil.copy(font, fontdir)
     run_command("fc-cache -f", "Refreshing font cache.", dry)
     print(f"{len(fonts)} fonts installed.")
 
