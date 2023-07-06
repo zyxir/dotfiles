@@ -1,0 +1,11 @@
+[/]
+element-order=['icon', 'title', 'controls', 'menu']
+extension-position='right'
+mouse-actions=['toggle_play', 'toggle_menu', 'none', 'none', 'none', 'none', 'none', 'none']
+prefer-using-seek=false
+seperator-chars=['|', '|']
+show-player-icon=true
+show-seek-back=false
+show-seek-forward=false
+show-seperators=false
+track-label=['track', '-', 'artist']

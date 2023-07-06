@@ -363,6 +363,11 @@ if __name__ == "__main__":
             "/org/gnome/shell/extensions/improved-workspace-indicator/",
             dry,
         )
+        dconf_load(
+            "./gnome_dconf/media-keys.dconf",
+            "/org/gnome/shell/extensions/mediacontrols/",
+            dry,
+        )
     else:
         print("Skipping dconf configuration.")
 
