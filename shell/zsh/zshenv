@@ -1,0 +1,19 @@
+# ~/.zshenv: Zsh environment variables file.
+#
+# Copyright 2023 Eric Zhuo Chen
+
+# Enable full color support in terminal.
+export COLORTERM=truecolor
+
+# Use Vim as default editor.
+export EDITOR=vim
+
+# Configure git-credential-manager.
+export GCM_CREDENTIAL_STORE=secretservice
+
+# Populate PATH.
+export PATH=${HOME}/.local/bin:${PATH}
+
+# Local Variables:
+# mode: sh
+# End:

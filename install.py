@@ -329,7 +329,7 @@ if __name__ == "__main__":
     copy("./mypy", "~/.config/mypy", dry)
     if WINDOWS:
         copy(
-            "./Microsoft.PowerShell_profile.ps1",
+            "./shell/PowerShell/Microsoft.PowerShell_profile.ps1",
             "~/Documents/WindowsPowerShell/Microsoft.PowerShell_profile.ps1",
             dry,
         )
@@ -337,8 +337,10 @@ if __name__ == "__main__":
         windows_configure_cangjie6(dry)
         ahk_compile("./AutoHotkey", dry)
     if LINUX:
-        copy("./dot_bashrc", "~/.bashrc", dry)
-        copy("./dot_bash_profile", "~/.bash_profile", dry)
+        copy("./shell/bash/bashrc", "~/.bashrc", dry)
+        copy("./shell/bash/bash_profile", "~/.bash_profile", dry)
+        copy("./shell/zsh/zshenv", "~/.zshenv", dry)
+        copy("./shell/zsh/zshrc", "~/.zshrc", dry)
         copy("./fonts.conf", "~/.config/fontconfig/fonts.conf", dry)
         copy("./fcitx5", "~/.config/fcitx5", dry)
         copy("./rime", "~/.local/share/fcitx5/rime", dry)
