@@ -220,6 +220,19 @@ def run_command(
     return 0
 
 
+def linux_configure_rime(dry: bool):
+    """Configure Rime on Linux.
+
+    If dry is True, perform a dry run.
+    """
+    if not dry:
+        src = "./rime/default.custom.linux.yaml"
+        dst = os.path.expanduser("~/.local/share/fcitx5/rime/default.custom.yaml")
+        if os.path.exists(dst):
+            os.remove(dst)
+        shutil.copy(src, dst)
+
+
 def windows_configure_cangjie6(dry: bool):
     """Configure the Cangjie6 schema of Rime on Windows.
 
@@ -281,12 +294,12 @@ def _install_fonts_linux(fonts: List[Path]):
 
 
 def _install_fonts_windows(fonts: List[Path]):
-    """Install a list of fonts on Windows. of
+    """Install a list of fonts on Windows."""
     fontdir = Path("~/Desktop/FONTS_TO_INSTALL").expanduser()
     for font in fonts:
         shutil.copy(font, fontdir)
     print(f"{len(fonts)} fonts copied to desktop.")
-    print(red("You should install the fonts manually.")) fon"""
+    print(red("You should install the fonts manually."))
 
 
 if __name__ == "__main__":
@@ -344,6 +357,7 @@ if __name__ == "__main__":
         copy("./fonts.conf", "~/.config/fontconfig/fonts.conf", dry)
         copy("./fcitx5", "~/.config/fcitx5", dry)
         copy("./rime", "~/.local/share/fcitx5/rime", dry)
+        linux_configure_rime(dry)
         copy("./xremap", "~/.config/xremap", dry)
 
     # Load dconf.
