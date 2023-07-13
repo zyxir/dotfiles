@@ -1,6 +1,6 @@
 [/]
 control-center=['<Super>i']
-custom-keybindings=['/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/']
+custom-keybindings=['/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/']
 www=['<Super>b']
 
 [custom-keybindings/custom0]
@@ -17,3 +17,8 @@ name='Launch Emacs'
 binding='<Super>e'
 command='nautilus'
 name='Launch Nautilus'
+
+[custom-keybindings/custom3]
+binding='F12'
+command='guake-toggle'
+name='Toggle Guake'
