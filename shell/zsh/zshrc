@@ -16,15 +16,10 @@ antigen bundle commnad-not-found
 antigen bundle zsh-users/zsh-autosuggestions
 antigen bundle zsh-users/zsh-completions
 antigen bundle zsh-users/zsh-syntax-highlighting
+antigen theme jackharrisonsherlock/common
 
 # Tell antigen you are done.
 antigen apply
-
-### Prompt
-
-# Starship must be installed system-wide.
-export TERM=xterm-256color
-eval "$(starship init zsh)"
 
 ### History
 
