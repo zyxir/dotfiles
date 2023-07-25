@@ -1,0 +1,6 @@
+parsers: #array
+  - reg: ^.+$
+    yaml:
+      prepend-rules:
+        # 校园网直连
+        - DOMAIN-SUFFIX,ieee.org,DIRECT
