@@ -4,3 +4,5 @@ parsers: #array
       prepend-rules:
         # 校园网直连
         - DOMAIN-SUFFIX,ieee.org,DIRECT
+        # SSH 直连
+        - DST-PORT,22,DIRECT
