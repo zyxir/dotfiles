@@ -6,6 +6,6 @@ SendMode Input  ; Recommended for new scripts due to its superior speed and reli
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 
 SetTitleMatchMode, 1
-#IfWinActive ZyEmacs
+#IfWinActive ZyEmacsWSL
 Shift & AppsKey::Return
 Shift::Send ^\
