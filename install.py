@@ -263,8 +263,9 @@ def install_fonts(dry: bool):
     """
     font_zip_path = first_available(
         "~/Zyspace/pcsetup/ZyFonts.zip",
+        "/mnt/c/Users/zyxir/Zyspace/pcsetup/ZyFonts.zip",
         "~/Downloads/ZyFonts.zip",
-        "/media/zyxir/Zydisk/pcsetup/ZyFonts.zip",
+        "/media/zyxir/Zydisk/pcsetup/ZyFonts.zip"
     )
     if font_zip_path is None:
         print("Skip font installation as no ZyFonts.zip is found.")
