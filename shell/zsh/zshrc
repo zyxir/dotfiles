@@ -5,11 +5,10 @@
 ### Antigen
 
 # Locate or download antigen.
-ANTIGEN="/usr/share/zsh/share/antigen.zsh"
+ANTIGEN="$HOME/.local/bin/antigen.zsh"
 if [ ! -f ${ANTIGEN} ]; then
-    mkdir -p $HOME/.local/bin
-    curl -L git.io/antigen > $HOME/.local/bin/antigen.zsh
-    ANTIGEN="$HOME/.local/bin/antigen.zsh"
+    mkdir -p ${ANTIGEN:h}
+    curl -L git.io/antigen > ${ANTIGEN}
 fi
 source ${ANTIGEN}
 
