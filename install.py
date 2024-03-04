@@ -286,7 +286,7 @@ def install_fonts(dry: bool):
 def _install_fonts_linux(fonts: List[Path]):
     """Install a list of fonts on Linux."""
     # Move all fonts to "~/.fonts".
-    fontdir = Path("~/.fonts").expanduser()
+    fontdir = Path("~/.local/share/fonts").expanduser()
     fontdir.mkdir(exist_ok=True)
     for font in fonts:
         shutil.copy(font, fontdir)
