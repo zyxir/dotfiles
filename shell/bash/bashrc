@@ -146,8 +146,6 @@ then
     if [ -x "$(command -v git)" ]; then
         git config --global credential.helper "/mnt/c/Program\ Files/Git/mingw64/bin/git-credential-manager.exe"
     fi
-    export DISPLAY=$hostip:0.0
-    export LIBGL_ALWAYS_INDIRECT=1
 fi
 
 # Local Variables:

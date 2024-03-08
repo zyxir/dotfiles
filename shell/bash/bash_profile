@@ -63,6 +63,12 @@ then
    nohup xremap "$HOME/.config/xremap/config.yml" &> /dev/null &
 fi
 
+# Setup home-manager if it exists.
+
+if [[ -f "$HOME/.nix-profile/etc/profile.d/hm-session-vars.sh" ]]; then
+    source "$HOME/.nix-profile/etc/profile.d/hm-session-vars.sh"
+fi
+
 # Run bashrc if it exists
 
 if [[ -f "$HOME/.bashrc" ]]; then
