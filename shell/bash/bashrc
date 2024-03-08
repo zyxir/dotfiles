@@ -138,7 +138,7 @@ fi
 
 ### WSL 2
 
-# Set proxy and display to host.
+# Settings related to the Windows host.
 if grep -qi microsoft /proc/version
 then
     hostip=$(ip route show default | awk '{print $3}')
