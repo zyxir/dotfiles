@@ -13,6 +13,12 @@ from pathlib import Path
 from typing import List, Optional, Union
 
 
+# OS constants.
+WINDOWS = platform.system() == "Windows"
+LINUX = platform.system() == "Linux"
+WSL = "WSL_DISTRO_NAME" in os.environ
+
+
 def cyan(path: Union[str, Path]) -> str:
     """Wrap path in cyan ANSI escape codes."""
     return "\u001b[36m" + str(path) + "\u001b[0m"
@@ -102,7 +108,7 @@ def symlink(src: str, dst: str, dry: bool):
     :param dst: The destination.
     :param dry: If True, perform a dry run.
     """
-    if platform.system() == "Windows":
+    if WINDOWS:
         copy(src, dst, dry)
     else:
         _do_symlink(src, dst, dry)
@@ -248,7 +254,7 @@ def windows_configure_cangjie6(dry: bool):
             fp.write(content)
 
 
-def first_available(*paths: str) -> Optional[str]:
+def first_existing_path(*paths: str) -> Optional[str]:
     """Return the first path available."""
     for path in paths:
         if normalize_path(path).exists():
@@ -261,7 +267,7 @@ def install_fonts(dry: bool):
 
     If dry is True, perform a dry run.
     """
-    font_zip_path = first_available(
+    font_zip_path = first_existing_path(
         "~/Zyspace/pcsetup/ZyFonts.zip",
         "/mnt/c/Users/zyxir/Zyspace/pcsetup/ZyFonts.zip",
         "~/Downloads/ZyFonts.zip",
@@ -279,8 +285,10 @@ def install_fonts(dry: bool):
             fonts = []
             for suffix in ["ttc", "ttf", "otc", "otf"]:
                 fonts += list(tempdir.rglob(f"*.{suffix}"))
-            if platform.system() == "Linux":
+            if LINUX:
                 _install_fonts_linux(fonts)
+            elif WINDOWS:
+                _install_fonts_windows(fonts)
 
 
 def _install_fonts_linux(fonts: List[Path]):
@@ -320,11 +328,6 @@ if __name__ == "__main__":
     dry = args.dry
     complete = args.complete
 
-    # OS constants.
-    WINDOWS = platform.system() == "Windows"
-    LINUX = platform.system() == "Linux"
-    WSL = "WSL_DISTRO_NAME" in os.environ
-
     # Make sure the script is run in the correct directory.
     try:
         setup_directory()
@@ -333,55 +336,59 @@ if __name__ == "__main__":
         sys.exit(1)
 
     # Install dot files.
-    copy("./dot_gitconfig", "~/.gitconfig", dry)
-    if shutil.which("git-credential-manager"):
-        run_command(
-            "git-credential-manager configure",
-            "Configuring git-credential-manager.",
-            dry,
-        )
-    copy("./mypy", "~/.config/mypy", dry)
     if WINDOWS:
+        copy("./apps/git/dot_gitconfig", "~/.gitconfig", dry)
         copy(
             "./shell/PowerShell/Microsoft.PowerShell_profile.ps1",
             "~/Documents/WindowsPowerShell/Microsoft.PowerShell_profile.ps1",
             dry,
         )
-        copy("./rime", "%appdata%/rime", dry)
+        copy("./apps/rime", "%appdata%/rime", dry)
         windows_configure_cangjie6(dry)
         ahk_compile("./AutoHotkey", dry)
     if LINUX:
         copy("./shell/bash/bashrc", "~/.bashrc", dry)
         copy("./shell/bash/bash_profile", "~/.bash_profile", dry)
-        copy("./shell/zsh/zshenv", "~/.zshenv", dry)
-        copy("./shell/zsh/zshrc", "~/.zshrc", dry)
-        copy("./fonts.conf", "~/.config/fontconfig/fonts.conf", dry)
-        copy("./fcitx5", "~/.config/fcitx5", dry)
-        copy("./rime", "~/.local/share/fcitx5/rime", dry)
-        linux_configure_rime(dry)
-        copy("./xremap", "~/.config/xremap", dry)
+        copy("./apps/fontconfig/fonts.conf", "~/.config/fontconfig/fonts.conf", dry)
+        if WSL:
+            # Currently I use Nix and home-manager inside a Ubuntu WSL.
+            copy("./apps/nix/home-manager/home.nix", "~/.config/home-manager/home.nix", dry)
+        else:
+            # These are for Linux without Nix, which I seldom use now. Changes
+            # could be made if I end up using a native Linux some day.
+            copy("./apps/fcitx5", "~/.config/fcitx5", dry)
+            copy("./apps/rime", "~/.local/share/fcitx5/rime", dry)
+            linux_configure_rime(dry)
+            copy("./apps/xremap", "~/.config/xremap", dry)
+            copy("./apps/git/dot_gitconfig", "~/.gitconfig", dry)
+            if shutil.which("git-credential-manager"):
+                run_command(
+                    "git-credential-manager configure",
+                    "Configuring git-credential-manager.",
+                    dry,
+                )
 
     # Load dconf.
     if LINUX and shutil.which("dconf") and not WSL:
-        dconf_load("./gnome_dconf/wm.dconf", "/org/gnome/desktop/wm/", dry)
-        dconf_load("./gnome_dconf/mutter.dconf", "/org/gnome/mutter/", dry)
+        dconf_load("./apps/gnome_dconf/wm.dconf", "/org/gnome/desktop/wm/", dry)
+        dconf_load("./apps/gnome_dconf/mutter.dconf", "/org/gnome/mutter/", dry)
         dconf_load(
-            "./gnome_dconf/media-keys.dconf",
+            "./apps/gnome_dconf/media-keys.dconf",
             "/org/gnome/settings-daemon/plugins/media-keys/",
             dry,
         )
         dconf_load(
-            "./gnome_dconf/dash-to-panel.dconf",
+            "./apps/gnome_dconf/dash-to-panel.dconf",
             "/org/gnome/shell/extensions/dash-to-panel/",
             dry,
         )
         dconf_load(
-            "./gnome_dconf/improved-workspace-indicator.dconf",
+            "./apps/gnome_dconf/improved-workspace-indicator.dconf",
             "/org/gnome/shell/extensions/improved-workspace-indicator/",
             dry,
         )
         dconf_load(
-            "./gnome_dconf/media-keys.dconf",
+            "./apps/gnome_dconf/media-keys.dconf",
             "/org/gnome/shell/extensions/mediacontrols/",
             dry,
         )
