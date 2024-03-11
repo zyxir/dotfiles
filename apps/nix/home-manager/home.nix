@@ -44,7 +44,7 @@
     isort
 
     # Emacs and accesories.
-    emacs
+    emacs29-pgtk
     gcc
     librime
     libvterm
@@ -67,6 +67,16 @@
   services.emacs = {
     enable = true;
     package = pkgs.emacs;
+  };
+
+  # Git config.
+  programs.git = {
+    enable = true;
+    userName = "Eric Zhuo Chen";
+    userEmail = "ericzhuochen@outlook.com";
+    extraConfig = {
+      credential.helper = "/mnt/c/Program\ Files/Git/mingw64/bin/git-credential-manager.exe";
+    };
   };
 
   # Home Manager is pretty good at managing dotfiles. The primary way to manage

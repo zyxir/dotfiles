@@ -1,9 +1,10 @@
 [user]
-	name = "Eric Zhuo Chen"
-	email = zyxirchen@outlook.com
+name = "Eric Zhuo Chen"
+email = zyxirchen@outlook.com
+
 [core]
-        auotcrlf = false
-	quotepath = false
+auotcrlf = false
+quotepath = false
 
 # Local Variables:
 # mode: conf
