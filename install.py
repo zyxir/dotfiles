@@ -16,7 +16,7 @@ from typing import List, Optional, Union
 # OS constants.
 WINDOWS = platform.system() == "Windows"
 LINUX = platform.system() == "Linux"
-WSL = "WSL_DISTRO_NAME" in os.environ
+WSL = "WSL" in platform.uname().release
 
 
 def cyan(path: Union[str, Path]) -> str:
