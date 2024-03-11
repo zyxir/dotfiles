@@ -232,7 +232,7 @@ def linux_configure_rime(dry: bool):
     If dry is True, perform a dry run.
     """
     if not dry:
-        src = "./rime/default.custom.linux.yaml"
+        src = "./apps/rime/default.custom.linux.yaml"
         dst = os.path.expanduser("~/.local/share/fcitx5/rime/default.custom.yaml")
         if os.path.exists(dst):
             os.remove(dst)

@@ -74,6 +74,14 @@ if [[ -f "$HOME/.nix-profile/etc/profile.d/hm-session-vars.sh" ]]; then
     source "$HOME/.nix-profile/etc/profile.d/hm-session-vars.sh"
 fi
 
+# Setup Emacs editor.
+if ! command -v emacs &> /dev/null; then
+    alias ec='emacsclient -c'
+    alias ecnw='emacsclient -nw'
+    alias vim='emacsclient -nw'
+    export EDITOR='emacsclient -nw'
+fi
+
 # Run bashrc if it exists
 
 if [[ -f "$HOME/.bashrc" ]]; then
