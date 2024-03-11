@@ -136,18 +136,6 @@ if ! shopt -oq posix; then
   fi
 fi
 
-### WSL 2
-
-# Settings related to the Windows host.
-if grep -qi microsoft /proc/version
-then
-    hostip=$(ip route show default | awk '{print $3}')
-    export hostip
-    if [ -x "$(command -v git)" ]; then
-        git config --global credential.helper "/mnt/c/Program\ Files/Git/mingw64/bin/git-credential-manager.exe"
-    fi
-fi
-
 # Local Variables:
 # mode: sh
 # flycheck-shellcheck-follow-sources: nil
