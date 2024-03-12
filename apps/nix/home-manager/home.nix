@@ -68,9 +68,6 @@
     enable = true;
   };
 
-  # Enable the Lorri service.
-  services.lorri.enable = true;
-
   # Git config.
   programs.git = {
     enable = true;

@@ -320,13 +320,24 @@ if __name__ == "__main__":
     )
     parser.add_argument("--dry", action="store_true", help="perform a dry run")
     parser.add_argument(
+        "--fonts",
+        action="store_true",
+        help="install fonts from possible archives",
+    )
+    parser.add_argument(
+        "--switch",
+        action="store_true",
+        help="do a home-manager switch",
+    )
+    parser.add_argument(
         "--complete",
         action="store_true",
-        help="perform a complete run: also install fonts",
+        help="perform a complete run: do every optional actions",
     )
     args = parser.parse_args()
     dry = args.dry
-    complete = args.complete
+    fonts = args.complete or args.fonts
+    switch = args.complete or args.switch
 
     # Make sure the script is run in the correct directory.
     try:
@@ -351,8 +362,13 @@ if __name__ == "__main__":
         copy("./shell/bash/bash_profile", "~/.bash_profile", dry)
         copy("./apps/fontconfig/fonts.conf", "~/.config/fontconfig/fonts.conf", dry)
         if WSL:
-            # Currently I use Nix and home-manager inside a Ubuntu WSL.
-            copy("./apps/nix/home-manager/home.nix", "~/.config/home-manager/home.nix", dry)
+            # Currently I use Nix and home-manager inside a Ubuntu WSL. Copy the
+            # home-manager configuration file and do a switch.
+            copy("./apps/nix/home-manager/home.nix",
+                 "~/.config/home-manager/home.nix", dry)
+            if switch and shutil.which("home-manager"):
+                run_command("home-manager switch",
+                            "Switching home-manager configuration.", dry)
         else:
             # These are for Linux without Nix, which I seldom use now. Changes
             # could be made if I end up using a native Linux some day.
@@ -396,5 +412,5 @@ if __name__ == "__main__":
         print("Skipping dconf configuration.")
 
     # Additional steps for a complete run.
-    if complete:
+    if fonts:
         install_fonts(dry)
