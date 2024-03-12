@@ -44,7 +44,7 @@
     isort
 
     # Emacs and accesories.
-    emacs29-pgtk
+    emacs
     gcc
     librime
     libvterm
@@ -66,8 +66,10 @@
   # Enable the Emacs daemon service.
   services.emacs = {
     enable = true;
-    package = pkgs.emacs;
   };
+
+  # Enable the Lorri service.
+  services.lorri.enable = true;
 
   # Git config.
   programs.git = {
