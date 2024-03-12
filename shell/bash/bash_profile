@@ -82,6 +82,11 @@ if command -v emacs &> /dev/null; then
     export EDITOR='emacsclient -nw'
 fi
 
+# Setup Direnv.
+if command -v direnv &> /dev/null; then
+    eval "$(direnv hook bash)"
+fi
+
 # Run bashrc if it exists
 
 if [[ -f "$HOME/.bashrc" ]]; then

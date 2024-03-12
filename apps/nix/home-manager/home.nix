@@ -34,14 +34,16 @@
     zip
 
     # Running Python scripts.
-    (python3.withPackages (python-pkgs: [
-      python-pkgs.matplotlib
-      python-pkgs.numpy
-      python-pkgs.pandas
-      python-pkgs.scipy
+    (python3.withPackages (python-pkgs: with python-pkgs; [
+      isort
+      matplotlib
+      numpy
+      pandas
+      scipy
     ]))
+    black
+    black-macchiato
     nodePackages.pyright
-    isort
 
     # Emacs and accesories.
     emacs
