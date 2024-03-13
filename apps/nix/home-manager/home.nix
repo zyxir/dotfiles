@@ -45,11 +45,12 @@
     black-macchiato
     nodePackages.pyright
 
-    # Emacs and accesories.
-    emacs
-    gcc
-    librime
-    libvterm
+    # Emacs with packages.
+    ((emacsPackagesFor emacs29-pgtk).emacsWithPackages (
+      epkgs: with epkgs; [
+        pdf-tools
+      ]
+    ))
 
     # # It is sometimes useful to fine-tune packages, for example, by applying
     # # overrides. You can do that directly here, just don't forget the
@@ -65,7 +66,7 @@
     # '')
   ];
 
-  # Enable the Emacs daemon service.
+  # Setup Emacs daemon service.
   services.emacs = {
     enable = true;
   };
