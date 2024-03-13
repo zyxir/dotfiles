@@ -77,9 +77,8 @@ fi
 # Setup Emacs editor.
 if command -v emacs &> /dev/null; then
     alias ec='emacsclient -c'
-    alias ecnw='emacsclient -nw'
-    alias vim='emacsclient -nw'
-    export EDITOR='emacsclient -nw'
+    alias vim='emacs -nw'
+    export EDITOR='emacs -nw'
 fi
 
 # Setup Direnv.
