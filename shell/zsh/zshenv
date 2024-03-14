@@ -8,12 +8,6 @@ export COLORTERM=truecolor
 # Use Vim as default editor.
 export EDITOR=vim
 
-# Configure git-credential-manager.
-export GCM_CREDENTIAL_STORE=secretservice
-
-# Populate PATH.
-export PATH=${HOME}/.local/bin:${PATH}
-
 # Setup Fcitx5 input method.
 export GTK_IM_MODULE=fcitx
 export QT_IM_MODULE=fcitx

@@ -361,8 +361,8 @@ if __name__ == "__main__":
         windows_configure_cangjie6(dry)
         ahk_compile("./AutoHotkey", dry)
     if LINUX:
-        copy("./shell/bash/bashrc", "~/.bashrc", dry)
-        copy("./shell/bash/bash_profile", "~/.bash_profile", dry)
+        copy("./shell/zsh/zshrc", "~/.zshrc", dry)
+        copy("./shell/zsh/zshenv", "~/.zshenv", dry)
         copy("./apps/fontconfig/fonts.conf", "~/.config/fontconfig/fonts.conf", dry)
         if WSL:
             # Currently I use Nix and home-manager inside a Ubuntu WSL. Copy the

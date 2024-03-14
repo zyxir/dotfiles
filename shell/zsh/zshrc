@@ -2,6 +2,15 @@
 #
 # Copyright 2023 Eric Zhuo Chen
 
+### Powerlevel10k Instant Prompt
+
+# Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
+# Initialization code that may require console input (password prompts, [y/n]
+# confirmations, etc.) must go above this block; everything else may go below.
+if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+fi
+
 ### Antigen
 
 # Locate or download antigen.
@@ -21,7 +30,7 @@ antigen bundle commnad-not-found
 antigen bundle zsh-users/zsh-autosuggestions
 antigen bundle zsh-users/zsh-completions
 antigen bundle zsh-users/zsh-syntax-highlighting
-antigen theme jackharrisonsherlock/common
+antigen theme romkatv/powerlevel10k
 
 # Tell antigen you are done.
 antigen apply
@@ -29,8 +38,8 @@ antigen apply
 ### History
 
 HISTFILE=~/.histfile
-HISTSIZE=1000
-SAVEHIST=1000
+HISTSIZE=10000
+SAVEHIST=10000
 
 ### Keybindings
 
@@ -41,7 +50,29 @@ bindkey -e
 alias ls="ls --color -F"
 alias ll="ls --color -lh"
 
-### Vterm integration
+### Home Manager Setup
+
+if [[ -f "$HOME/.nix-profile/etc/profile.d/hm-session-vars.sh" ]]; then
+    source "$HOME/.nix-profile/etc/profile.d/hm-session-vars.sh"
+fi
+
+### Emacs Related
+
+if command -v emacs &> /dev/null; then
+    alias ec='emacsclient -c'
+    alias ecnw='emacsclient -nw'
+    alias enw='emacs -nw'
+    alias vim='emacsclient -nw'
+    export EDITOR='emacs -nw'
+fi
+
+# Setup Direnv
+
+if command -v direnv &> /dev/null; then
+    eval "$(direnv hook zsh)"
+fi
+
+### Vterm Integration
 
 # Code and comments below are copied from commit 94e2b0b of the emacs-libvterm
 # repo.
@@ -101,19 +132,9 @@ vterm_prompt_end() {
 setopt PROMPT_SUBST
 PROMPT=$PROMPT'%{$(vterm_prompt_end)%}'
 
-### WSL 2
+### Activate Powerlevel10k
 
-# Set display and git-credential-manager to host.
-if grep -qi microsoft /proc/version
-then
-    hostip=$(ip route show default | awk '{print $3}')
-    export hostip
-    if [ -x "$(command -v git)" ]; then
-        git config --global credential.helper "/mnt/c/Program\ Files/Git/mingw64/bin/git-credential-manager.exe"
-    fi
-    export DISPLAY=$hostip:0.0
-    export LIBGL_ALWAYS_INDIRECT=1
-fi
+[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
 # Local Variables:
 # mode: sh
