@@ -218,6 +218,9 @@ def run_command(
         args = shlex.split(cmd)
         proc = subprocess.run(args, capture_output=True, text=True, shell=shell)
         code = proc.returncode
+        # If the return code is non-zero, report it.
+        if code != 0:
+            print(proc.stderr)
         # Get back.
         if workdir:
             os.chdir(cwd)

@@ -46,29 +46,23 @@
     nodePackages.pyright
 
     # Emacs with packages.
-    ((emacsPackagesFor emacs29-pgtk).emacsWithPackages (
+    ((emacsPackagesFor emacs).emacsWithPackages (
       epkgs: with epkgs; [
+        # Add packages here so that they are already compiled while using Emacs.
         pdf-tools
       ]
     ))
-
-    # # It is sometimes useful to fine-tune packages, for example, by applying
-    # # overrides. You can do that directly here, just don't forget the
-    # # parentheses. Maybe you want to install Nerd Fonts with a limited number of
-    # # fonts?
-    # (pkgs.nerdfonts.override { fonts = [ "FantasqueSansMono" ]; })
-
-    # # You can also create simple shell scripts directly inside your
-    # # configuration. For example, this adds a command 'my-hello' to your
-    # # environment:
-    # (pkgs.writeShellScriptBin "my-hello" ''
-    #   echo "Hello, ${config.home.username}!"
-    # '')
   ];
 
   # Setup Emacs daemon service.
   services.emacs = {
     enable = true;
+    # This should be the same as above.
+    package = with pkgs; (emacsPackagesFor emacs).emacsWithPackages (
+      epkgs: with epkgs; [
+        pdf-tools
+      ]
+    );
   };
 
   # Git config.
