@@ -24,7 +24,6 @@
 
     # Command line utilities.
     curl
-    direnv
     fd
     fontconfig
     git
@@ -53,6 +52,13 @@
       ]
     ))
   ];
+
+  # Setup nix-direnv.
+  programs.direnv = {
+    enable = true;
+    enableBashIntegration = true;
+    nix-direnv.enable = true;
+  };
 
   # Setup Emacs daemon service.
   services.emacs = {
