@@ -367,6 +367,7 @@ if __name__ == "__main__":
         copy("./shell/zsh/zshenv", "~/.zshenv", dry)
         copy("./apps/fontconfig/fonts.conf", "~/.config/fontconfig/fonts.conf", dry)
         if WSL:
+            copy("./scripts/wslemacs", "~/.local/bin/wslemacs", dry)
             # Currently I use Nix and home-manager inside a Ubuntu WSL. Copy the
             # home-manager configuration file and do a switch.
             copy("./apps/nix/home-manager/home.nix",

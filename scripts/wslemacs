@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# Wait until the Emacs service becomes active, then run Emacs client.
+
+while ! systemctl --user is-active emacs &> /dev/null; do
+    sleep 0.2
+done
+setsid emacsclient --create-frame &> /dev/null
+
+# Local Variables:
+# mode: sh
+# End:
