@@ -3,12 +3,16 @@
 let
   emacsWithPackages = pkgs.emacsWithPackages (
     epkgs: with epkgs; [
-      # Put important and hard-to-build packages here.
+      # Put heavy or hard-to-build packages here.
       auctex
       evil
+      magit
       org
+      org-roam
       pdf-tools
       rime
+      yasnippet
+      yasnippet-snippets
     ]
   );
   in
