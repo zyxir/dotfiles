@@ -73,8 +73,11 @@ if command -v emacs &> /dev/null; then
     alias ec='emacsclient -c'
     alias ecnw='emacsclient -nw'
     alias vim='emacs -nw'
-    alias emacs-sync='emacs --batch --load $HOME/.emacs.d/zy-sync.el'
     export EDITOR='emacsclient -nw'
+    emacs-sync() {
+        ZYEMACS_SYNC_LEVEL="${1:-0}"
+        emacs --batch --load "$HOME/.emacs.d/zy-sync.el"
+    }
 fi
 
 # Setup Direnv.
