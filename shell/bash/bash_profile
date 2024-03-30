@@ -75,8 +75,7 @@ if command -v emacs &> /dev/null; then
     alias vim='emacs -nw'
     export EDITOR='emacsclient -nw'
     emacs-sync() {
-        ZYEMACS_SYNC_LEVEL="${1:-0}"
-        emacs --batch --load "$HOME/.emacs.d/zy-sync.el"
+        ZYEMACS_SYNC_LEVEL="$1" emacs --batch --load "$HOME/.emacs.d/zy-sync.el"
     }
 fi
 
