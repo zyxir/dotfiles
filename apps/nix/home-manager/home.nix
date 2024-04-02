@@ -44,6 +44,7 @@ let
       fontconfig
       git
       p7zip
+      pm2
       ripgrep
       vim
       zip
@@ -61,7 +62,18 @@ let
       nodePackages.pyright
 
       # Emacs.
-      emacsWithPackages
+      ((emacsPackagesFor emacs).emacsWithPackages (epkgs: with epkgs; [
+        # Put heavy or hard-to-build packages here.
+        auctex
+        evil
+        magit
+        org
+        org-roam
+        pdf-tools
+        rime
+        yasnippet
+        yasnippet-snippets
+      ]))
       rime-data
     ];
 
@@ -70,12 +82,6 @@ let
       enable = true;
       enableBashIntegration = true;
       nix-direnv.enable = true;
-    };
-
-    # Setup Emacs daemon service.
-    services.emacs = {
-      enable = true;
-      package =  emacsWithPackages;
     };
 
     # Git config.
