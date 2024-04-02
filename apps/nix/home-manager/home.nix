@@ -81,10 +81,17 @@
 
     # Emacs daemon service.
     systemd.user.services.emacs = {
-      Unit.Description = "Emacs daemon service.";
-      Install.WantedBy = [ "multi-user.target" ];
+      Unit = {
+        Description = "Emacs daemon service.";
+      };
+      Install = {
+        WantedBy = [ "default.target" ];
+      };
       Service = {
         ExecStart = "/bin/bash -l -c \"emacs --fg-daemon\"";
+        Restart = "on-failure";
+        SuccessExitStatus = 15;
+        Type = "notify";
       };
     };
 
