@@ -1,21 +1,5 @@
 { config, pkgs, ... }:
 
-let
-  emacsWithPackages = pkgs.emacsWithPackages (
-    epkgs: with epkgs; [
-      # Put heavy or hard-to-build packages here.
-      auctex
-      evil
-      magit
-      org
-      org-roam
-      pdf-tools
-      rime
-      yasnippet
-      yasnippet-snippets
-    ]
-  );
-  in
   {
     # Home Manager needs a bit of information about you and the paths it should
     # manage.
@@ -46,6 +30,7 @@ let
       p7zip
       pm2
       ripgrep
+      systemd
       vim
       zip
 
@@ -91,6 +76,15 @@ let
       userEmail = "ericzhuochen@outlook.com";
       extraConfig = {
         credential.helper = "/mnt/c/Program\\ Files/Git/mingw64/bin/git-credential-manager.exe";
+      };
+    };
+
+    # Emacs daemon service.
+    systemd.user.services.emacs = {
+      Unit.Description = "Emacs daemon service.";
+      Install.WantedBy = [ "multi-user.target" ];
+      Service = {
+        ExecStart = "/bin/bash -l -c \"emacs --fg-daemon\"";
       };
     };
 
