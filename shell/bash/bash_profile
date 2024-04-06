@@ -72,7 +72,7 @@ fi
 if command -v emacs &> /dev/null; then
     alias ec='emacsclient -c'
     alias ecnw='emacsclient -nw'
-    alias vim='emacs -nw'
+    alias vim='emacsclient -nw'
     export EDITOR='emacsclient -nw'
     emacs-sync() {
         ZYEMACS_SYNC_LEVEL="$1" emacs --batch --load "$HOME/.emacs.d/zy-sync.el"

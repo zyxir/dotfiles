@@ -2,10 +2,8 @@
 
 # Wait until the Emacs service becomes active, then run Emacs client.
 
-while ! systemctl --user is-active emacs &> /dev/null; do
-    sleep 0.2
-done
-setsid emacsclient --create-frame &> /dev/null
+# Run Emacs in a new session and log its output.
+setsid emacs 2>&1 | logger -t emacs -i &
 
 # Local Variables:
 # mode: sh
