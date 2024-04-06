@@ -27,6 +27,7 @@
       fd
       fontconfig
       git
+      imagemagick
       p7zip
       pm2
       ripgrep
