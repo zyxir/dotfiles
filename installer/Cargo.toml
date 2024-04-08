@@ -1,0 +1,5 @@
+[package]
+name = "install"
+description = "Installer for Zyxir's dotfiles."
+version = "0.1.0"
+edition = "2021"
