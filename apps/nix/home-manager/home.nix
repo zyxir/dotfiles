@@ -33,6 +33,7 @@
       ripgrep
       systemd
       vim
+      which
       zip
 
       # Python and accessories.
