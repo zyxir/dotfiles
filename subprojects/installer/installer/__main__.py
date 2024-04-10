@@ -1,6 +1,7 @@
 #!/bin/python3
 """Cross-platform installation script for my dotfiles."""
 
+import argparse
 import os
 import platform
 import shlex
@@ -11,6 +12,9 @@ import tempfile
 import zipfile
 from pathlib import Path
 from typing import List, Optional, Union
+
+from installer.opt import Options
+from installer.path import setup_directory
 
 
 # OS constants.
@@ -29,12 +33,6 @@ def red(path: Union[str, Path]) -> str:
     return "\u001b[31m" + str(path) + "\u001b[0m"
 
 
-class DirectoryError(Exception):
-    """Raised when the script cannot be executed in the correct directory."""
-
-    pass
-
-
 def normalize_path(p: Union[str, Path]) -> Path:
     """Normalize path."""
     if isinstance(p, str):
@@ -43,24 +41,6 @@ def normalize_path(p: Union[str, Path]) -> Path:
         normalized = p.expanduser()
     normalized = normalized.absolute()
     return normalized
-
-
-def setup_directory():
-    """Change directory to where this script is in.
-
-    If __file__ is available, use the directory it is in.
-
-    Otherwise, try to find a directory named "Unix" with a "install.py" inside,
-    and change directory to it.  If no directory is found, raise an error.
-    """
-    if "__file__" in globals():
-        os.chdir(Path(__file__).parent)
-    else:
-        candidates = list(Path.cwd().rglob("install.py"))
-        if len(candidates) == 0:
-            raise DirectoryError
-        else:
-            os.chdir(candidates[0].parent)
 
 
 def copy(src: str, dst: str, dry: bool):
@@ -274,7 +254,7 @@ def install_fonts(dry: bool):
         "~/Zyspace/pcsetup/ZyFonts.zip",
         "/mnt/c/Users/zyxir/Zyspace/pcsetup/ZyFonts.zip",
         "~/Downloads/ZyFonts.zip",
-        "/media/zyxir/Zydisk/pcsetup/ZyFonts.zip"
+        "/media/zyxir/Zydisk/pcsetup/ZyFonts.zip",
     )
     if font_zip_path is None:
         print("Skip font installation as no ZyFonts.zip is found.")
@@ -301,7 +281,7 @@ def _install_fonts_linux(fonts: List[Path]):
     fontdir.mkdir(exist_ok=True)
     for font in fonts:
         shutil.copy(font, fontdir)
-    run_command("fc-cache -f", "Refreshing font cache.", dry)
+    run_command("fc-cache -f", "Refreshing font cache.", False)
     print(f"{len(fonts)} fonts installed.")
 
 
@@ -315,13 +295,13 @@ def _install_fonts_windows(fonts: List[Path]):
 
 
 if __name__ == "__main__":
-    # Parse arguments.
-    import argparse
-
-    parser = argparse.ArgumentParser(
-        description="Installation script for Unix dotfiles."
+    # Get options through arguments.
+    parser = argparse.ArgumentParser(description="Install Zyxir's dotfiles.")
+    parser.add_argument(
+        "--dry",
+        action="store_true",
+        help="perform a dry run (only print; don't install anything)",
     )
-    parser.add_argument("--dry", action="store_true", help="perform a dry run")
     parser.add_argument(
         "--fonts",
         action="store_true",
@@ -338,84 +318,48 @@ if __name__ == "__main__":
         help="perform a complete run: do every optional actions",
     )
     args = parser.parse_args()
-    dry = args.dry
-    fonts = args.complete or args.fonts
-    switch = args.complete or args.switch
+    opt = Options(
+        dry=args.dry or args.complete,
+        switch=args.switch or args.complete,
+        fonts=args.fonts or args.complete,
+    )
 
     # Make sure the script is run in the correct directory.
     try:
         setup_directory()
-    except DirectoryError:
-        print("The script cannot find the correct directory to run.")
+    except Exception:
+        print("Cannot locate the dotfiles repo.")
         sys.exit(1)
 
     # Install dot files.
-    if WINDOWS:
-        copy("./apps/git/dot_gitconfig", "~/.gitconfig", dry)
-        copy(
-            "./shell/PowerShell/Microsoft.PowerShell_profile.ps1",
-            "~/Documents/WindowsPowerShell/Microsoft.PowerShell_profile.ps1",
-            dry,
-        )
-        copy("./apps/rime", "%appdata%/rime", dry)
-        windows_configure_cangjie6(dry)
-        ahk_compile("./AutoHotkey", dry)
-    if LINUX:
-        copy("./shell/bash/bashrc", "~/.bashrc", dry)
-        copy("./shell/bash/bash_profile", "~/.bash_profile", dry)
-        copy("./shell/zsh/zshrc", "~/.zshrc", dry)
-        copy("./shell/zsh/zshenv", "~/.zshenv", dry)
-        copy("./apps/fontconfig/fonts.conf", "~/.config/fontconfig/fonts.conf", dry)
-        if WSL:
-            # Currently I use Nix and home-manager inside a Ubuntu WSL. Copy the
-            # home-manager configuration file and do a switch.
-            copy("./apps/nix/home-manager/home.nix",
-                 "~/.config/home-manager/home.nix", dry)
-            if switch and shutil.which("home-manager"):
-                run_command("home-manager switch",
-                            "Switching home-manager configuration.", dry)
-        else:
-            # These are for Linux without Nix, which I seldom use now. Changes
-            # could be made if I end up using a native Linux some day.
-            copy("./apps/fcitx5", "~/.config/fcitx5", dry)
-            copy("./apps/rime", "~/.local/share/fcitx5/rime", dry)
-            linux_configure_rime(dry)
-            copy("./apps/xremap", "~/.config/xremap", dry)
-            copy("./apps/git/dot_gitconfig", "~/.gitconfig", dry)
-            if shutil.which("git-credential-manager"):
-                run_command(
-                    "git-credential-manager configure",
-                    "Configuring git-credential-manager.",
-                    dry,
-                )
+    # if WINDOWS:
+    #     copy("./apps/git/dot_gitconfig", "~/.gitconfig", dry)
+    #     copy(
+    #         "./shell/PowerShell/Microsoft.PowerShell_profile.ps1",
+    #         "~/Documents/WindowsPowerShell/Microsoft.PowerShell_profile.ps1",
+    #         dry,
+    #     )
+    #     copy("./apps/rime", "%appdata%/rime", dry)
+    #     windows_configure_cangjie6(dry)
+    #     ahk_compile("./AutoHotkey", dry)
+    # if LINUX:
+    #     copy("./shell/bash/bashrc", "~/.bashrc", dry)
+    #     copy("./shell/bash/bash_profile", "~/.bash_profile", dry)
+    #     copy("./shell/zsh/zshrc", "~/.zshrc", dry)
+    #     copy("./shell/zsh/zshenv", "~/.zshenv", dry)
+    #     copy("./apps/fontconfig/fonts.conf", "~/.config/fontconfig/fonts.conf", dry)
+    #     # Currently I use Nix and home-manager inside a Ubuntu WSL. Copy the
+    #     # home-manager configuration file and do a switch.
+    #     copy(
+    #         "./apps/nix/home-manager/home.nix",
+    #         "~/.config/home-manager/home.nix",
+    #         dry,
+    #     )
+    #     if switch and shutil.which("home-manager"):
+    #         run_command(
+    #             "home-manager switch", "Switching home-manager configuration.", dry
+    #         )
 
-    # Load dconf.
-    if LINUX and shutil.which("dconf") and not WSL:
-        dconf_load("./apps/gnome_dconf/wm.dconf", "/org/gnome/desktop/wm/", dry)
-        dconf_load("./apps/gnome_dconf/mutter.dconf", "/org/gnome/mutter/", dry)
-        dconf_load(
-            "./apps/gnome_dconf/media-keys.dconf",
-            "/org/gnome/settings-daemon/plugins/media-keys/",
-            dry,
-        )
-        dconf_load(
-            "./apps/gnome_dconf/dash-to-panel.dconf",
-            "/org/gnome/shell/extensions/dash-to-panel/",
-            dry,
-        )
-        dconf_load(
-            "./apps/gnome_dconf/improved-workspace-indicator.dconf",
-            "/org/gnome/shell/extensions/improved-workspace-indicator/",
-            dry,
-        )
-        dconf_load(
-            "./apps/gnome_dconf/media-keys.dconf",
-            "/org/gnome/shell/extensions/mediacontrols/",
-            dry,
-        )
-    else:
-        print("Skipping dconf configuration.")
-
-    # Additional steps for a complete run.
-    if fonts:
-        install_fonts(dry)
+    # # Additional steps for a complete run.
+    # if fonts:
+    #     install_fonts(dry)
