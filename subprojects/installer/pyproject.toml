@@ -1,0 +1,15 @@
+[project]
+name = "installer"
+description = "Installer for Zyxir's dotfiles."
+version = "0.1.0"
+requires-python = ">=3.11"
+authors = [
+  {name = "Eric Zhuo Chen", email="ericzhuochen@outlook.com"},
+]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project.scripts]
+installer = "installer:main"

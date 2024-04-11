@@ -1,9 +1,0 @@
-[/]
-attach-modal-dialogs=false
-dynamic-workspaces=false
-edge-tiling=false
-experimental-features=['scale-monitor-framebuffer']
-workspaces-only-on-primary=true
-
-[keybindings]
-toggle-tiled-left=['<Super>Left']
