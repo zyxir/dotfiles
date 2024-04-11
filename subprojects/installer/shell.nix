@@ -6,5 +6,6 @@ pkgs.mkShell {
       isort
       pyflakes
     ]))
+    shiv
   ];
 }
