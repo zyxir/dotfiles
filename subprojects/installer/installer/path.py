@@ -2,6 +2,9 @@
 
 import os
 from pathlib import Path
+from typing import Optional, Tuple
+
+from installer.style import emph_path
 
 
 def is_repo():
@@ -31,4 +34,42 @@ def setup_directory():
             raise Exception("Cannot locate the repo till root")
         else:
             # Otherwise keep going up.
-            os.chdir(Path.cwd().parent)
+            os.chdir(cwd.parent)
+
+
+def to_path(s: str) -> Path:
+    """Convert `s` to a normalized path.
+
+    The resulted path is absolute, with all "~" expanded and all environment
+    variables substituted.
+    """
+    s = os.path.expanduser(s)
+    s = os.path.expandvars(s)
+    path = Path(s).absolute()
+    return path
+
+
+def to_paths(s1: str, s2: str) -> Tuple[Path, Path]:
+    """Covert `s1` and `s2` to paths via `to_path`."""
+    return to_path(s1), to_path(s2)
+
+
+def ensure_path(p: str | Path) -> Path:
+    """Ensure that `p` exists, returning its path object."""
+    path = to_path(p) if isinstance(p, str) else p
+    if path.exists():
+        return path
+    else:
+        raise Exception(f"{emph_path(p)} does not exist")
+
+
+def some_path(*paths: str) -> Optional[Path]:
+    """Return the first path available.
+
+    The path is converted to a proper path object via `to_path`.
+    """
+    for p in paths:
+        path = to_path(p)
+        if path.exists():
+            return path
+    return None

@@ -12,6 +12,4 @@ Most files can be installed via the ~install.py~ script (currently support Windo
 
 These files are no longer used, but are kept for reference:
 
-- `apps/mypy`: I use Pyright now as Python LSP, so Mypy is not used any longer.
-- `apps/xremap`: I only WSL for Linux now, so Xremap is not needed.
 - `shell/zsh`: I only use bash now for maximum compatibility and ease of setup.
