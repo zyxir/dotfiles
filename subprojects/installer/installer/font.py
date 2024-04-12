@@ -91,9 +91,6 @@ def win_install_fonts(fonts: List[Path], opt: Options) -> None:
     """Install every font in `fonts` on Windows."""
     if opt.dry:
         return
-    import win32api
-    import win32con
     import ctypes
     for font in fonts:
         ctypes.windll.gdi32.AddFontResourceA(str(font))
-    win32api.SendMessage(win32con.HWND_BROADCAST, win32con.WM_FONTCHANGE)
