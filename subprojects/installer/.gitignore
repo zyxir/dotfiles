@@ -1,4 +1,5 @@
 /.direnv
+/AutoHotkey/*.exe
 /build
 /*.egg-info
 

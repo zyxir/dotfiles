@@ -6,7 +6,7 @@ import platform
 from installer.ahk import ahk_install_all
 from installer.cmd import run
 
-from installer.file import link
+from installer.file import copy, link
 from installer.opt import Options
 from installer.path import setup_directory
 from installer.rime import win_rime_setup
@@ -70,7 +70,7 @@ def main():
             "~/Documents/WindowsPowerShell/Microsoft.PowerShell_profile.ps1",
             opt,
         )
-        link("./apps/rime", "%appdata%/rime", opt)
+        copy("./apps/rime", "%appdata%/rime", opt)
         win_rime_setup(opt)
         ahk_install_all("./AutoHotkey", opt)
     if LINUX:
