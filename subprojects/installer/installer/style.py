@@ -29,10 +29,10 @@ class Formatter(logging.Formatter):
 
     # Log indicators.
     INDICATORS = {
-        # Gray for debugs.
-        logging.DEBUG: "\u001b[38m" + "*" + "\u001b[0m",
-        # Blue for infos.
-        logging.INFO: "\u001b[34m" + "*" + "\u001b[0m",
+        # No color for debugs.
+        logging.DEBUG: "D",
+        # Green for infos.
+        logging.INFO: "\u001b[32m" + "I" + "\u001b[0m",
         # Bold yellow for warnings.
         logging.WARNING: "\u001b[33;1m" + "W" + "\u001b[0m",
         # Bold red for errors.
@@ -46,8 +46,10 @@ class Formatter(logging.Formatter):
         content = str(record.msg)
         return prefix + content
 
-def setup_logging():
+def setup_logging(debug: bool = False):
     """Set up logging."""
     sh = logging.StreamHandler()
     sh.setFormatter(Formatter())
     logging.getLogger().addHandler(sh)
+    if debug:
+        logging.getLogger().setLevel(logging.DEBUG)

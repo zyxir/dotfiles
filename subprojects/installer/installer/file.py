@@ -1,5 +1,6 @@
 """Utility for file operations."""
 
+import logging
 import os
 import shutil
 from pathlib import Path
@@ -23,7 +24,11 @@ def copy(src: str, dst: str, opt: Options) -> None:
 
 
 def link(src: str, dst: str, opt: Options) -> None:
-    """Link to `src` as `dst`, handling errors."""
+    """Link to `src` as `dst`, handling errors.
+
+    If `src` is a directory, create a directory of symbolic links, instead of a
+    single symbolic link.
+    """
     msg = f"Linking to {emph_path(src)} as {emph_path(dst)}"
 
     def action() -> None:
@@ -51,12 +56,7 @@ def copy_path(src_path: Path, dst_path: Path, opt: Options) -> None:
         return
 
     # Copy recursively while copying permissions and times.
-    if src_path.is_dir():
-        # This also creates any missing directories.
-        shutil.copytree(src_path, dst_path)
-    else:
-        # `copytree` uses `copy2` for copying individual files.
-        shutil.copy2(src_path, dst_path)
+    copy_recursively(src_path, dst_path)
 
 
 def link_path(src_path: Path, dst_path: Path, opt: Options) -> None:
@@ -67,25 +67,55 @@ def link_path(src_path: Path, dst_path: Path, opt: Options) -> None:
     if opt.dry:
         return
 
-    # If the destination is already the correct symlink, do nothing.
-    if dst_path.is_symlink() and dst_path.resolve().samefile(src_path):
-        return
-
-    # Otherwise, remove any existing destination.
-    if dst_path.exists():
-        remove_path(dst_path)
-
     try:
-        # Try to create the symbolic link.
-        os.symlink(src_path, dst_path, target_is_directory=src_path.is_dir())
+        # Try to create symbolic link(s).
+        link_recursively(src_path, dst_path)
     except OSError:
         # Fall back to copying.
-        copy_path(src_path, dst_path, opt)
+        logging.debug("Fall back to copying")
+        copy_recursively(src_path, dst_path)
 
 
-def remove_path(path: Path) -> None:
-    """Remove `path` in the proper way."""
-    if path.is_symlink() or path.is_file():
-        path.unlink()
+def copy_recursively(src_path: Path, dst_path: Path) -> None:
+    """Recursively copy `src_path` to `dst_path`."""
+    if src_path.is_file():
+        # Remove destination if it exists.
+        if dst_path.exists():
+            dst_path.unlink()
+        # Copy the file including its metadata.
+        shutil.copy2(src_path, dst_path)
     else:
-        shutil.rmtree(path)
+        # Make destination directory if it does not exist.
+        if not dst_path.exists():
+            os.makedirs(dst_path)
+        # Copy everything in the source.
+        for entry in src_path.iterdir():
+            entry_dst = dst_path.joinpath(entry.name)
+            copy_recursively(entry, entry_dst)
+
+
+def link_recursively(src_path: Path, dst_path: Path) -> None:
+    """File-wise linking.
+
+    If `src_path` is a file, make `dst_path` its symbolic link. Otherwise create
+    a directory as `dst_path` and create symbolic links of files in `src_path`
+    inside it.
+    """
+    if src_path.is_file():
+        # Skip if destination is already the correct symlink.
+        if dst_path.is_symlink() and dst_path.resolve().samefile(src_path):
+            logging.debug(f"{emph_path(dst_path)} is already the correct symlink")
+            return
+        # Remove destination if it exists.
+        if dst_path.exists():
+            dst_path.unlink()
+        # Create the symbolic link.
+        os.symlink(src_path, dst_path, target_is_directory=False)
+    else:
+        # Make destination directory if it does not exist.
+        if not dst_path.exists():
+            os.makedirs(dst_path)
+        # Link everything in the source.
+        for entry in src_path.iterdir():
+            entry_dst = dst_path.joinpath(entry.name)
+            link_recursively(entry, entry_dst)

@@ -2,7 +2,7 @@
 
 import os
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
 
 from installer.style import emph_path
 
@@ -37,7 +37,7 @@ def setup_directory():
             os.chdir(cwd.parent)
 
 
-def to_path(s: str) -> Path:
+def to_path(s: Union[str, os.PathLike]) -> Path:
     """Convert `s` to a normalized path.
 
     The resulted path is absolute, with all "~" expanded and all environment
@@ -54,9 +54,9 @@ def to_paths(s1: str, s2: str) -> Tuple[Path, Path]:
     return to_path(s1), to_path(s2)
 
 
-def ensure_path(p: str | Path) -> Path:
+def ensure_path(p: Union[str, os.PathLike]) -> Path:
     """Ensure that `p` exists, returning its path object."""
-    path = to_path(p) if isinstance(p, str) else p
+    path = to_path(p)
     if path.exists():
         return path
     else:
