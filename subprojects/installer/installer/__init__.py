@@ -6,7 +6,7 @@ import platform
 from installer.ahk import ahk_install_all
 from installer.cmd import run
 
-from installer.file import copy, link
+from installer.file import link
 from installer.opt import Options
 from installer.path import setup_directory
 from installer.rime import win_rime_setup

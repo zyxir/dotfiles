@@ -70,9 +70,9 @@ def link_path(src_path: Path, dst_path: Path, opt: Options) -> None:
     try:
         # Try to create symbolic link(s).
         link_recursively(src_path, dst_path)
-        
     except OSError:
         # Fall back to copying.
+        logging.debug("Fall back to copying")
         copy_recursively(src_path, dst_path)
 
 
