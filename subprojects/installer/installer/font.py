@@ -1,6 +1,6 @@
 """Utility for installing fonts."""
 
-
+import os
 import platform
 import shutil
 import zipfile
@@ -92,5 +92,8 @@ def win_install_fonts(fonts: List[Path], opt: Options) -> None:
     if opt.dry:
         return
     import ctypes
+    fontdir = Path(os.environ["SystemRoot"]).joinpath("Fonts")
     for font in fonts:
-        ctypes.windll.gdi32.AddFontResourceA(str(font))
+        font_dst = fontdir.joinpath(font.name)
+        shutil.copy2(font, font_dst)
+        ctypes.windll.gdi32.AddFontResourceA(str(font_dst))

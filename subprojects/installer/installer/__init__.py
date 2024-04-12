@@ -45,7 +45,7 @@ def main():
     )
     args = parser.parse_args()
     opt = Options(
-        dry=args.dry or args.complete,
+        dry=args.dry,
         switch=args.switch or args.complete,
         fonts=args.fonts or args.complete,
     )

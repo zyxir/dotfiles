@@ -20,5 +20,13 @@ else:
     subprocess.run(cmd.split(), cwd=curdir)
 
 # Remove temporary files.
-shutil.rmtree(curdir.joinpath("build"))
-shutil.rmtree(curdir.joinpath("installer.egg-info"))
+temp_files = [
+    curdir.joinpath("build"),
+    curdir.joinpath("installer.egg-info")
+]
+for file in temp_files:
+    if file.exists():
+        if file.is_dir():
+            shutil.rmtree(file)
+        else:
+            file.unlink()
