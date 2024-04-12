@@ -75,7 +75,7 @@ def main():
             "~/Documents/WindowsPowerShell/Microsoft.PowerShell_profile.ps1",
             opt,
         )
-        copy("./apps/rime", "%appdata%/rime", opt)
+        link("./apps/rime", "%appdata%/rime", opt)
         win_rime_setup(opt)
         ahk_install_all("./AutoHotkey", opt)
     if LINUX:

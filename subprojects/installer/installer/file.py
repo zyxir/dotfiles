@@ -78,11 +78,20 @@ def link_path(src_path: Path, dst_path: Path, opt: Options) -> None:
 
 def copy_recursively(src_path: Path, dst_path: Path) -> None:
     """Recursively copy `src_path` to `dst_path`."""
-    if src_path.is_dir():
-        # This also creates any missing directories.
-        shutil.copytree(src_path, dst_path, copy_function=shutil.copy2)
-    else:
+    if src_path.is_file():
+        # Remove destination if it exists.
+        if dst_path.exists():
+            dst_path.unlink()
+        # Copy the file including its metadata.
         shutil.copy2(src_path, dst_path)
+    else:
+        # Make destination directory if it does not exist.
+        if not dst_path.exists():
+            os.makedirs(dst_path)
+        # Copy everything in the source.
+        for entry in src_path.iterdir():
+            entry_dst = dst_path.joinpath(entry.name)
+            copy_recursively(entry, entry_dst)
 
 
 def link_recursively(src_path: Path, dst_path: Path) -> None:
