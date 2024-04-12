@@ -41,6 +41,11 @@ def main():
         action="store_true",
         help="perform a complete run: do every optional actions",
     )
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="show debug messages"
+    )
     args = parser.parse_args()
     opt = Options(
         dry=args.dry or args.complete,
@@ -49,7 +54,7 @@ def main():
     )
 
     # Set up logging.
-    setup_logging()
+    setup_logging(args.debug)
 
     # Make sure the script is run in the correct directory.
     try:
