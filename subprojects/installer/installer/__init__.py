@@ -1,21 +1,18 @@
 """Cross-platform installation script for my dotfiles."""
 
-import sys
 import argparse
 import platform
+import sys
+import time
+
 from installer.ahk import ahk_install_all
 from installer.cmd import run
-
 from installer.file import link
+from installer.font import install_zyfonts
 from installer.opt import Options
 from installer.path import setup_directory
 from installer.rime import win_rime_setup
 from installer.style import emph, setup_logging
-
-# OS constants.
-WINDOWS = platform.system() == "Windows"
-LINUX = platform.system() == "Linux"
-WSL = "WSL" in platform.uname().release
 
 
 def main():
@@ -67,18 +64,11 @@ def main():
     if opt.dry:
         print("This is a {}. Nothing is actually installed.".format(emph("dry run")))
 
+    # Start timing.
+    start_time = time.time()
+
     # Install dot files.
-    if WINDOWS:
-        link("./apps/git/dot_gitconfig", "~/.gitconfig", opt)
-        link(
-            "./shell/PowerShell/Microsoft.PowerShell_profile.ps1",
-            "~/Documents/WindowsPowerShell/Microsoft.PowerShell_profile.ps1",
-            opt,
-        )
-        link("./apps/rime", "%appdata%/rime", opt)
-        win_rime_setup(opt)
-        ahk_install_all("./AutoHotkey", opt)
-    if LINUX:
+    if platform.system() == "Linux":
         link("./shell/bash/bashrc", "~/.bashrc", opt)
         link("./shell/bash/bash_profile", "~/.bash_profile", opt)
         link("./shell/zsh/zshrc", "~/.zshrc", opt)
@@ -91,7 +81,21 @@ def main():
         )
         if opt.switch:
             run("home-manager switch", opt)
+    elif platform.system() == "Windows":
+        link("./apps/git/dot_gitconfig", "~/.gitconfig", opt)
+        link(
+            "./shell/PowerShell/Microsoft.PowerShell_profile.ps1",
+            "~/Documents/WindowsPowerShell/Microsoft.PowerShell_profile.ps1",
+            opt,
+        )
+        link("./apps/rime", "%appdata%/rime", opt)
+        win_rime_setup(opt)
+        ahk_install_all("./AutoHotkey", opt)
 
-    # # Additional steps for a complete run.
-    # if fonts:
-    #     install_fonts(dry)
+    # Install fonts.
+    if opt.fonts:
+        install_zyfonts(opt)
+
+    # Say goodbye.
+    elapsed_time = time.time() - start_time
+    print(f"Finished in {elapsed_time:.3f} seconds.")
