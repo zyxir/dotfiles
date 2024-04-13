@@ -7,6 +7,6 @@
 # Start Emacs client.
 $processOptions = @{
     FilePath = "wslg.exe"
-    ArgumentList = @("--user", "zyxir", "emacs")
+    ArgumentList = @("--user", "zyxir", "--cd", "~", "emacs")
 }
 Start-Process @processOptions
