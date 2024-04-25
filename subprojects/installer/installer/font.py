@@ -1,7 +1,6 @@
 """Utility for installing fonts."""
 
 import os
-import platform
 import shutil
 import zipfile
 from pathlib import Path
@@ -11,6 +10,7 @@ from typing import List
 from installer.cmd import run_cmd
 from installer.job import Job
 from installer.opt import Options
+from installer.os import IS_LINUX, IS_WINDOWS
 from installer.path import some_path
 from installer.style import emph_path
 
@@ -68,9 +68,9 @@ def install_fonts_in(dir: Path, opt: Options) -> None:
         fonts += dir.rglob(f"*.{ext}")
 
     # Install them in a platform-dependent way.
-    if platform.system() == "Linux":
+    if IS_LINUX:
         linux_install_fonts(fonts, opt)
-    elif platform.system() == "Windows":
+    elif IS_WINDOWS:
         win_install_fonts(fonts, opt)
     else:
         raise OSError("Unsupported system.")
@@ -83,7 +83,8 @@ def linux_install_fonts(fonts: List[Path], opt: Options) -> None:
     fontdir = Path("~/.local/share/fonts").expanduser()
     fontdir.mkdir(exist_ok=True)
     for font in fonts:
-        shutil.copy2(font, fontdir)
+        font_dst = fontdir.joinpath(font.name)
+        copy_font(font, font_dst)
     run_cmd("fc-cache -f", opt)
 
 
@@ -95,5 +96,15 @@ def win_install_fonts(fonts: List[Path], opt: Options) -> None:
     fontdir = Path(os.environ["SystemRoot"]).joinpath("Fonts")
     for font in fonts:
         font_dst = fontdir.joinpath(font.name)
-        shutil.copy2(font, font_dst)
+        copy_font(font, font_dst)
         ctypes.windll.gdi32.AddFontResourceA(str(font_dst))
+
+
+def copy_font(font: Path, font_dst: Path) -> None:
+    """Copy `font` to `dst`.
+
+    If `dst` already exists, don't copy at all, since copying a font may be
+    heavy work.
+    """
+    if not font_dst.is_file():
+        shutil.copy2(font,  font_dst)
