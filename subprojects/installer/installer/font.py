@@ -81,7 +81,7 @@ def linux_install_fonts(fonts: List[Path], opt: Options) -> None:
     if opt.dry:
         return
     fontdir = Path("~/.local/share/fonts").expanduser()
-    fontdir.mkdir(exist_ok=True)
+    os.makedirs(fontdir, exist_ok=True)
     for font in fonts:
         font_dst = fontdir.joinpath(font.name)
         copy_font(font, font_dst)
