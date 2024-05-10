@@ -36,18 +36,6 @@
       which
       zip
 
-      # Python and accessories.
-      (python3.withPackages (python-pkgs: with python-pkgs; [
-        isort
-        matplotlib
-        numpy
-        pandas
-        scipy
-      ]))
-      black
-      black-macchiato
-      nodePackages.pyright
-
       # Emacs.
       ((emacsPackagesFor emacs).emacsWithPackages (epkgs: with epkgs; [
         # Put heavy or hard-to-build packages here.
