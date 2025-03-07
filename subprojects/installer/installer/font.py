@@ -92,12 +92,12 @@ def win_install_fonts(fonts: List[Path], opt: Options) -> None:
     """Install every font in `fonts` on Windows."""
     if opt.dry:
         return
-    import ctypes
     fontdir = Path(os.environ["SystemRoot"]).joinpath("Fonts")
+    dstdir = Path.home().joinpath("Downloads/fonts_extracted")
+    dstdir.mkdir(exist_ok=True)
     for font in fonts:
         font_dst = fontdir.joinpath(font.name)
         copy_font(font, font_dst)
-        ctypes.windll.gdi32.AddFontResourceA(str(font_dst))
 
 
 def copy_font(font: Path, font_dst: Path) -> None:
