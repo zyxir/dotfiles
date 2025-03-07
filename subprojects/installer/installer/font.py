@@ -26,6 +26,8 @@ def install_zyfonts(opt: Options) -> None:
         install_fonts_in(extracted, opt)
 
     Job(msg, action).run()
+    fontdir = Path.home().joinpath("Downloads/fonts_extracted")
+    print("You should manually install fonts in {}".format(emph_path(fontdir)))
 
 
 def extract_zyfonts(tempdir: Path) -> Path:
@@ -92,9 +94,8 @@ def win_install_fonts(fonts: List[Path], opt: Options) -> None:
     """Install every font in `fonts` on Windows."""
     if opt.dry:
         return
-    fontdir = Path(os.environ["SystemRoot"]).joinpath("Fonts")
-    dstdir = Path.home().joinpath("Downloads/fonts_extracted")
-    dstdir.mkdir(exist_ok=True)
+    fontdir = Path.home().joinpath("Downloads/fonts_extracted")
+    fontdir.mkdir(exist_ok=True)
     for font in fonts:
         font_dst = fontdir.joinpath(font.name)
         copy_font(font, font_dst)

@@ -13,3 +13,7 @@ Most files can be installed via the ~install.py~ script (currently support Windo
 These files are no longer used, but are kept for reference:
 
 - `shell/zsh`: I only use bash now for maximum compatibility and ease of setup.
+
+## Installer
+
+To edit and update the installer, install `shiv` with `pip` before running `subprojects/installer/build.py`.

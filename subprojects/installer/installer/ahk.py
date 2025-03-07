@@ -36,7 +36,7 @@ def ahk_install(file: Path, opt: Options) -> None:
 
 def ensure_ahk2exe() -> Path:
     """Ensure and return the \"Ahk2Exe.exe\" program."""
-    path = to_path("C:\\Program Files\\AutoHotkey\\Compiler\\Ahk2Exe.exe")
+    path = Path.home().joinpath("AppData\\Local\\Programs\\AutoHotkey\\Compiler\\Ahk2Exe.exe")
     if not path.exists():
         raise Exception("Ahk2Exe.exe not found")
     return path
