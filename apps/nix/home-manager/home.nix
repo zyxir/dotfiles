@@ -33,7 +33,6 @@
       ripgrep
       systemd
       vim
-      which
       zip
 
       # Emacs.
