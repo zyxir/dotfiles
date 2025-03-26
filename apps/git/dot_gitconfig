@@ -3,8 +3,11 @@ name = "Eric Zhuo Chen"
 email = zyxirchen@outlook.com
 
 [core]
-auotcrlf = false
+autocrlf = false
 quotepath = false
+
+[init]
+defaultBranch = main
 
 # Local Variables:
 # mode: conf
