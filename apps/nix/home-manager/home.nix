@@ -39,7 +39,6 @@
       ((emacsPackagesFor emacs).emacsWithPackages (epkgs: with epkgs; [
         # Put heavy or hard-to-build packages here.
         auctex
-        evil
         magit
         org
         org-roam
