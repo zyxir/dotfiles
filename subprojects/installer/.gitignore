@@ -1,6 +1,0 @@
-/.direnv
-/AutoHotkey/*.exe
-/build
-/*.egg-info
-
-__pycache__

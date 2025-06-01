@@ -1,5 +1,0 @@
-patch:
-  # 使用擴充詞庫。
-  translator/dictionary: luna_pinyin.extended
-  # 默认輸出簡化字。
-  "switches/@2/reset": 1

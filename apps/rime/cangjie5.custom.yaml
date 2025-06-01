@@ -1,9 +1,11 @@
+# 此文件修改了五代倉頡的一些配置
+
 patch:
-  # 使用雙拼進行反查
-  reverse_lookup/prism: double_pinyin
-  reverse_lookup/tips: 〔雙拼〕
+  # 使用小鶴雙拼進行反查
+  reverse_lookup/prism: double_pinyin_flypy
+  reverse_lookup/tips: 〔小鶴雙拼〕
   reverse_lookup/preedit_format: []
   # 關閉逐鍵提示
-  translator/enable_completion: false
-  # 關閉用戶詞典與字頻調整
+  # translator/enable_completion: false
+  # 禁用字頻調整以固定碼序
   translator/enable_user_dict: false

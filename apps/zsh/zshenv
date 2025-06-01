@@ -1,0 +1,21 @@
+# ~/.zshenv: Environment variables for zsh.
+#
+# Copyright 2025 Eric Zhuo Chen <ericzhuochen@outlook.com>
+
+# Enable full color support in terminal
+export COLORTERM=truecolor
+
+# Default editor: VS Code, Vim
+export EDITOR=vim
+if command -v code >/dev/null 2>&1; then
+    export EDITOR=code
+else
+    export EDITOR=vim
+fi
+
+# Populate PATH
+export PATH="/opt/homebrew/bin:${HOME}/.local/bin:${PATH}"
+
+# Keep more history
+export HISTSIZE=100_000
+export SAVEHIST=100_000

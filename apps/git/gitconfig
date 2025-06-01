@@ -1,0 +1,12 @@
+; ~/.gitconfig: Git configuration.
+
+[user]
+name = "Eric Zhuo Chen"
+email = ericzhuochen@outlook.com
+
+[core]
+autocrlf = false
+quotepath = false
+
+[init]
+defaultBranch = main

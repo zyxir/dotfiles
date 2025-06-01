@@ -1,19 +1,12 @@
 # Dotfiles
 
-My collection of text-based files for configuration or other purposes.
+My collection of text-based configuration files for Windows and macOS.
 
 ## Installation
 
-Most files can be installed via the `install.py` script (currently support Windows and Linux).  Other files that require manual intervention are in the `manual` directory:
+Install Python 3 first (which is pre-installed on macOS), then run `install.py` to install all the dotfiles.
 
-- `manual/clash/clash_parsers.yaml`: Parsers for **Clash for Windows**.
+## Project Structure
 
-## Not Installed Files
-
-These files are no longer used, but are kept for reference:
-
-- `shell/zsh`: I only use bash now for maximum compatibility and ease of setup.
-
-## Installer
-
-To edit and update the installer, install `shiv` with `pip` before running `subprojects/installer/build.py`.
+- `apps`: dotfiles for different applications.
+- `scripts`: useful scripts.
