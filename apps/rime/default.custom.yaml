@@ -1,13 +1,12 @@
-# 此文件配置了整個輸入法的行爲
+# 此文件配置了整個輸入法的行爲。
 
 patch:
   # 每页显示 9 個候選
   "menu/page_size": 9
-  # 我個人只使用倉頡和雙拼，他人使用時可切爲袖珍簡化字拼音
+  # 我個人只使用倉頡和雙拼
   schema_list:
     - schema: cangjie5
     - schema: double_pinyin_flypy
-    - schema: pinyin_simp
   # 這些鍵位很少衝突，兼顧 Windows 和 macOS
   "switcher/hotkeys":
     - Control+F1
