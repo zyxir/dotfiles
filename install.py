@@ -26,13 +26,23 @@ def pathify(s: Union[str, os.PathLike]) -> Path:
     return path
 
 
-def _link_rec(src: Path, dst: Path) -> None:
+def already_linked(src: Path, dst: Path) -> bool:
+    """Return True if `dst` points to `src`."""
+    if dst.is_symlink():
+        try:
+            return dst.resolve().samefile(src)
+        except Exception:
+            return False
+    return False
+
+
+def link_rec(src: Path, dst: Path) -> None:
     """Symlink `dst` to `src` recursively without checking."""
     if src.is_file():
-        if dst.is_symlink() and dst.resolve().samefile(src):
+        if already_linked(src, dst):
             logging.debug("skip existing '%s'", dst)
             return
-        elif dst.exists():
+        elif dst.is_symlink() or dst.exists():
             logging.debug("remove incorrect '%s'", dst)
             dst.unlink()
         logging.debug("creating symlink '%s'", dst)
@@ -41,7 +51,7 @@ def _link_rec(src: Path, dst: Path) -> None:
         dst.mkdir(exist_ok=True)
         for s in src.iterdir():
             d = dst.joinpath(s.name)
-            _link_rec(s, d)
+            link_rec(s, d)
 
 
 def link(
@@ -56,7 +66,7 @@ def link(
     # Make sure `dst`'s parent exists
     dst_p.parent.mkdir(parents=True, exist_ok=True)
     # Make symlink(s)
-    _link_rec(src_p, dst_p)
+    link_rec(src_p, dst_p)
 
 
 class Result:
@@ -139,9 +149,12 @@ class Zsh(Task):
 if __name__ == "__main__":
     # Parse command line arguments
     parser = argparse.ArgumentParser(description="Install Zyxir's dotfiles.")
+    parser.add_argument("--debug", help="turn on debug mode", action="store_true")
+    args = parser.parse_args()
+    debug: bool = args.debug
 
     # Setup logging
-    setup_logging(debug=False)
+    setup_logging(debug=debug)
 
     # Define platform-specific tasks
     tasks: list[Task] = []
