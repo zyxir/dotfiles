@@ -120,7 +120,7 @@ class Rime(Task):
     def run(self) -> Result:
         rime_dir = pathify("~/Library/Rime")
         # Check missing schemas
-        schemas = ["cangjie5", "double_pinyin_flypy"]
+        schemas = ["cangjie5", "double_pinyin_flypy", "quick5"]
         missing_schemas = []
         for schema in schemas:
             schema_file = rime_dir.joinpath(f"{schema}.schema.yaml")
