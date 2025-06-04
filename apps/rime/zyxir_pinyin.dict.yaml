@@ -1,9 +1,5 @@
-# Rime dictionary
-# encoding: utf-8
-#
-# 我的個人拼音詞庫，由朙月拼音和霧凇拼音的詞庫合併而成。
+# 此文件是我的個人拼音詞庫，由朙月拼音和霧凇拼音的詞庫合併而成。
 
----
 name: zyxir_pinyin
 version: "2025-06-04"
 sort: by_weight
