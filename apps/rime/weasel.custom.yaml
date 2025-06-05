@@ -13,12 +13,13 @@ patch:
   "style/comment_font_point": 14
   # 使用和鼠鬚管類似的佈局
   "style/layout":
-    border: 0
     border_width: 0
     margin_x: 0
     margin_y: 0
     candidate_spacing: 5
     round_corner: 7
+    hilite_spacing: 5
+    hilite_padding: 5
 
   # 以下皮膚均來自薄荷輸入法
   preset_color_schemes:
