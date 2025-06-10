@@ -3,12 +3,5 @@
 patch:
   # 默認狀態爲西文
   "switches/@0/reset": 1
-  # 默認不進行簡繁轉換
-  "switches/@2/reset": 0
-  # 使用小鶴雙拼進行反查
-  reverse_lookup/prism: double_pinyin_flypy
-  reverse_lookup/dictionary: zyxir_pinyin
-  reverse_lookup/tips: 〔小鶴雙拼〕
-  reverse_lookup/preedit_format: []
   # 禁用字頻調整以固定碼序
   translator/enable_user_dict: false

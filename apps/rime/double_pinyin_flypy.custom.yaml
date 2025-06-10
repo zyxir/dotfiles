@@ -1,9 +1,0 @@
-# 此文件定製了小鶴雙拼的配置。
-
-patch:
-  # 默認狀態爲西文
-  "switches/@0/reset": 1
-  # 默認轉換爲簡體
-  "switches/@2/reset": 1
-  # 使用個人詞庫
-  "translator/dictionary": zyxir_pinyin

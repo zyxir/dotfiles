@@ -3,11 +3,10 @@
 patch:
   # 每页显示 9 個候選
   "menu/page_size": 9
-  # 只使用倉頡、速成和小鶴雙拼
+  # 只使用倉頡和速成
   schema_list:
     - schema: cangjie5
     - schema: quick5
-    - schema: double_pinyin_flypy
   # 這些鍵位很少衝突，兼顧 Windows 和 macOS
   "switcher/hotkeys":
     - Control+F1
