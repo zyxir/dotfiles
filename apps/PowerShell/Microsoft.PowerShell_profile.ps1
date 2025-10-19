@@ -1,6 +1,6 @@
 <#
 This is the CurrentUserCurrentHost PowerShell profile, usually placed at:
-$HOME\Documents\PowerShell\Microsoft.PowerShell_profile.ps1
+$HOME\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1
 #>
 
 # Enable UTF-8

@@ -3,9 +3,12 @@
 
 from abc import ABC, abstractmethod
 import argparse
+import ctypes
 import logging
 import os
 import platform
+import shutil
+import sys
 from pathlib import Path
 from typing import Union
 
@@ -19,7 +22,7 @@ def setup_logging(debug: bool = False):
 def pathify(s: Union[str, os.PathLike]) -> Path:
     """Convert `s` to an absolute `Path` object.
 
-    Expand "~" to user home directory in the process.
+    Expand "~" (user home) and env vars in the process.
     """
     s = os.path.expandvars(s)
     path = Path(s).expanduser().absolute()
@@ -54,10 +57,35 @@ def link_rec(src: Path, dst: Path) -> None:
             link_rec(s, d)
 
 
+def is_newer(src: Path, dst: Path) -> bool:
+    """Returns `True` if `src` is newer than `dst`."""
+    src_mtime = src.stat().st_mtime
+    dst_mtime = dst.stat().st_mtime
+    return src_mtime > dst_mtime
+
+
+def copy_rec(src: Path, dst: Path) -> None:
+    """Copy `src` to `dst` recursively without checking."""
+    if src.is_file():
+        if not dst.exists() or is_newer(src, dst):
+            shutil.copyfile(src, dst)
+            logging.debug("copying file to '%s'", dst)
+        else:
+            logging.debug("skip existing '%s'", dst)
+    else:
+        dst.mkdir(exist_ok=True)
+        for s in src.iterdir():
+            d = dst.joinpath(s.name)
+            copy_rec(s, d)
+
+
 def link(
     src: Union[str, os.PathLike], dst: Union[str, os.PathLike], mkdir: bool = False
 ) -> None:
-    """Symlink `dst` to `src`."""
+    """Symlink `dst` to `src`.
+
+    On Windows, this function copies files instead.
+    """
     # Pathify arguments
     src_p, dst_p = pathify(src), pathify(dst)
     # Validate `src`
@@ -65,8 +93,11 @@ def link(
         raise FileExistsError(f"'{src_p}' does not exist")
     # Make sure `dst`'s parent exists
     dst_p.parent.mkdir(parents=True, exist_ok=True)
-    # Make symlink(s)
-    link_rec(src_p, dst_p)
+    # Make symlink(s) or copy the files
+    if platform.system() == "Windows":
+        copy_rec(src_p, dst_p)
+    else:
+        link_rec(src_p, dst_p)
 
 
 class Result:
@@ -119,15 +150,18 @@ class Rime(Task):
 
     def run(self) -> Result:
         rime_dir = pathify("~/Library/Rime")
-        # Check missing schemas
-        schemas = ["cangjie5", "quick5"]
-        missing_schemas = []
-        for schema in schemas:
-            schema_file = rime_dir.joinpath(f"{schema}.schema.yaml")
-            if not schema_file.exists():
-                missing_schemas.append(schema)
-        if missing_schemas:
-            return Failure("schema(s) missing: {}".format(", ".join(missing_schemas)))
+        # Check missing schemas if not on Windows
+        if platform.system() != "Windows":
+            schemas = ["cangjie5", "quick5"]
+            missing_schemas = []
+            for schema in schemas:
+                schema_file = rime_dir.joinpath(f"{schema}.schema.yaml")
+                if not schema_file.exists():
+                    missing_schemas.append(schema)
+            if missing_schemas:
+                return Failure(
+                    "schema(s) missing: {}".format(", ".join(missing_schemas))
+                )
         # Install dotfiles
         link("./apps/rime", rime_dir)
         return Success()
@@ -146,6 +180,18 @@ class Zsh(Task):
         return result
 
 
+class PowerShell(Task):
+    """Install PowerShell config."""
+
+    def run(self) -> Result:
+        link(
+            "./apps/PowerShell/Microsoft.PowerShell_profile.ps1",
+            "~/Documents/WindowsPowerShell/Microsoft.PowerShell_profile.ps1",
+        )
+        result = Success()
+        return result
+
+
 if __name__ == "__main__":
     # Parse command line arguments
     parser = argparse.ArgumentParser(description="Install Zyxir's dotfiles.")
@@ -160,6 +206,8 @@ if __name__ == "__main__":
     tasks: list[Task] = []
     if platform.system() == "Darwin":
         tasks += [Git(), Kitty(), Rime(), Zsh()]
+    elif platform.system() == "Windows":
+        tasks += [Git(), Rime(), PowerShell()]
 
     # Perform the tasks
     for task in tasks:
