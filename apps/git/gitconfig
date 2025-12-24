@@ -5,7 +5,7 @@ name = "Eric Zhuo Chen"
 email = ericzhuochen@outlook.com
 
 [core]
-autocrlf = false
+autocrlf = input
 quotepath = false
 
 [init]
