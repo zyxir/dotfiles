@@ -98,55 +98,32 @@ def link(
         link_rec(src_p, dst_p)
 
 
-class Result:
-    """Installation result."""
-
-    hint: str = ""
-
-
-class Success(Result):
-    """A success."""
-
-    def __init__(self, hint: str = "") -> None:
-        self.hint = hint
-
-
-class Failure(Result):
-    """A failure."""
-
-    def __init__(self, msg: str, hint: str = "") -> None:
-        self.msg = msg
-        self.hint = hint
-
-
 class Task(ABC):
     """A task to perform."""
 
     @abstractmethod
-    def run(self) -> Result:
-        """Perform the task."""
+    def run(self) -> str | None:
+        """Perform the task. Returns an optional hint string."""
 
 
 class Kitty(Task):
     """Install kitty config."""
 
-    def run(self) -> Result:
+    def run(self) -> str | None:
         link("./apps/kitty", "~/.config/kitty")
-        return Success()
 
 
 class Git(Task):
     """Install git config."""
 
-    def run(self) -> Result:
+    def run(self) -> str | None:
         link("./apps/git/gitconfig", "~/.gitconfig")
-        return Success()
 
 
 class Rime(Task):
     """Install rime config."""
 
-    def run(self) -> Result:
+    def run(self) -> str | None:
         rime_dir = pathify("~/Library/Rime")
         # Check missing schemas if not on Windows
         if platform.system() != "Windows":
@@ -157,37 +134,32 @@ class Rime(Task):
                 if not schema_file.exists():
                     missing_schemas.append(schema)
             if missing_schemas:
-                return Failure(
+                raise RuntimeError(
                     "schema(s) missing: {}".format(", ".join(missing_schemas))
                 )
         # Install dotfiles
         link("./apps/rime", rime_dir)
-        return Success()
 
 
 class Zsh(Task):
     """Install zsh config."""
 
-    def run(self) -> Result:
+    def run(self) -> str | None:
         link("./apps/zsh/zshenv", "~/.zshenv")
         link("./apps/zsh/zshrc", "~/.zshrc")
         link("./apps/zsh/p10k.zsh", "~/.p10k.zsh")
-        result = Success()
         if not os.environ.get("SHELL", "").endswith("zsh"):
-            result.hint = "Consider setting zsh as your default shell."
-        return result
+            return "Consider setting zsh as your default shell."
 
 
 class PowerShell(Task):
     """Install PowerShell config."""
 
-    def run(self) -> Result:
+    def run(self) -> str | None:
         link(
             "./apps/PowerShell/Microsoft.PowerShell_profile.ps1",
             "~/Documents/WindowsPowerShell/Microsoft.PowerShell_profile.ps1",
         )
-        result = Success()
-        return result
 
 
 if __name__ == "__main__":
@@ -210,10 +182,10 @@ if __name__ == "__main__":
     # Perform the tasks
     for task in tasks:
         print("{}..".format(task.__doc__), end="")
-        result = task.run()
-        if isinstance(result, Success):
+        try:
+            hint = task.run()
             print("\033[1;32m\u2713\033[0m")
-        elif isinstance(result, Failure):
-            print(f"\033[1;31m\u2717\033[0m \033[33m{result.msg}\033[0m")
-        if result.hint != "":
-            print(f"\u2757{result.hint}")
+            if hint:
+                print(f"\u2757{hint}")
+        except Exception as e:
+            print(f"\033[1;31m\u2717\033[0m \033[33m{e}\033[0m")
