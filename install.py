@@ -88,7 +88,7 @@ def link(
     src_p, dst_p = pathify(src), pathify(dst)
     # Validate `src`
     if not src_p.exists():
-        raise FileExistsError(f"'{src_p}' does not exist")
+        raise FileNotFoundError(f"'{src_p}' does not exist")
     # Make sure `dst`'s parent exists
     dst_p.parent.mkdir(parents=True, exist_ok=True)
     # Make symlink(s) or copy the files
