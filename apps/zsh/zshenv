@@ -17,6 +17,16 @@ fi
 export PATH="/opt/homebrew/bin:${HOME}/.local/bin:${PATH}"
 [ -d "${HOME}/.cargo/bin" ] && export PATH="${HOME}/.cargo/bin:${PATH}"
 
+# Set up proxy if the proxy port is listening
+if nc -z 127.0.0.1 7897 2>/dev/null; then
+    export http_proxy="http://127.0.0.1:7897"
+    export https_proxy="http://127.0.0.1:7897"
+    export no_proxy="localhost,127.0.0.1,::1"
+    export HTTP_PROXY="http://127.0.0.1:7897"
+    export HTTPS_PROXY="http://127.0.0.1:7897"
+    export NO_PROXY="localhost,127.0.0.1,::1"
+fi
+
 # Keep more history
 export HISTSIZE=100_000
 export SAVEHIST=100_000
