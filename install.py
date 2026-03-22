@@ -6,7 +6,6 @@ import argparse
 import logging
 import os
 import platform
-import shutil
 from pathlib import Path
 from typing import Union
 
@@ -47,7 +46,16 @@ def link_rec(src: Path, dst: Path) -> None:
             logging.debug("remove incorrect '%s'", dst)
             dst.unlink()
         logging.debug("creating symlink '%s'", dst)
-        dst.symlink_to(src)
+        try:
+            dst.symlink_to(src)
+        except OSError as e:
+            if getattr(e, 'winerror', None) == 1314:
+                raise PermissionError(
+                    "Cannot create symlinks. Either:\n"
+                    "  • Enable Developer Mode: Settings → Privacy & Security → For Developers\n"
+                    "  • Or re-run this script as Administrator"
+                ) from e
+            raise
     else:
         dst.mkdir(exist_ok=True)
         for s in src.iterdir():
@@ -55,34 +63,12 @@ def link_rec(src: Path, dst: Path) -> None:
             link_rec(s, d)
 
 
-def is_newer(src: Path, dst: Path) -> bool:
-    """Returns `True` if `src` is newer than `dst`."""
-    src_mtime = src.stat().st_mtime
-    dst_mtime = dst.stat().st_mtime
-    return src_mtime > dst_mtime
-
-
-def copy_rec(src: Path, dst: Path) -> None:
-    """Copy `src` to `dst` recursively without checking."""
-    if src.is_file():
-        if not dst.exists() or is_newer(src, dst):
-            shutil.copyfile(src, dst)
-            logging.debug("copying file to '%s'", dst)
-        else:
-            logging.debug("skip existing '%s'", dst)
-    else:
-        dst.mkdir(exist_ok=True)
-        for s in src.iterdir():
-            d = dst.joinpath(s.name)
-            copy_rec(s, d)
-
-
 def link(
     src: Union[str, os.PathLike], dst: Union[str, os.PathLike], mkdir: bool = False
 ) -> None:
     """Symlink `dst` to `src`.
 
-    On Windows, this function copies files instead.
+    On Windows, this requires Developer Mode or Administrator privileges.
     """
     # Pathify arguments
     src_p, dst_p = pathify(src), pathify(dst)
@@ -91,11 +77,8 @@ def link(
         raise FileNotFoundError(f"'{src_p}' does not exist")
     # Make sure `dst`'s parent exists
     dst_p.parent.mkdir(parents=True, exist_ok=True)
-    # Make symlink(s) or copy the files
-    if platform.system() == "Windows":
-        copy_rec(src_p, dst_p)
-    else:
-        link_rec(src_p, dst_p)
+    # Make symlink(s)
+    link_rec(src_p, dst_p)
 
 
 class Task(ABC):
