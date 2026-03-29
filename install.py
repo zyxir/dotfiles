@@ -1,6 +1,8 @@
 #!/usr/bin/python3
 """Cross-platform installation script for my dotfiles."""
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 import argparse
 import logging
@@ -63,12 +65,23 @@ def link_rec(src: Path, dst: Path) -> None:
             link_rec(s, d)
 
 
+def cleanup_dead_symlinks(path: Path) -> None:
+    """Remove all dead symlinks in a directory recursively."""
+    if not path.is_dir():
+        return
+    for entry in path.rglob("*"):
+        if entry.is_symlink() and not entry.exists():
+            logging.debug("remove dead symlink '%s'", entry)
+            entry.unlink()
+
+
 def link(
     src: Union[str, os.PathLike], dst: Union[str, os.PathLike], mkdir: bool = False
 ) -> None:
     """Symlink `dst` to `src`.
 
     On Windows, this requires Developer Mode or Administrator privileges.
+    If `dst` is a directory, removes any dead symlinks after symlinking.
     """
     # Pathify arguments
     src_p, dst_p = pathify(src), pathify(dst)
@@ -79,6 +92,9 @@ def link(
     dst_p.parent.mkdir(parents=True, exist_ok=True)
     # Make symlink(s)
     link_rec(src_p, dst_p)
+    # Clean up dead symlinks if destination is a directory
+    if src_p.is_dir():
+        cleanup_dead_symlinks(dst_p)
 
 
 class Task(ABC):

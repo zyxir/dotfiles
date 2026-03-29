@@ -1,5 +1,8 @@
 {
     "files.associations": {
         "gitconfig": "ini"
+    },
+    "files.watcherExclude": {
+        "**/target": true
     }
 }
