@@ -11,9 +11,19 @@ python3 install.py          # normal run
 python3 install.py --debug  # verbose output
 ```
 
-The script symlinks config files on macOS and copies them on Windows. macOS installs: Git, Kitty, Rime, Zsh. Windows installs: Git, Rime, PowerShell.
+The script symlinks config files on macOS and copies them on Windows. macOS installs: Git, Kitty, Rime, Zsh, Claude Code. Windows installs: Git, Rime, PowerShell, Claude Code.
 
 **Rime prerequisite (macOS):** The schemas `cangjie5.schema.yaml` and `quick5.schema.yaml` must already exist in `~/Library/Rime/` before running the installer, or the Rime task will fail.
+
+## Secrets
+
+Secrets should be added to a local `~/.zshenv.secrets` file that is not tracked in git:
+
+1. Create the file: `touch ~/.zshenv.secrets`
+2. Edit it and add your tokens (e.g., `export ANTHROPIC_AUTH_TOKEN="sk-..."`)
+3. Reload your shell: `source ~/.zshrc`
+
+The installer will warn you if this file is missing.
 
 ## Architecture
 
@@ -26,6 +36,7 @@ Config files live under `apps/<app>/` and are installed to their canonical locat
 | Rime | `apps/rime/` | `~/Library/Rime/` |
 | Zsh | `apps/zsh/{zshenv,zshrc,p10k.zsh}` | `~/{.zshenv,.zshrc,.p10k.zsh}` |
 | PowerShell | `apps/PowerShell/Microsoft.PowerShell_profile.ps1` | `~/Documents/WindowsPowerShell/` |
+| Claude Code | `apps/claude-code/settings.json` | `~/.claude/settings.json` |
 
 `install.py` uses an abstract `Task` class — each app has a subclass that calls `link()`. To add support for a new app, add a `Task` subclass and append it to the appropriate platform's task list in `__main__`.
 

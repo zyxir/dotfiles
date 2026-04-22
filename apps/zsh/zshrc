@@ -2,6 +2,13 @@
 #
 # Copyright 2025 Eric Zhuo Chen
 
+### Secrets
+
+# Load secrets from a separate file (untracked)
+if [ -f ~/.zshenv.secrets ]; then
+  source ~/.zshenv.secrets
+fi
+
 ### Antigen
 
 # Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.

@@ -1,0 +1,6 @@
+{
+  "env": {
+    "ANTHROPIC_BASE_URL": "https://api.aigocode.com"
+  },
+  "model": "opus[1m]"
+}

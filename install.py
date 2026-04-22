@@ -3,11 +3,11 @@
 
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
 import argparse
 import logging
 import os
 import platform
+from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Union
 
@@ -51,7 +51,7 @@ def link_rec(src: Path, dst: Path) -> None:
         try:
             dst.symlink_to(src)
         except OSError as e:
-            if getattr(e, 'winerror', None) == 1314:
+            if getattr(e, "winerror", None) == 1314:
                 raise PermissionError(
                     "Cannot create symlinks. Either:\n"
                     "  • Enable Developer Mode: Settings → Privacy & Security → For Developers\n"
@@ -147,6 +147,9 @@ class Zsh(Task):
         link("./apps/zsh/zshenv", "~/.zshenv")
         link("./apps/zsh/zshrc", "~/.zshrc")
         link("./apps/zsh/p10k.zsh", "~/.p10k.zsh")
+        secrets_file = pathify("~/.zshenv.secrets")
+        if not secrets_file.exists():
+            return "Create ~/.zshenv.secrets for secrets (e.g. ANTHROPIC_AUTH_TOKEN)."
         if not os.environ.get("SHELL", "").endswith("zsh"):
             return "Consider setting zsh as your default shell."
 
@@ -159,6 +162,15 @@ class PowerShell(Task):
             "./apps/PowerShell/Microsoft.PowerShell_profile.ps1",
             "~/Documents/WindowsPowerShell/Microsoft.PowerShell_profile.ps1",
         )
+
+
+class ClaudeCode(Task):
+    """Install Claude Code config."""
+
+    def run(self) -> str | None:
+        link("./apps/claude-code/settings.json", "~/.claude/settings.json")
+        if not os.environ.get("ANTHROPIC_AUTH_TOKEN"):
+            return "Add ANTHROPIC_AUTH_TOKEN to ~/.zshenv.secrets and reload your shell."
 
 
 if __name__ == "__main__":
@@ -174,9 +186,9 @@ if __name__ == "__main__":
     # Define platform-specific tasks
     tasks: list[Task] = []
     if platform.system() == "Darwin":
-        tasks += [Git(), Kitty(), Rime(), Zsh()]
+        tasks += [Git(), Kitty(), Rime(), Zsh(), ClaudeCode()]
     elif platform.system() == "Windows":
-        tasks += [Git(), Rime(), PowerShell()]
+        tasks += [Git(), Rime(), PowerShell(), ClaudeCode()]
 
     # Perform the tasks
     for task in tasks:
