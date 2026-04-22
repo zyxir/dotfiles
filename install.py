@@ -7,6 +7,8 @@ import argparse
 import logging
 import os
 import platform
+import shutil
+import subprocess
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Union
@@ -173,6 +175,43 @@ class ClaudeCode(Task):
             return "Add ANTHROPIC_AUTH_TOKEN to ~/.zshenv.secrets and reload your shell."
 
 
+class VSCodium(Task):
+    """Install VSCodium config and extensions."""
+
+    def run(self) -> str | None:
+        if platform.system() == "Darwin":
+            user_dir = "~/Library/Application Support/VSCodium/User"
+        else:
+            user_dir = "~/AppData/Roaming/VSCodium/User"
+        link("./apps/vscodium/settings.json", f"{user_dir}/settings.json")
+
+        codium = shutil.which("codium")
+        if codium is None:
+            return "Install VSCodium to sync extensions (codium CLI not found)."
+
+        extensions_file = pathify("./apps/vscodium/extensions.txt")
+        wanted = [
+            line.strip()
+            for line in extensions_file.read_text().splitlines()
+            if line.strip() and not line.startswith("#")
+        ]
+        installed = set(
+            subprocess.run(
+                [codium, "--list-extensions"], capture_output=True, text=True, check=True
+            ).stdout.split()
+        )
+        missing = [ext for ext in wanted if ext not in installed]
+        for ext in missing:
+            logging.debug("installing extension %s", ext)
+            subprocess.run(
+                [codium, "--install-extension", ext, "--force"],
+                capture_output=True,
+                check=True,
+            )
+        if missing:
+            return f"Installed {len(missing)} VSCodium extension(s): {', '.join(missing)}"
+
+
 if __name__ == "__main__":
     # Parse command line arguments
     parser = argparse.ArgumentParser(description="Install Zyxir's dotfiles.")
@@ -186,9 +225,9 @@ if __name__ == "__main__":
     # Define platform-specific tasks
     tasks: list[Task] = []
     if platform.system() == "Darwin":
-        tasks += [Git(), Kitty(), Rime(), Zsh(), ClaudeCode()]
+        tasks += [Git(), Kitty(), Rime(), Zsh(), ClaudeCode(), VSCodium()]
     elif platform.system() == "Windows":
-        tasks += [Git(), Rime(), PowerShell(), ClaudeCode()]
+        tasks += [Git(), Rime(), PowerShell(), ClaudeCode(), VSCodium()]
 
     # Perform the tasks
     for task in tasks:

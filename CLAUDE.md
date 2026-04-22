@@ -11,7 +11,7 @@ python3 install.py          # normal run
 python3 install.py --debug  # verbose output
 ```
 
-The script symlinks config files on macOS and copies them on Windows. macOS installs: Git, Kitty, Rime, Zsh, Claude Code. Windows installs: Git, Rime, PowerShell, Claude Code.
+The script symlinks config files on macOS and copies them on Windows. macOS installs: Git, Kitty, Rime, Zsh, Claude Code, VSCodium. Windows installs: Git, Rime, PowerShell, Claude Code, VSCodium.
 
 **Rime prerequisite (macOS):** The schemas `cangjie5.schema.yaml` and `quick5.schema.yaml` must already exist in `~/Library/Rime/` before running the installer, or the Rime task will fail.
 
@@ -37,6 +37,7 @@ Config files live under `apps/<app>/` and are installed to their canonical locat
 | Zsh | `apps/zsh/{zshenv,zshrc,p10k.zsh}` | `~/{.zshenv,.zshrc,.p10k.zsh}` |
 | PowerShell | `apps/PowerShell/Microsoft.PowerShell_profile.ps1` | `~/Documents/WindowsPowerShell/` |
 | Claude Code | `apps/claude-code/settings.json` | `~/.claude/settings.json` |
+| VSCodium | `apps/vscodium/settings.json` | `~/Library/Application Support/VSCodium/User/settings.json` |
 
 `install.py` uses an abstract `Task` class — each app has a subclass that calls `link()`. To add support for a new app, add a `Task` subclass and append it to the appropriate platform's task list in `__main__`.
 
@@ -47,3 +48,4 @@ Config files live under `apps/<app>/` and are installed to their canonical locat
 - **Zsh**: Uses Antigen (auto-downloaded to `~/.antigen/`) with Powerlevel10k theme. Proxy is set to `http://127.0.0.1:7897` when that port is reachable.
 - **Rime**: Uses Cangjie5 and Quick5 input schemas. Platform-specific UI config in `squirrel.custom.yaml` (macOS) and `weasel.custom.yaml` (Windows).
 - **scripts/disable-ctrl-space.reg**: Windows registry patch to free up Ctrl+Space for Rime.
+- **VSCodium**: `apps/vscodium/extensions.txt` lists installed extensions. After adding/removing extensions in the editor, regenerate it with `codium --list-extensions > apps/vscodium/extensions.txt` and commit. The installer runs `codium --install-extension` for any missing ones.

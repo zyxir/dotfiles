@@ -1,0 +1,7 @@
+anthropic.claude-code
+charliermarsh.ruff
+codesmith.markdown-inline-editor-vscode
+ms-python.debugpy
+ms-python.python
+ms-python.vscode-python-envs
+yzhang.markdown-all-in-one
