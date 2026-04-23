@@ -2,5 +2,13 @@
     "editor.fontSize": 14,
     "editor.formatOnSave": true,
     "workbench.colorTheme": "Default Light Modern",
-    "claudeCode.preferredLocation": "panel"
+    "claudeCode.preferredLocation": "panel",
+    "git.autofetch": true,
+    "[python]": {
+        "editor.defaultFormatter": "charliermarsh.ruff",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.organizeImports.ruff": "explicit"
+        }
+    }
 }

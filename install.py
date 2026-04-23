@@ -172,7 +172,9 @@ class ClaudeCode(Task):
     def run(self) -> str | None:
         link("./apps/claude-code/settings.json", "~/.claude/settings.json")
         if not os.environ.get("ANTHROPIC_AUTH_TOKEN"):
-            return "Add ANTHROPIC_AUTH_TOKEN to ~/.zshenv.secrets and reload your shell."
+            return (
+                "Add ANTHROPIC_AUTH_TOKEN to ~/.zshenv.secrets and reload your shell."
+            )
 
 
 class VSCodium(Task):
@@ -197,7 +199,10 @@ class VSCodium(Task):
         ]
         installed = set(
             subprocess.run(
-                [codium, "--list-extensions"], capture_output=True, text=True, check=True
+                [codium, "--list-extensions"],
+                capture_output=True,
+                text=True,
+                check=True,
             ).stdout.split()
         )
         missing = [ext for ext in wanted if ext not in installed]
@@ -209,7 +214,9 @@ class VSCodium(Task):
                 check=True,
             )
         if missing:
-            return f"Installed {len(missing)} VSCodium extension(s): {', '.join(missing)}"
+            return (
+                f"Installed {len(missing)} VSCodium extension(s): {', '.join(missing)}"
+            )
 
 
 if __name__ == "__main__":
