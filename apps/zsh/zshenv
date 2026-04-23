@@ -2,6 +2,13 @@
 #
 # Copyright 2025 Eric Zhuo Chen <ericzhuochen@outlook.com>
 
+### Secrets
+
+# Load secrets from a separate file (untracked)
+if [ -f ~/.zshenv.secrets ]; then
+  source ~/.zshenv.secrets
+fi
+
 # Enable full color support in terminal
 export COLORTERM=truecolor
 
