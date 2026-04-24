@@ -79,7 +79,7 @@ python3 install.py --debug  # verbose output
 
 The script symlinks config files on macOS and copies them on Windows. macOS installs: Git, Kitty, Rime, Zsh, Claude Code, VSCodium. Windows installs: Git, Rime, PowerShell, Claude Code, VSCodium.
 
-**Rime prerequisite (macOS):** The schemas `cangjie5.schema.yaml` and `quick5.schema.yaml` must already exist in `~/Library/Rime/` before running the installer, or the Rime task will fail.
+On macOS, the Rime task auto-downloads the `cangjie5` and `quick5` schema and dict files from the upstream Rime repos if they are missing in `~/Library/Rime/`.
 
 ## Secrets
 

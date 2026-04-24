@@ -124,25 +124,36 @@ class Git(Task):
         link("./apps/git/gitconfig", "~/.gitconfig")
 
 
+RIME_SCHEMA_FILES: list[tuple[str, str]] = [
+    # (filename, url)
+    ("cangjie5.schema.yaml", "https://raw.githubusercontent.com/rime/rime-cangjie/master/cangjie5.schema.yaml"),
+    ("cangjie5.dict.yaml", "https://raw.githubusercontent.com/rime/rime-cangjie/master/cangjie5.dict.yaml"),
+    ("quick5.schema.yaml", "https://raw.githubusercontent.com/rime/rime-quick/master/quick5.schema.yaml"),
+    ("quick5.dict.yaml", "https://raw.githubusercontent.com/rime/rime-quick/master/quick5.dict.yaml"),
+    ("double_pinyin.schema.yaml", "https://raw.githubusercontent.com/rime/rime-double-pinyin/master/double_pinyin.schema.yaml"),
+]
+
+
 class Rime(Task):
     """Install rime config."""
 
     def run(self) -> str | None:
         rime_dir = pathify("~/Library/Rime")
-        # Check missing schemas if not on Windows
+        # Download missing schemas if not on Windows
+        downloaded: list[str] = []
         if platform.system() != "Windows":
-            schemas = ["cangjie5", "quick5"]
-            missing_schemas = []
-            for schema in schemas:
-                schema_file = rime_dir.joinpath(f"{schema}.schema.yaml")
-                if not schema_file.exists():
-                    missing_schemas.append(schema)
-            if missing_schemas:
-                raise RuntimeError(
-                    "schema(s) missing: {}".format(", ".join(missing_schemas))
-                )
+            rime_dir.mkdir(parents=True, exist_ok=True)
+            for filename, url in RIME_SCHEMA_FILES:
+                dst = rime_dir / filename
+                if dst.exists():
+                    continue
+                logging.debug("downloading rime file: %s", filename)
+                urllib.request.urlretrieve(url, dst)
+                downloaded.append(filename)
         # Install dotfiles
         link("./apps/rime", rime_dir)
+        if downloaded:
+            return f"Downloaded {len(downloaded)} schema file(s): {', '.join(downloaded)}."
 
 
 class Zsh(Task):
