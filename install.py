@@ -9,6 +9,9 @@ import os
 import platform
 import shutil
 import subprocess
+import tempfile
+import urllib.request
+import zipfile
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Union
@@ -151,9 +154,9 @@ class Zsh(Task):
         link("./apps/zsh/p10k.zsh", "~/.p10k.zsh")
         secrets_file = pathify("~/.zshenv.secrets")
         if not secrets_file.exists():
-            return "Create ~/.zshenv.secrets for secrets (e.g. ANTHROPIC_AUTH_TOKEN)."
+            return "❗Create ~/.zshenv.secrets for secrets (e.g. ANTHROPIC_AUTH_TOKEN)."
         if not os.environ.get("SHELL", "").endswith("zsh"):
-            return "Consider setting zsh as your default shell."
+            return "❗Consider setting zsh as your default shell."
 
 
 class PowerShell(Task):
@@ -173,8 +176,98 @@ class ClaudeCode(Task):
         link("./apps/claude-code/settings.json", "~/.claude/settings.json")
         if not os.environ.get("ANTHROPIC_AUTH_TOKEN"):
             return (
-                "Add ANTHROPIC_AUTH_TOKEN to ~/.zshenv.secrets and reload your shell."
+                "❗Add ANTHROPIC_AUTH_TOKEN to ~/.zshenv.secrets and reload your shell."
             )
+
+
+def _system_font_dir() -> Path:
+    """Return the platform-specific system fonts directory."""
+    if platform.system() == "Darwin":
+        return pathify("~/Library/Fonts")
+    return pathify("~/AppData/Local/Microsoft/Windows/Fonts")
+
+
+def install_fonts(base_url: str, files: list[str]) -> list[str]:
+    """Download missing fonts from direct URLs.
+
+    Returns the list of filenames that were actually installed.
+    """
+    font_dir = _system_font_dir()
+    font_dir.mkdir(parents=True, exist_ok=True)
+
+    installed: list[str] = []
+    for filename in files:
+        dst = font_dir / filename
+        if dst.exists():
+            logging.debug("font already installed: %s", filename)
+            continue
+        url = base_url + filename.replace(" ", "%20")
+        logging.debug("downloading font: %s", filename)
+        urllib.request.urlretrieve(url, dst)
+        installed.append(filename)
+    return installed
+
+
+def install_fonts_from_zip(url: str) -> list[str]:
+    """Download and extract missing fonts from a zip archive.
+
+    Returns the list of filenames that were actually installed.
+    """
+    font_dir = _system_font_dir()
+    font_dir.mkdir(parents=True, exist_ok=True)
+
+    with tempfile.NamedTemporaryFile(suffix=".zip", delete=False) as tmp:
+        urllib.request.urlretrieve(url, tmp.name)
+        tmp_path = Path(tmp.name)
+
+    try:
+        with tempfile.TemporaryDirectory() as extract_dir:
+            with zipfile.ZipFile(tmp_path, "r") as zf:
+                zf.extractall(extract_dir)
+
+            installed: list[str] = []
+            for ext in ("*.otf", "*.ttf"):
+                for src in Path(extract_dir).rglob(ext):
+                    dst = font_dir / src.name
+                    if dst.exists():
+                        logging.debug("font already installed: %s", src.name)
+                        continue
+                    logging.debug("installing font: %s", src.name)
+                    shutil.copy2(src, dst)
+                    installed.append(src.name)
+    finally:
+        tmp_path.unlink()
+
+    return installed
+
+
+class MesloLGSFont(Task):
+    """Install MesloLGS NF font."""
+
+    def run(self) -> str | None:
+        installed = install_fonts(
+            "https://raw.githubusercontent.com/romkatv/powerlevel10k-media/master/",
+            [
+                "MesloLGS NF Regular.ttf",
+                "MesloLGS NF Bold.ttf",
+                "MesloLGS NF Italic.ttf",
+                "MesloLGS NF Bold Italic.ttf",
+            ],
+        )
+        if installed:
+            return f"Installed {len(installed)} file(s): {', '.join(installed)}."
+
+
+class SourceHanSansFont(Task):
+    """Install Source Han Sans font."""
+
+    def run(self) -> str | None:
+        installed = install_fonts_from_zip(
+            "https://github.com/adobe-fonts/source-han-sans/"
+            "releases/download/2.005R/09_SourceHanSansSC.zip"
+        )
+        if installed:
+            return f"Installed {len(installed)} file(s): {', '.join(installed)}."
 
 
 class VSCodium(Task):
@@ -189,7 +282,7 @@ class VSCodium(Task):
 
         codium = shutil.which("codium")
         if codium is None:
-            return "Install VSCodium to sync extensions (codium CLI not found)."
+            return "❗Install VSCodium to sync extensions (codium CLI not found)."
 
         extensions_file = pathify("./apps/vscodium/extensions.txt")
         wanted = [
@@ -232,17 +325,34 @@ if __name__ == "__main__":
     # Define platform-specific tasks
     tasks: list[Task] = []
     if platform.system() == "Darwin":
-        tasks += [Git(), Kitty(), Rime(), Zsh(), ClaudeCode(), VSCodium()]
+        tasks += [
+            Git(),
+            Kitty(),
+            Rime(),
+            Zsh(),
+            ClaudeCode(),
+            VSCodium(),
+            MesloLGSFont(),
+            SourceHanSansFont(),
+        ]
     elif platform.system() == "Windows":
-        tasks += [Git(), Rime(), PowerShell(), ClaudeCode(), VSCodium()]
+        tasks += [
+            Git(),
+            Rime(),
+            PowerShell(),
+            ClaudeCode(),
+            VSCodium(),
+            MesloLGSFont(),
+            SourceHanSansFont(),
+        ]
 
     # Perform the tasks
     for task in tasks:
-        print("{}..".format(task.__doc__), end="")
+        print("{}..".format(task.__doc__), end="", flush=True)
         try:
             hint = task.run()
             print("\033[1;32m\u2713\033[0m")
             if hint:
-                print(f"\u2757{hint}")
+                print(hint)
         except Exception as e:
             print(f"\033[1;31m\u2717\033[0m \033[33m{e}\033[0m")
