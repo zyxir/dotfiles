@@ -4,4 +4,5 @@ codesmith.markdown-inline-editor-vscode
 ms-python.debugpy
 ms-python.python
 ms-python.vscode-python-envs
+yutengjing.open-in-external-app
 yzhang.markdown-all-in-one

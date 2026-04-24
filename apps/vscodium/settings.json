@@ -1,14 +1,27 @@
 {
     "editor.fontSize": 14,
+    "editor.fontFamily": "MesloLGS NF, Menlo, Monaco, 'Courier New', monospace",
     "editor.formatOnSave": true,
     "workbench.colorTheme": "Default Light Modern",
     "claudeCode.preferredLocation": "panel",
     "git.autofetch": true,
+    "python.analysis.typeCheckingMode": "standard",
     "[python]": {
         "editor.defaultFormatter": "charliermarsh.ruff",
         "editor.formatOnSave": true,
         "editor.codeActionsOnSave": {
             "source.organizeImports.ruff": "explicit"
         }
-    }
+    },
+    "openInExternalApp.openMapper": [
+        {
+            "extensionName": "vcd",
+            "apps": [
+                {
+                    "title": "surfer",
+                    "shellCommand": "surfer ${file}"
+                }
+            ]
+        }
+    ]
 }
