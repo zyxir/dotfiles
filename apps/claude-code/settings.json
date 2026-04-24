@@ -5,6 +5,5 @@
   "enabledPlugins": {
     "claude-md-management@claude-plugins-official": true
   },
-  "theme": "light",
-  "model": "opus[1m]"
+  "theme": "light"
 }
