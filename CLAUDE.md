@@ -86,7 +86,11 @@ The script symlinks config files on macOS and copies them on Windows. macOS inst
 Secrets should be added to a local `~/.zshenv.secrets` file that is not tracked in git:
 
 1. Create the file: `touch ~/.zshenv.secrets`
-2. Edit it and add your tokens (e.g., `export ANTHROPIC_AUTH_TOKEN="sk-..."`)
+2. Edit it and add your tokens:
+   ```sh
+   export ANTHROPIC_AUTH_TOKEN="sk-..."
+   ```
+   Other environment variables (e.g., `ANTHROPIC_BASE_URL`, `ANTHROPIC_MODEL`) can also be set here if you prefer them outside of `settings.json`.
 3. Reload your shell: `source ~/.zshrc`
 
 The installer will warn you if this file is missing.
@@ -95,19 +99,28 @@ The installer will warn you if this file is missing.
 
 Config files live under `apps/<app>/` and are installed to their canonical locations by `install.py`:
 
-| App | Source | Target (macOS) |
-|-----|--------|----------------|
-| Git | `apps/git/gitconfig` | `~/.gitconfig` |
-| Kitty | `apps/kitty/` | `~/.config/kitty/` |
-| Rime | `apps/rime/` | `~/Library/Rime/` |
-| Zsh | `apps/zsh/{zshenv,zshrc,p10k.zsh}` | `~/{.zshenv,.zshrc,.p10k.zsh}` |
-| PowerShell | `apps/PowerShell/Microsoft.PowerShell_profile.ps1` | `~/Documents/WindowsPowerShell/` |
-| Claude Code | `apps/claude-code/settings.json` | `~/.claude/settings.json` |
-| VSCodium | `apps/vscodium/settings.json` | `~/Library/Application Support/VSCodium/User/settings.json` |
+| App | Source | Target (macOS) | Target (Windows) |
+|-----|--------|----------------|------------------|
+| Git | `apps/git/gitconfig` | `~/.gitconfig` | `~/.gitconfig` |
+| Kitty | `apps/kitty/` | `~/.config/kitty/` | — |
+| Rime | `apps/rime/` | `~/Library/Rime/` | `~/Library/Rime/` |
+| Zsh | `apps/zsh/{zshenv,zshrc,p10k.zsh}` | `~/{.zshenv,.zshrc,.p10k.zsh}` | — |
+| PowerShell | `apps/PowerShell/Microsoft.PowerShell_profile.ps1` | — | `~/Documents/WindowsPowerShell/` |
+| Claude Code | `apps/claude-code/settings.json` | `~/.claude/settings.json` | `~/.claude/settings.json` |
+| VSCodium | `apps/vscodium/settings.json` | `~/Library/Application Support/VSCodium/User` | `~/AppData/Roaming/VSCodium/User` |
+
+Fonts are installed by dedicated `Task` subclasses rather than symlinked from the repo:
+
+| Task | Method | Source |
+|------|--------|--------|
+| `MesloLGSFont` | `install_fonts()` (direct download) | Raw GitHub URLs |
+| `SourceHanSansFont` | `install_fonts_from_zip()` (zip extraction) | GitHub release archive |
+
+Both helpers use `_system_font_dir()` to resolve the platform-specific fonts directory (`~/Library/Fonts` on macOS, `~/AppData/Local/Microsoft/Windows/Fonts` on Windows). Only missing fonts are installed; existing files are skipped.
 
 `install.py` uses an abstract `Task` class -- each app has a subclass that calls `link()`. To add support for a new app, add a `Task` subclass and append it to the appropriate platform's task list in `__main__`.
 
-`link()` dispatches to `link_rec()` (symlinks, Unix) or `copy_rec()` (file copy, Windows). `copy_rec` only overwrites if the source is newer than the destination.
+`link()` calls `link_rec()` to create symlinks. On Windows, symlinks require Developer Mode or Administrator privileges. If a destination already exists but points to the wrong source, it is removed before creating the new symlink.
 
 ## Key Configuration Details
 
