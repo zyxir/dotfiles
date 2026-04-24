@@ -3,5 +3,8 @@
     "ANTHROPIC_BASE_URL": "https://api.moonshot.ai/anthropic",
     "ANTHROPIC_MODEL": "kimi-k2.6",
     "ANTHROPIC_SMALL_FAST_MODEL": "kimi-k2.6"
+  },
+  "enabledPlugins": {
+    "claude-md-management@claude-plugins-official": true
   }
 }
