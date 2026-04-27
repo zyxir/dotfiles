@@ -153,13 +153,12 @@ class Git(Task):
             return SKIPPED
 
 
-RIME_SCHEMA_FILES: list[tuple[str, str]] = [
-    # (filename, url)
-    ("cangjie5.schema.yaml", "https://raw.githubusercontent.com/rime/rime-cangjie/master/cangjie5.schema.yaml"),
-    ("cangjie5.dict.yaml", "https://raw.githubusercontent.com/rime/rime-cangjie/master/cangjie5.dict.yaml"),
-    ("quick5.schema.yaml", "https://raw.githubusercontent.com/rime/rime-quick/master/quick5.schema.yaml"),
-    ("quick5.dict.yaml", "https://raw.githubusercontent.com/rime/rime-quick/master/quick5.dict.yaml"),
-    ("double_pinyin.schema.yaml", "https://raw.githubusercontent.com/rime/rime-double-pinyin/master/double_pinyin.schema.yaml"),
+PLUM_URL = "https://github.com/rime/plum.git"
+# (plum schema name, sentinel file installed by plum)
+PLUM_SCHEMAS: list[tuple[str, str]] = [
+    ("double-pinyin", "double_pinyin.schema.yaml"),
+    ("cangjie", "cangjie5.schema.yaml"),
+    ("quick", "quick5.schema.yaml"),
 ]
 
 
@@ -167,25 +166,47 @@ class Rime(Task):
     """Install rime config."""
 
     def steps(self) -> list[Step]:
-        return [Step("Download schemas and link config", self._run)]
+        return [
+            Step("Clone plum into Rime directory", self._install_plum),
+            *[Step(f"Install schema: {s}", self._schema_installer(s, f)) for s, f in PLUM_SCHEMAS],
+            Step("Link config", self._run),
+        ]
+
+    def _schema_installer(self, schema: str, sentinel: str) -> Callable[[], str | _Skipped | None]:
+        def _install() -> str | _Skipped | None:
+            if platform.system() == "Windows":
+                return SKIPPED
+            rime_dir = pathify("~/Library/Rime")
+            if (rime_dir / sentinel).exists():
+                return SKIPPED
+            rime_install = rime_dir / "plum" / "rime-install"
+            logging.debug("installing schema: %s", schema)
+            subprocess.run(
+                ["bash", str(rime_install), schema],
+                check=True,
+                capture_output=True,
+                env={**os.environ, "rime_dir": str(rime_dir)},
+            )
+        return _install
+
+    def _install_plum(self) -> str | _Skipped | None:
+        if platform.system() == "Windows":
+            return SKIPPED
+        dst = pathify("~/Library/Rime/plum")
+        if dst.exists():
+            return SKIPPED
+        logging.debug("cloning plum into %s", dst)
+        subprocess.run(
+            ["git", "clone", "--depth", "1", PLUM_URL, str(dst)],
+            check=True,
+            capture_output=True,
+        )
 
     def _run(self) -> str | _Skipped | None:
         rime_dir = pathify("~/Library/Rime")
-        downloaded: list[str] = []
-        if platform.system() != "Windows":
-            rime_dir.mkdir(parents=True, exist_ok=True)
-            for filename, url in RIME_SCHEMA_FILES:
-                dst = rime_dir / filename
-                if dst.exists():
-                    continue
-                logging.debug("downloading rime file: %s", filename)
-                urllib.request.urlretrieve(url, dst)
-                downloaded.append(filename)
         created = link("./apps/rime", rime_dir)
-        if not downloaded and not created:
+        if not created:
             return SKIPPED
-        if downloaded:
-            return f"Downloaded {len(downloaded)} schema file(s): {', '.join(downloaded)}."
 
 
 class Zsh(Task):
