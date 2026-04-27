@@ -13,14 +13,33 @@ import tempfile
 import urllib.request
 import zipfile
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from pathlib import Path
 from typing import Union
 
 
-def setup_logging(debug: bool = False):
-    """Set up logging."""
+class _DebugTracker(logging.Handler):
+    """Logging handler that records whether any debug message was emitted."""
+
+    def __init__(self) -> None:
+        super().__init__(logging.DEBUG)
+        self.fired = False
+
+    def reset(self) -> None:
+        self.fired = False
+
+    def emit(self, record: logging.LogRecord) -> None:
+        self.fired = True
+
+
+def setup_logging(debug: bool = False) -> _DebugTracker:
+    """Set up logging. Returns a tracker that detects debug output."""
+    tracker = _DebugTracker()
+    logging.getLogger().addHandler(tracker)
     if debug:
         logging.getLogger().setLevel(logging.DEBUG)
+        logging.basicConfig(level=logging.DEBUG)
+    return tracker
 
 
 def pathify(s: Union[str, os.PathLike]) -> Path:
@@ -43,12 +62,12 @@ def already_linked(src: Path, dst: Path) -> bool:
     return False
 
 
-def link_rec(src: Path, dst: Path) -> None:
-    """Symlink `dst` to `src` recursively without checking."""
+def link_rec(src: Path, dst: Path) -> bool:
+    """Symlink `dst` to `src` recursively without checking. Returns True if any symlink was created."""
     if src.is_file():
         if already_linked(src, dst):
             logging.debug("skip existing '%s'", dst)
-            return
+            return False
         elif dst.is_symlink() or dst.exists():
             logging.debug("remove incorrect '%s'", dst)
             dst.unlink()
@@ -63,11 +82,10 @@ def link_rec(src: Path, dst: Path) -> None:
                     "  • Or re-run this script as Administrator"
                 ) from e
             raise
+        return True
     else:
         dst.mkdir(exist_ok=True)
-        for s in src.iterdir():
-            d = dst.joinpath(s.name)
-            link_rec(s, d)
+        return any(link_rec(s, dst.joinpath(s.name)) for s in src.iterdir())
 
 
 def cleanup_dead_symlinks(path: Path) -> None:
@@ -82,46 +100,57 @@ def cleanup_dead_symlinks(path: Path) -> None:
 
 def link(
     src: Union[str, os.PathLike], dst: Union[str, os.PathLike], mkdir: bool = False
-) -> None:
-    """Symlink `dst` to `src`.
+) -> bool:
+    """Symlink `dst` to `src`. Returns True if any symlink was created.
 
     On Windows, this requires Developer Mode or Administrator privileges.
     If `dst` is a directory, removes any dead symlinks after symlinking.
     """
-    # Pathify arguments
     src_p, dst_p = pathify(src), pathify(dst)
-    # Validate `src`
     if not src_p.exists():
         raise FileNotFoundError(f"'{src_p}' does not exist")
-    # Make sure `dst`'s parent exists
     dst_p.parent.mkdir(parents=True, exist_ok=True)
-    # Make symlink(s)
-    link_rec(src_p, dst_p)
-    # Clean up dead symlinks if destination is a directory
+    created = link_rec(src_p, dst_p)
     if src_p.is_dir():
         cleanup_dead_symlinks(dst_p)
+    return created
+
+
+class _Skipped:
+    pass
+
+
+SKIPPED = _Skipped()
+
+
+class Step:
+    """A named sub-action within a task."""
+
+    def __init__(self, description: str, fn: Callable[[], str | _Skipped | None]):
+        self.description = description
+        self._fn = fn
+
+    def run(self) -> str | _Skipped | None:
+        return self._fn()
 
 
 class Task(ABC):
     """A task to perform."""
 
     @abstractmethod
-    def run(self) -> str | None:
-        """Perform the task. Returns an optional hint string."""
-
-
-class Kitty(Task):
-    """Install kitty config."""
-
-    def run(self) -> str | None:
-        link("./apps/kitty", "~/.config/kitty")
+    def steps(self) -> list[Step]:
+        """Return the list of steps that make up this task."""
 
 
 class Git(Task):
     """Install git config."""
 
-    def run(self) -> str | None:
-        link("./apps/git/gitconfig", "~/.gitconfig")
+    def steps(self) -> list[Step]:
+        return [Step("Link ~/.gitconfig", self._run)]
+
+    def _run(self) -> str | _Skipped | None:
+        if not link("./apps/git/gitconfig", "~/.gitconfig"):
+            return SKIPPED
 
 
 RIME_SCHEMA_FILES: list[tuple[str, str]] = [
@@ -137,9 +166,11 @@ RIME_SCHEMA_FILES: list[tuple[str, str]] = [
 class Rime(Task):
     """Install rime config."""
 
-    def run(self) -> str | None:
+    def steps(self) -> list[Step]:
+        return [Step("Download schemas and link config", self._run)]
+
+    def _run(self) -> str | _Skipped | None:
         rime_dir = pathify("~/Library/Rime")
-        # Download missing schemas if not on Windows
         downloaded: list[str] = []
         if platform.system() != "Windows":
             rime_dir.mkdir(parents=True, exist_ok=True)
@@ -150,8 +181,9 @@ class Rime(Task):
                 logging.debug("downloading rime file: %s", filename)
                 urllib.request.urlretrieve(url, dst)
                 downloaded.append(filename)
-        # Install dotfiles
-        link("./apps/rime", rime_dir)
+        created = link("./apps/rime", rime_dir)
+        if not downloaded and not created:
+            return SKIPPED
         if downloaded:
             return f"Downloaded {len(downloaded)} schema file(s): {', '.join(downloaded)}."
 
@@ -159,36 +191,48 @@ class Rime(Task):
 class Zsh(Task):
     """Install zsh config."""
 
-    def run(self) -> str | None:
-        link("./apps/zsh/zshenv", "~/.zshenv")
-        link("./apps/zsh/zshrc", "~/.zshrc")
-        link("./apps/zsh/p10k.zsh", "~/.p10k.zsh")
+    def steps(self) -> list[Step]:
+        return [Step("Link config files", self._run)]
+
+    def _run(self) -> str | _Skipped | None:
+        a = link("./apps/zsh/zshenv", "~/.zshenv")
+        b = link("./apps/zsh/zshrc", "~/.zshrc")
+        c = link("./apps/zsh/p10k.zsh", "~/.p10k.zsh")
         secrets_file = pathify("~/.zshenv.secrets")
         if not secrets_file.exists():
             return "❗Create ~/.zshenv.secrets for secrets (e.g. ANTHROPIC_AUTH_TOKEN)."
         if not os.environ.get("SHELL", "").endswith("zsh"):
             return "❗Consider setting zsh as your default shell."
+        if not (a or b or c):
+            return SKIPPED
 
 
 class PowerShell(Task):
     """Install PowerShell config."""
 
-    def run(self) -> str | None:
-        link(
+    def steps(self) -> list[Step]:
+        return [Step("Link profile", self._run)]
+
+    def _run(self) -> str | _Skipped | None:
+        if not link(
             "./apps/PowerShell/Microsoft.PowerShell_profile.ps1",
             "~/Documents/WindowsPowerShell/Microsoft.PowerShell_profile.ps1",
-        )
+        ):
+            return SKIPPED
 
 
 class ClaudeCode(Task):
     """Install Claude Code config."""
 
-    def run(self) -> str | None:
-        link("./apps/claude-code/settings.json", "~/.claude/settings.json")
+    def steps(self) -> list[Step]:
+        return [Step("Link settings.json", self._run)]
+
+    def _run(self) -> str | _Skipped | None:
+        created = link("./apps/claude-code/settings.json", "~/.claude/settings.json")
         if not os.environ.get("ANTHROPIC_AUTH_TOKEN"):
-            return (
-                "❗Add ANTHROPIC_AUTH_TOKEN to ~/.zshenv.secrets and reload your shell."
-            )
+            return "❗Add ANTHROPIC_AUTH_TOKEN to ~/.zshenv.secrets and reload your shell."
+        if not created:
+            return SKIPPED
 
 
 def _system_font_dir() -> Path:
@@ -196,27 +240,6 @@ def _system_font_dir() -> Path:
     if platform.system() == "Darwin":
         return pathify("~/Library/Fonts")
     return pathify("~/AppData/Local/Microsoft/Windows/Fonts")
-
-
-def install_fonts(base_url: str, files: list[str]) -> list[str]:
-    """Download missing fonts from direct URLs.
-
-    Returns the list of filenames that were actually installed.
-    """
-    font_dir = _system_font_dir()
-    font_dir.mkdir(parents=True, exist_ok=True)
-
-    installed: list[str] = []
-    for filename in files:
-        dst = font_dir / filename
-        if dst.exists():
-            logging.debug("font already installed: %s", filename)
-            continue
-        url = base_url + filename.replace(" ", "%20")
-        logging.debug("downloading font: %s", filename)
-        urllib.request.urlretrieve(url, dst)
-        installed.append(filename)
-    return installed
 
 
 def install_fonts_from_zip(url: str, filenames: list[str] | None = None) -> list[str]:
@@ -258,10 +281,16 @@ def install_fonts_from_zip(url: str, filenames: list[str] | None = None) -> list
     return installed
 
 
-class JetBrainsMonoNerdFont(Task):
-    """Install JetBrainsMono Nerd Font."""
+class Fonts(Task):
+    """Install fonts."""
 
-    def run(self) -> str | None:
+    def steps(self) -> list[Step]:
+        return [
+            Step("JetBrainsMono Nerd Font", self._jetbrains_mono),
+            Step("Source Han Sans", self._source_han_sans),
+        ]
+
+    def _jetbrains_mono(self) -> str | _Skipped | None:
         installed = install_fonts_from_zip(
             "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip",
             [
@@ -271,14 +300,11 @@ class JetBrainsMonoNerdFont(Task):
                 "JetBrainsMonoNerdFontMono-BoldItalic.ttf",
             ],
         )
-        if installed:
-            return f"Installed {len(installed)} file(s): {', '.join(installed)}."
+        if not installed:
+            return SKIPPED
+        return f"Installed {len(installed)} file(s): {', '.join(installed)}."
 
-
-class SourceHanSansFont(Task):
-    """Install Source Han Sans font."""
-
-    def run(self) -> str | None:
+    def _source_han_sans(self) -> str | _Skipped | None:
         installed = install_fonts_from_zip(
             "https://github.com/adobe-fonts/source-han-sans/"
             "releases/download/2.005R/09_SourceHanSansSC.zip",
@@ -292,27 +318,40 @@ class SourceHanSansFont(Task):
                 "SourceHanSansSC-Heavy.otf",
             ],
         )
-        if installed:
-            return f"Installed {len(installed)} file(s): {', '.join(installed)}."
+        if not installed:
+            return SKIPPED
+        return f"Installed {len(installed)} file(s): {', '.join(installed)}."
 
 
 class Ghostty(Task):
     """Install Ghostty config."""
 
-    def run(self) -> str | None:
-        link("./apps/ghostty", "~/.config/ghostty")
+    def steps(self) -> list[Step]:
+        return [Step("Link ~/.config/ghostty", self._run)]
+
+    def _run(self) -> str | _Skipped | None:
+        if not link("./apps/ghostty", "~/.config/ghostty"):
+            return SKIPPED
 
 
 class VSCodium(Task):
     """Install VSCodium config and extensions."""
 
-    def run(self) -> str | None:
+    def steps(self) -> list[Step]:
+        return [
+            Step("Link settings.json", self._link_settings),
+            Step("Install extensions", self._install_extensions),
+        ]
+
+    def _link_settings(self) -> str | _Skipped | None:
         if platform.system() == "Darwin":
             user_dir = "~/Library/Application Support/VSCodium/User"
         else:
             user_dir = "~/AppData/Roaming/VSCodium/User"
-        link("./apps/vscodium/settings.json", f"{user_dir}/settings.json")
+        if not link("./apps/vscodium/settings.json", f"{user_dir}/settings.json"):
+            return SKIPPED
 
+    def _install_extensions(self) -> str | _Skipped | None:
         codium = shutil.which("codium")
         if codium is None:
             return "❗Install VSCodium to sync extensions (codium CLI not found)."
@@ -332,6 +371,8 @@ class VSCodium(Task):
             ).stdout.split()
         )
         missing = [ext for ext in wanted if ext not in installed]
+        if not missing:
+            return SKIPPED
         for ext in missing:
             logging.debug("installing extension %s", ext)
             subprocess.run(
@@ -340,9 +381,7 @@ class VSCodium(Task):
                 check=True,
             )
         if missing:
-            return (
-                f"Installed {len(missing)} VSCodium extension(s): {', '.join(missing)}"
-            )
+            return f"Installed {len(missing)} VSCodium extension(s): {', '.join(missing)}"
 
 
 if __name__ == "__main__":
@@ -353,7 +392,7 @@ if __name__ == "__main__":
     debug: bool = args.debug
 
     # Setup logging
-    setup_logging(debug=debug)
+    tracker = setup_logging(debug=debug)
 
     # Define platform-specific tasks
     tasks: list[Task] = []
@@ -365,8 +404,7 @@ if __name__ == "__main__":
             Zsh(),
             ClaudeCode(),
             VSCodium(),
-            JetBrainsMonoNerdFont(),
-            SourceHanSansFont(),
+            Fonts(),
         ]
     elif platform.system() == "Windows":
         tasks += [
@@ -375,17 +413,29 @@ if __name__ == "__main__":
             PowerShell(),
             ClaudeCode(),
             VSCodium(),
-            JetBrainsMonoNerdFont(),
-            SourceHanSansFont(),
+            Fonts(),
         ]
 
     # Perform the tasks
     for task in tasks:
-        print("{}..".format(task.__doc__), flush=True)
+        print("- {}...".format(task.__doc__), flush=True)
         try:
-            hint = task.run()
-            print("\033[1;32mDONE\033[0m")
-            if hint:
-                print(hint)
+            for step in task.steps():
+                label = "  + {}...".format(step.description)
+                print(label, flush=True)
+                tracker.reset()
+                result = step.run()
+                if isinstance(result, _Skipped):
+                    status = "\033[0;33mSKIP\033[0m"
+                    hint = None
+                else:
+                    status = "\033[1;32mDONE\033[0m"
+                    hint = result
+                if tracker.fired:
+                    print("  " + status)
+                else:
+                    print("\033[1A\r{} {}".format(label, status))
+                if hint:
+                    print(hint)
         except Exception as e:
-            print(f"\033[1;31mFAILED\033[0m \033[33m{e}\033[0m")
+            print("  \033[1;31mFAILED\033[0m \033[33m{}\033[0m".format(e))
