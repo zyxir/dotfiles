@@ -219,13 +219,17 @@ def install_fonts(base_url: str, files: list[str]) -> list[str]:
     return installed
 
 
-def install_fonts_from_zip(url: str) -> list[str]:
+def install_fonts_from_zip(url: str, filenames: list[str] | None = None) -> list[str]:
     """Download and extract missing fonts from a zip archive.
 
     Returns the list of filenames that were actually installed.
     """
     font_dir = _system_font_dir()
     font_dir.mkdir(parents=True, exist_ok=True)
+
+    if filenames is not None and all((font_dir / f).exists() for f in filenames):
+        logging.debug("all fonts already installed, skipping download")
+        return []
 
     with tempfile.NamedTemporaryFile(suffix=".zip", delete=False) as tmp:
         urllib.request.urlretrieve(url, tmp.name)
@@ -239,6 +243,8 @@ def install_fonts_from_zip(url: str) -> list[str]:
             installed: list[str] = []
             for ext in ("*.otf", "*.ttf"):
                 for src in Path(extract_dir).rglob(ext):
+                    if filenames is not None and src.name not in filenames:
+                        continue
                     dst = font_dir / src.name
                     if dst.exists():
                         logging.debug("font already installed: %s", src.name)
@@ -252,17 +258,17 @@ def install_fonts_from_zip(url: str) -> list[str]:
     return installed
 
 
-class MesloLGSFont(Task):
-    """Install MesloLGS NF font."""
+class JetBrainsMonoNerdFont(Task):
+    """Install JetBrainsMono Nerd Font."""
 
     def run(self) -> str | None:
-        installed = install_fonts(
-            "https://raw.githubusercontent.com/romkatv/powerlevel10k-media/master/",
+        installed = install_fonts_from_zip(
+            "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip",
             [
-                "MesloLGS NF Regular.ttf",
-                "MesloLGS NF Bold.ttf",
-                "MesloLGS NF Italic.ttf",
-                "MesloLGS NF Bold Italic.ttf",
+                "JetBrainsMonoNerdFontMono-Regular.ttf",
+                "JetBrainsMonoNerdFontMono-Bold.ttf",
+                "JetBrainsMonoNerdFontMono-Italic.ttf",
+                "JetBrainsMonoNerdFontMono-BoldItalic.ttf",
             ],
         )
         if installed:
@@ -275,10 +281,26 @@ class SourceHanSansFont(Task):
     def run(self) -> str | None:
         installed = install_fonts_from_zip(
             "https://github.com/adobe-fonts/source-han-sans/"
-            "releases/download/2.005R/09_SourceHanSansSC.zip"
+            "releases/download/2.005R/09_SourceHanSansSC.zip",
+            [
+                "SourceHanSansSC-ExtraLight.otf",
+                "SourceHanSansSC-Light.otf",
+                "SourceHanSansSC-Normal.otf",
+                "SourceHanSansSC-Regular.otf",
+                "SourceHanSansSC-Medium.otf",
+                "SourceHanSansSC-Bold.otf",
+                "SourceHanSansSC-Heavy.otf",
+            ],
         )
         if installed:
             return f"Installed {len(installed)} file(s): {', '.join(installed)}."
+
+
+class Ghostty(Task):
+    """Install Ghostty config."""
+
+    def run(self) -> str | None:
+        link("./apps/ghostty", "~/.config/ghostty")
 
 
 class VSCodium(Task):
@@ -338,12 +360,12 @@ if __name__ == "__main__":
     if platform.system() == "Darwin":
         tasks += [
             Git(),
-            Kitty(),
+            Ghostty(),
             Rime(),
             Zsh(),
             ClaudeCode(),
             VSCodium(),
-            MesloLGSFont(),
+            JetBrainsMonoNerdFont(),
             SourceHanSansFont(),
         ]
     elif platform.system() == "Windows":
@@ -353,17 +375,17 @@ if __name__ == "__main__":
             PowerShell(),
             ClaudeCode(),
             VSCodium(),
-            MesloLGSFont(),
+            JetBrainsMonoNerdFont(),
             SourceHanSansFont(),
         ]
 
     # Perform the tasks
     for task in tasks:
-        print("{}..".format(task.__doc__), end="", flush=True)
+        print("{}..".format(task.__doc__), flush=True)
         try:
             hint = task.run()
-            print("\033[1;32m\u2713\033[0m")
+            print("\033[1;32mDONE\033[0m")
             if hint:
                 print(hint)
         except Exception as e:
-            print(f"\033[1;31m\u2717\033[0m \033[33m{e}\033[0m")
+            print(f"\033[1;31mFAILED\033[0m \033[33m{e}\033[0m")
