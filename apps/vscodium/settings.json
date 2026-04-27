@@ -23,5 +23,6 @@
                 }
             ]
         }
-    ]
+    ],
+    "git.confirmSync": false
 }
