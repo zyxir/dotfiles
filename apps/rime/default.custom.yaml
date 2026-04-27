@@ -8,6 +8,7 @@ patch:
     - schema: cangjie5
     - schema: quick5
     - schema: double_pinyin
+    - schema: rime_ice
   # 這些鍵位很少衝突，兼顧 Windows 和 macOS
   "switcher/hotkeys":
     - Control+F1
