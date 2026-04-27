@@ -1,6 +1,6 @@
 {
-    "editor.fontSize": 14,
-    "editor.fontFamily": "MesloLGS NF, Menlo, Monaco, 'Courier New', monospace",
+    "editor.fontSize": 13,
+    "editor.fontFamily": "JetBrainsMonoNerdFont, Menlo, Monaco, 'Courier New', monospace",
     "editor.formatOnSave": true,
     "workbench.colorTheme": "Default Light Modern",
     "claudeCode.preferredLocation": "panel",
