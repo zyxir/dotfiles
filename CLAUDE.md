@@ -77,9 +77,9 @@ python3 install.py          # normal run
 python3 install.py --debug  # verbose output
 ```
 
-The script symlinks config files on macOS and copies them on Windows. macOS installs: Git, Kitty, Rime, Zsh, Claude Code, VSCodium. Windows installs: Git, Rime, PowerShell, Claude Code, VSCodium.
+The script symlinks config files on macOS and copies them on Windows. macOS installs: Git, Ghostty, Kitty, Rime, Zsh, Claude Code, VSCodium. Windows installs: Git, Rime, PowerShell, Claude Code, VSCodium.
 
-On macOS, the Rime task auto-downloads the `cangjie5` and `quick5` schema and dict files from the upstream Rime repos if they are missing in `~/Library/Rime/`.
+On macOS, the Rime task uses plum (`~/Library/Rime/plum/`) to install schemas (rime-ice, cangjie5, quick5) if their sentinel files are missing.
 
 ## Secrets
 
@@ -102,6 +102,7 @@ Config files live under `apps/<app>/` and are installed to their canonical locat
 | App | Source | Target (macOS) | Target (Windows) |
 |-----|--------|----------------|------------------|
 | Git | `apps/git/gitconfig` | `~/.gitconfig` | `~/.gitconfig` |
+| Ghostty | `apps/ghostty/` | `~/.config/ghostty/` | — |
 | Kitty | `apps/kitty/` | `~/.config/kitty/` | — |
 | Rime | `apps/rime/` | `~/Library/Rime/` | `~/Library/Rime/` |
 | Zsh | `apps/zsh/{zshenv,zshrc,p10k.zsh}` | `~/{.zshenv,.zshrc,.p10k.zsh}` | — |
@@ -125,6 +126,6 @@ Both helpers use `_system_font_dir()` to resolve the platform-specific fonts dir
 ## Key Configuration Details
 
 - **Zsh**: Uses Antigen (auto-downloaded to `~/.antigen/`) with Powerlevel10k theme. Proxy is set to `http://127.0.0.1:7897` when that port is reachable.
-- **Rime**: Uses Cangjie5 and Quick5 input schemas. Platform-specific UI config in `squirrel.custom.yaml` (macOS) and `weasel.custom.yaml` (Windows).
+- **Rime**: Uses rime-ice (double_pinyin), Cangjie5, and Quick5 input schemas, installed via plum. Platform-specific UI config in `squirrel.custom.yaml` (macOS) and `weasel.custom.yaml` (Windows).
 - **scripts/disable-ctrl-space.reg**: Windows registry patch to free up Ctrl+Space for Rime.
 - **VSCodium**: `apps/vscodium/extensions.txt` lists installed extensions. After adding/removing extensions in the editor, regenerate it with `codium --list-extensions > apps/vscodium/extensions.txt` and commit. The installer runs `codium --install-extension` for any missing ones.
