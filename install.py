@@ -85,7 +85,8 @@ def link_rec(src: Path, dst: Path) -> bool:
         return True
     else:
         dst.mkdir(exist_ok=True)
-        return any(link_rec(s, dst.joinpath(s.name)) for s in src.iterdir())
+        results = [link_rec(s, dst.joinpath(s.name)) for s in src.iterdir()]
+        return any(results)
 
 
 def cleanup_dead_symlinks(path: Path) -> None:
@@ -156,9 +157,16 @@ class Git(Task):
 PLUM_URL = "https://github.com/rime/plum.git"
 # (plum schema name, sentinel file installed by plum)
 PLUM_SCHEMAS: list[tuple[list[str], str, str | None]] = [
-    (["iDvel/rime-ice:others/recipes/full", "iDvel/rime-ice:others/recipes/config:schema=double_pinyin"], "rime_ice.schema.yaml", "rime-ice"),
     (["cangjie"], "cangjie5.schema.yaml", None),
     (["quick"], "quick5.schema.yaml", None),
+    (
+        [
+            "iDvel/rime-ice:others/recipes/full",
+            "iDvel/rime-ice:others/recipes/config:schema=double_pinyin",
+        ],
+        "rime_ice.schema.yaml",
+        "rime-ice",
+    ),
 ]
 
 
@@ -168,11 +176,19 @@ class Rime(Task):
     def steps(self) -> list[Step]:
         return [
             Step("Clone plum into Rime directory", self._install_plum),
-            *[Step(f"Install schema: {name or pkgs[0]}", self._schema_installer(pkgs, sentinel)) for pkgs, sentinel, name in PLUM_SCHEMAS],
+            *[
+                Step(
+                    f"Install schema: {name or pkgs[0]}",
+                    self._schema_installer(pkgs, sentinel),
+                )
+                for pkgs, sentinel, name in PLUM_SCHEMAS
+            ],
             Step("Link config", self._run),
         ]
 
-    def _schema_installer(self, packages: list[str], sentinel: str) -> Callable[[], str | _Skipped | None]:
+    def _schema_installer(
+        self, packages: list[str], sentinel: str
+    ) -> Callable[[], str | _Skipped | None]:
         def _install() -> str | _Skipped | None:
             if platform.system() == "Windows":
                 return SKIPPED
@@ -188,6 +204,7 @@ class Rime(Task):
                     capture_output=True,
                     env={**os.environ, "rime_dir": str(rime_dir)},
                 )
+
         return _install
 
     def _install_plum(self) -> str | _Skipped | None:
@@ -252,7 +269,9 @@ class ClaudeCode(Task):
     def _run(self) -> str | _Skipped | None:
         created = link("./apps/claude-code/settings.json", "~/.claude/settings.json")
         if not os.environ.get("ANTHROPIC_AUTH_TOKEN"):
-            return "❗Add ANTHROPIC_AUTH_TOKEN to ~/.zshenv.secrets and reload your shell."
+            return (
+                "❗Add ANTHROPIC_AUTH_TOKEN to ~/.zshenv.secrets and reload your shell."
+            )
         if not created:
             return SKIPPED
 
@@ -403,7 +422,9 @@ class VSCodium(Task):
                 check=True,
             )
         if missing:
-            return f"Installed {len(missing)} VSCodium extension(s): {', '.join(missing)}"
+            return (
+                f"Installed {len(missing)} VSCodium extension(s): {', '.join(missing)}"
+            )
 
 
 if __name__ == "__main__":
