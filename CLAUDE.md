@@ -77,7 +77,7 @@ python3 install.py          # normal run
 python3 install.py --debug  # verbose output
 ```
 
-The script symlinks config files on macOS and copies them on Windows. macOS installs: Git, Ghostty, Kitty, Rime, Zsh, Claude Code, VSCodium. Windows installs: Git, Rime, PowerShell, Claude Code, VSCodium.
+The script symlinks config files on macOS and copies them on Windows. macOS installs: Git, Ghostty, Kitty, Rime, Zsh, VSCodium. Windows installs: Git, Rime, PowerShell, VSCodium.
 
 On macOS, the Rime task uses plum (`~/Library/Rime/plum/`) to install schemas (rime-ice, cangjie5, quick5) if their sentinel files are missing.
 
@@ -107,7 +107,6 @@ Config files live under `apps/<app>/` and are installed to their canonical locat
 | Rime | `apps/rime/` | `~/Library/Rime/` | `~/Library/Rime/` |
 | Zsh | `apps/zsh/{zshenv,zshrc,p10k.zsh}` | `~/{.zshenv,.zshrc,.p10k.zsh}` | — |
 | PowerShell | `apps/PowerShell/Microsoft.PowerShell_profile.ps1` | — | `~/Documents/WindowsPowerShell/` |
-| Claude Code | `apps/claude-code/settings.json` | `~/.claude/settings.json` | `~/.claude/settings.json` |
 | VSCodium | `apps/vscodium/settings.json` | `~/Library/Application Support/VSCodium/User` | `~/AppData/Roaming/VSCodium/User` |
 
 Fonts are installed by dedicated `Task` subclasses rather than symlinked from the repo:

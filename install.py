@@ -260,22 +260,6 @@ class PowerShell(Task):
             return SKIPPED
 
 
-class ClaudeCode(Task):
-    """Install Claude Code config."""
-
-    def steps(self) -> list[Step]:
-        return [Step("Link settings.json", self._run)]
-
-    def _run(self) -> str | _Skipped | None:
-        created = link("./apps/claude-code/settings.json", "~/.claude/settings.json")
-        if not os.environ.get("ANTHROPIC_AUTH_TOKEN"):
-            return (
-                "❗Add ANTHROPIC_AUTH_TOKEN to ~/.zshenv.secrets and reload your shell."
-            )
-        if not created:
-            return SKIPPED
-
-
 def _system_font_dir() -> Path:
     """Return the platform-specific system fonts directory."""
     if platform.system() == "Darwin":
@@ -445,7 +429,6 @@ if __name__ == "__main__":
             Ghostty(),
             Rime(),
             Zsh(),
-            ClaudeCode(),
             VSCodium(),
             Fonts(),
         ]
@@ -454,7 +437,6 @@ if __name__ == "__main__":
             Git(),
             Rime(),
             PowerShell(),
-            ClaudeCode(),
             VSCodium(),
             Fonts(),
         ]

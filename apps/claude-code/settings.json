@@ -1,9 +1,0 @@
-{
-  "env": {
-    "ANTHROPIC_BASE_URL": "https://api.aigocode.com"
-  },
-  "enabledPlugins": {
-    "claude-md-management@claude-plugins-official": true
-  },
-  "theme": "light"
-}
