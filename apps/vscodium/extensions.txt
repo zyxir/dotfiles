@@ -4,5 +4,8 @@ codesmith.markdown-inline-editor-vscode
 ms-python.debugpy
 ms-python.python
 ms-python.vscode-python-envs
+rust-lang.rust-analyzer
+scala-lang.scala
+scalameta.metals
 yutengjing.open-in-external-app
 yzhang.markdown-all-in-one
