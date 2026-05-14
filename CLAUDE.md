@@ -77,7 +77,7 @@ python3 install.py          # normal run
 python3 install.py --debug  # verbose output
 ```
 
-The script symlinks config files on macOS and copies them on Windows. macOS installs: Git, Ghostty, Kitty, Rime, Zsh, VSCodium. Windows installs: Git, Rime, PowerShell, VSCodium.
+The script symlinks config files on macOS and copies them on Windows. macOS installs: Git, Ghostty, Kitty, Rime, Vim, Zsh, VSCodium. Windows installs: Git, Rime, PowerShell, Vim, VSCodium.
 
 On macOS, the Rime task uses plum (`~/Library/Rime/plum/`) to install schemas (rime-ice, cangjie5, quick5) if their sentinel files are missing.
 
@@ -105,6 +105,7 @@ Config files live under `apps/<app>/` and are installed to their canonical locat
 | Ghostty | `apps/ghostty/` | `~/.config/ghostty/` | — |
 | Kitty | `apps/kitty/` | `~/.config/kitty/` | — |
 | Rime | `apps/rime/` | `~/Library/Rime/` | `~/Library/Rime/` |
+| Vim | `apps/vim/vimrc` | `~/.vimrc` | `~/.vimrc` |
 | Zsh | `apps/zsh/{zshenv,zshrc,p10k.zsh}` | `~/{.zshenv,.zshrc,.p10k.zsh}` | — |
 | PowerShell | `apps/PowerShell/Microsoft.PowerShell_profile.ps1` | — | `~/Documents/WindowsPowerShell/` |
 | VSCodium | `apps/vscodium/settings.json` | `~/Library/Application Support/VSCodium/User` | `~/AppData/Roaming/VSCodium/User` |

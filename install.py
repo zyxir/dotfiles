@@ -348,6 +348,17 @@ class Fonts(Task):
         return f"Installed {len(installed)} file(s): {', '.join(installed)}."
 
 
+class Vim(Task):
+    """Install vim config."""
+
+    def steps(self) -> list[Step]:
+        return [Step("Link ~/.vimrc", self._run)]
+
+    def _run(self) -> str | _Skipped | None:
+        if not link("./apps/vim/vimrc", "~/.vimrc"):
+            return SKIPPED
+
+
 class Ghostty(Task):
     """Install Ghostty config."""
 
@@ -428,6 +439,7 @@ if __name__ == "__main__":
             Git(),
             Ghostty(),
             Rime(),
+            Vim(),
             Zsh(),
             VSCodium(),
             Fonts(),
@@ -437,6 +449,7 @@ if __name__ == "__main__":
             Git(),
             Rime(),
             PowerShell(),
+            Vim(),
             VSCodium(),
             Fonts(),
         ]
