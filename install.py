@@ -426,7 +426,8 @@ class VSCodium(Task):
 _ELEVATE_PS1 = """\
 param(
     [switch]$Elevated,
-    [string]$InstallPy
+    [string]$InstallPy,
+    [string]$Python
 )
 
 $alreadyAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
@@ -436,16 +437,27 @@ if (-not $alreadyAdmin) {
         "-ExecutionPolicy", "Bypass",
         "-File", $PSCommandPath,
         "-InstallPy", $InstallPy,
+        "-Python", $Python,
         "-Elevated"
     )
     if ($args.Count -gt 0) {
         $argList += $args
     }
-    Start-Process powershell -Verb runAs -ArgumentList $argList -Wait
+    $argString = ($argList | ForEach-Object {
+        if ($_ -match '\\s') { '"{0}"' -f $_ } else { $_ }
+    }) -join ' '
+
+    $wt = Get-Command wt -ErrorAction SilentlyContinue
+    if ($wt) {
+        Start-Process wt -Verb runAs -ArgumentList (@("powershell") + $argList) -Wait
+    } else {
+        Start-Process powershell -Verb runAs -ArgumentList $argString -Wait
+    }
     exit
 }
 
-& python3 $InstallPy @args
+Set-Location (Split-Path -Parent $InstallPy)
+& $Python $InstallPy @args
 
 if ($Elevated) {
     Write-Host ""
@@ -493,6 +505,21 @@ def _windows_symlink_capable() -> bool:
     return False
 
 
+def _supports_ansi() -> bool:
+    """Return True if stdout appears to support ANSI escape sequences."""
+    if os.environ.get("NO_COLOR"):
+        return False
+    if not sys.stdout.isatty():
+        return False
+    if platform.system() != "Windows":
+        return True
+    return (
+        "WT_SESSION" in os.environ
+        or "ANSICON" in os.environ
+        or "256color" in os.environ.get("TERM", "")
+    )
+
+
 if __name__ == "__main__":
     # Parse command line arguments
     parser = argparse.ArgumentParser(description="Install Zyxir's dotfiles.")
@@ -515,6 +542,8 @@ if __name__ == "__main__":
                 ps1_path,
                 "-InstallPy",
                 str(Path(__file__).resolve()),
+                "-Python",
+                sys.executable,
             ]
             + sys.argv[1:]
         )
@@ -539,6 +568,17 @@ if __name__ == "__main__":
 
     # Setup logging
     tracker = setup_logging(debug=debug)
+
+    # Detect ANSI support
+    if _supports_ansi():
+        C_SKIP = "\033[0;33m"
+        C_DONE = "\033[1;32m"
+        C_FAIL = "\033[1;31m"
+        C_WARN = "\033[33m"
+        C_RESET = "\033[0m"
+        C_CLEAR = "\033[1A\r"
+    else:
+        C_SKIP = C_DONE = C_FAIL = C_WARN = C_RESET = C_CLEAR = ""
 
     # Define platform-specific tasks
     tasks: list[Task] = []
@@ -572,16 +612,16 @@ if __name__ == "__main__":
                 tracker.reset()
                 result = step.run()
                 if isinstance(result, _Skipped):
-                    status = "\033[0;33mSKIP\033[0m"
+                    status = f"{C_SKIP}SKIP{C_RESET}"
                     hint = None
                 else:
-                    status = "\033[1;32mDONE\033[0m"
+                    status = f"{C_DONE}DONE{C_RESET}"
                     hint = result
                 if tracker.fired:
                     print("  " + status)
                 else:
-                    print("\033[1A\r{} {}".format(label, status))
+                    print(f"{C_CLEAR}{label} {status}")
                 if hint:
                     print(hint)
         except Exception as e:
-            print("  \033[1;31mFAILED\033[0m \033[33m{}\033[0m".format(e))
+            print(f"  {C_FAIL}FAILED{C_RESET} {C_WARN}{e}{C_RESET}")
