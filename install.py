@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import getpass
 import logging
 import os
 import platform
@@ -139,6 +140,8 @@ class Step:
 class Task(ABC):
     """A task to perform."""
 
+    skip_envs: set[str] = set()
+
     @abstractmethod
     def steps(self) -> list[Step]:
         """Return the list of steps that make up this task."""
@@ -146,6 +149,8 @@ class Task(ABC):
 
 class Git(Task):
     """Install git config."""
+
+    skip_envs = {"vps", "corporate"}
 
     def steps(self) -> list[Step]:
         return [Step("Link ~/.gitconfig", self._run)]
@@ -180,6 +185,8 @@ def _rime_dir() -> Path:
 
 class Rime(Task):
     """Install rime config."""
+
+    skip_envs = {"vps"}
 
     def steps(self) -> list[Step]:
         return [
@@ -318,6 +325,8 @@ def install_fonts_from_zip(url: str, filenames: list[str] | None = None) -> list
 class Fonts(Task):
     """Install fonts."""
 
+    skip_envs = {"vps"}
+
     def steps(self) -> list[Step]:
         return [
             Step("JetBrainsMono Nerd Font", self._jetbrains_mono),
@@ -371,6 +380,8 @@ class Vim(Task):
 class Ghostty(Task):
     """Install Ghostty config."""
 
+    skip_envs = {"vps"}
+
     def steps(self) -> list[Step]:
         return [Step("Link ~/.config/ghostty", self._run)]
 
@@ -381,6 +392,8 @@ class Ghostty(Task):
 
 class VSCodium(Task):
     """Install VSCodium config and extensions."""
+
+    skip_envs = {"vps", "corporate"}
 
     def steps(self) -> list[Step]:
         return [
@@ -528,6 +541,19 @@ def _supports_ansi() -> bool:
     )
 
 
+def _environment() -> str:
+    """Detect the environment based on username and OS."""
+    user = getpass.getuser()
+    system = platform.system()
+    if user == "zyxir":
+        return "personal"
+    if user == "linuxuser" and system == "Linux":
+        return "vps"
+    if system == "Windows":
+        return "corporate"
+    return "personal"
+
+
 if __name__ == "__main__":
     # Parse command line arguments
     parser = argparse.ArgumentParser(description="Install Zyxir's dotfiles.")
@@ -583,12 +609,17 @@ if __name__ == "__main__":
         C_DONE = "\033[1;32m"
         C_FAIL = "\033[1;31m"
         C_WARN = "\033[33m"
+        C_INFO = "\033[1;36m"
         C_RESET = "\033[0m"
         C_CLEAR = "\033[1A\r"
     else:
-        C_SKIP = C_DONE = C_FAIL = C_WARN = C_RESET = C_CLEAR = ""
+        C_SKIP = C_DONE = C_FAIL = C_WARN = C_INFO = C_RESET = C_CLEAR = ""
 
     # Define platform-specific tasks
+    env = _environment()
+    print(f"{C_INFO}▶{C_RESET} Environment: {C_INFO}{env}{C_RESET}  |  Platform: {C_INFO}{platform.system()}{C_RESET}")
+    print()
+
     tasks: list[Task] = []
     if platform.system() == "Darwin":
         tasks += [
@@ -609,9 +640,20 @@ if __name__ == "__main__":
             VSCodium(),
             Fonts(),
         ]
+    elif platform.system() == "Linux":
+        tasks += [
+            Git(),
+            Vim(),
+            Zsh(),
+            Rime(),
+            VSCodium(),
+            Fonts(),
+        ]
 
     # Perform the tasks
     for task in tasks:
+        if env in task.skip_envs:
+            continue
         print("- {}...".format(task.__doc__), flush=True)
         try:
             for step in task.steps():
