@@ -9,3 +9,23 @@ $OutputEncoding = [console]::InputEncoding = [console]::OutputEncoding = New-Obj
 # Use Emacs style shortcuts
 Import-Module PSReadLine
 Set-PSReadLineOption -EditMode Emacs
+
+# Set up proxy if the proxy port is listening
+$proxyPort = 7897
+$proxyAvailable = $false
+try {
+    $client = New-Object System.Net.Sockets.TcpClient("127.0.0.1", $proxyPort)
+    $client.Close()
+    $proxyAvailable = $true
+} catch {
+    $proxyAvailable = $false
+}
+
+if ($proxyAvailable) {
+    $env:http_proxy = "http://127.0.0.1:${proxyPort}"
+    $env:https_proxy = "http://127.0.0.1:${proxyPort}"
+    $env:no_proxy = "localhost,127.0.0.1,::1"
+    $env:HTTP_PROXY = "http://127.0.0.1:${proxyPort}"
+    $env:HTTPS_PROXY = "http://127.0.0.1:${proxyPort}"
+    $env:NO_PROXY = "localhost,127.0.0.1,::1"
+}

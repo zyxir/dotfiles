@@ -9,6 +9,7 @@ import os
 import platform
 import shutil
 import subprocess
+import sys
 import tempfile
 import urllib.request
 import zipfile
@@ -422,12 +423,119 @@ class VSCodium(Task):
             )
 
 
+_ELEVATE_PS1 = """\
+param(
+    [switch]$Elevated,
+    [string]$InstallPy
+)
+
+$alreadyAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+
+if (-not $alreadyAdmin) {
+    $argList = @(
+        "-ExecutionPolicy", "Bypass",
+        "-File", $PSCommandPath,
+        "-InstallPy", $InstallPy,
+        "-Elevated"
+    )
+    if ($args.Count -gt 0) {
+        $argList += $args
+    }
+    Start-Process powershell -Verb runAs -ArgumentList $argList -Wait
+    exit
+}
+
+& python3 $InstallPy @args
+
+if ($Elevated) {
+    Write-Host ""
+    Write-Host "Press Enter to exit."
+    $null = Read-Host
+}
+"""
+
+
+def _proxy_url() -> str | None:
+    """Return a working proxy URL from the environment, or probe 127.0.0.1:7897."""
+    for key in ("https_proxy", "HTTPS_PROXY", "http_proxy", "HTTP_PROXY"):
+        url = os.environ.get(key)
+        if url:
+            return url
+    import socket
+
+    try:
+        with socket.create_connection(("127.0.0.1", 7897), timeout=1):
+            return "http://127.0.0.1:7897"
+    except OSError:
+        return None
+
+
+def _windows_symlink_capable() -> bool:
+    """Return True if the current Windows session can create symlinks."""
+    import ctypes
+
+    if ctypes.windll.shell32.IsUserAnAdmin():
+        return True
+    try:
+        import winreg
+
+        with winreg.OpenKey(
+            winreg.HKEY_LOCAL_MACHINE,
+            r"SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock",
+        ) as key:
+            value, _ = winreg.QueryValueEx(key, "AllowDevelopmentWithoutDevLicense")
+            if value == 1:
+                return True
+    except FileNotFoundError:
+        pass
+    except OSError:
+        pass
+    return False
+
+
 if __name__ == "__main__":
     # Parse command line arguments
     parser = argparse.ArgumentParser(description="Install Zyxir's dotfiles.")
     parser.add_argument("--debug", help="turn on debug mode", action="store_true")
     args = parser.parse_args()
     debug: bool = args.debug
+
+    # On Windows, hand off to the PowerShell wrapper if we cannot create symlinks
+    if platform.system() == "Windows" and not _windows_symlink_capable():
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".ps1", delete=False) as f:
+            f.write(_ELEVATE_PS1)
+            ps1_path = f.name
+        print("Elevating via PowerShell wrapper...")
+        subprocess.run(
+            [
+                "powershell",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                ps1_path,
+                "-InstallPy",
+                str(Path(__file__).resolve()),
+            ]
+            + sys.argv[1:]
+        )
+        try:
+            os.unlink(ps1_path)
+        except OSError:
+            pass
+        sys.exit(0)
+
+    # Detect and configure proxy for downloads
+    proxy_url = _proxy_url()
+    if proxy_url:
+        os.environ.setdefault("http_proxy", proxy_url)
+        os.environ.setdefault("https_proxy", proxy_url)
+        os.environ.setdefault("no_proxy", "localhost,127.0.0.1,::1")
+        proxy_handler = urllib.request.ProxyHandler(
+            {"http": proxy_url, "https": proxy_url}
+        )
+        urllib.request.install_opener(
+            urllib.request.build_opener(proxy_handler)
+        )
 
     # Setup logging
     tracker = setup_logging(debug=debug)
