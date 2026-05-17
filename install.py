@@ -171,6 +171,13 @@ PLUM_SCHEMAS: list[tuple[list[str], str, str | None]] = [
 ]
 
 
+def _rime_dir() -> Path:
+    """Return the platform-specific Rime user data directory."""
+    if platform.system() == "Darwin":
+        return pathify("~/Library/Rime")
+    return pathify("~/AppData/Roaming/Rime")
+
+
 class Rime(Task):
     """Install rime config."""
 
@@ -191,16 +198,19 @@ class Rime(Task):
         self, packages: list[str], sentinel: str
     ) -> Callable[[], str | _Skipped | None]:
         def _install() -> str | _Skipped | None:
-            if platform.system() == "Windows":
-                return SKIPPED
-            rime_dir = pathify("~/Library/Rime")
+            rime_dir = _rime_dir()
             if (rime_dir / sentinel).exists():
                 return SKIPPED
-            rime_install = rime_dir / "plum" / "rime-install"
+            if platform.system() == "Windows":
+                rime_install = rime_dir / "plum" / "rime-install.bat"
+                shell = ["cmd", "/c", str(rime_install)]
+            else:
+                rime_install = rime_dir / "plum" / "rime-install"
+                shell = ["bash", str(rime_install)]
             for pkg in packages:
                 logging.debug("installing schema: %s", pkg)
                 subprocess.run(
-                    ["bash", str(rime_install), pkg],
+                    shell + [pkg],
                     check=True,
                     capture_output=True,
                     env={**os.environ, "rime_dir": str(rime_dir)},
@@ -209,9 +219,7 @@ class Rime(Task):
         return _install
 
     def _install_plum(self) -> str | _Skipped | None:
-        if platform.system() == "Windows":
-            return SKIPPED
-        dst = pathify("~/Library/Rime/plum")
+        dst = _rime_dir() / "plum"
         if dst.exists():
             return SKIPPED
         logging.debug("cloning plum into %s", dst)
@@ -222,7 +230,7 @@ class Rime(Task):
         )
 
     def _run(self) -> str | _Skipped | None:
-        rime_dir = pathify("~/Library/Rime")
+        rime_dir = _rime_dir()
         created = link("./apps/rime", rime_dir)
         if not created:
             return SKIPPED

@@ -11,5 +11,12 @@ patch:
     - schema: rime_ice
   # 這些鍵位很少衝突，兼顧 Windows 和 macOS
   "switcher/hotkeys":
-    - Control+F1
-    - Control+Shift+0
+    - Control+Shift+1
+    - Control+Shift+2
+    - Control+Shift+3
+    - Control+Shift+4
+    - Control+Shift+5
+    - Control+Shift+6
+    - Control+Shift+7
+    - Control+Shift+8
+    - Control+Shift+9
