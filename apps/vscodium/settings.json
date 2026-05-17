@@ -1,6 +1,6 @@
 {
     "editor.fontSize": 13,
-    "editor.fontFamily": "JetBrainsMonoNerdFont, Menlo, Monaco, 'Courier New', monospace",
+    "editor.fontFamily": "JetBrainsMonoNL NFM, Menlo, Monaco, 'Cascadia Mono', Consolas, 'Courier New', monospace",
     "editor.formatOnSave": true,
     "workbench.colorTheme": "Light Modern",
     "claudeCode.preferredLocation": "panel",
