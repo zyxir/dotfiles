@@ -22,7 +22,6 @@ touch ~/.zshenv.secrets
 
 - [Git](https://git-scm.com) — distributed version control (macOS & Windows)
 - [Ghostty](https://ghostty.org) — GPU-accelerated terminal emulator (macOS)
-- [Kitty](https://sw.kovidgoyal.net/kitty/) — GPU-accelerated terminal emulator (macOS)
 - [Rime](https://rime.im) — extensible input method engine (macOS & Windows)
 - [Vim](https://www.vim.org) — text editor (macOS & Windows)
 - [Zsh](https://www.zsh.org) — Unix shell with [Antigen](https://github.com/zsh-users/antigen) plugin manager and [Powerlevel10k](https://github.com/romkatv/powerlevel10k) prompt (macOS)

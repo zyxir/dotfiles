@@ -40,7 +40,6 @@ Config files live under `apps/<app>/` and are installed by `install.py`:
 |-----|--------|----------------|------------------|
 | Git | `apps/git/gitconfig` | `~/.gitconfig` | `~/.gitconfig` |
 | Ghostty | `apps/ghostty/` | `~/.config/ghostty/` | — |
-| Kitty | `apps/kitty/` | `~/.config/kitty/` | — |
 | Rime | `apps/rime/` | `~/Library/Rime/` | `~/AppData/Roaming/Rime/` |
 | Vim | `apps/vim/vimrc` | `~/.vimrc` | `~/.vimrc` |
 | Zsh | `apps/zsh/{zshenv,zshrc,p10k.zsh}` | `~/{.zshenv,.zshrc,.p10k.zsh}` | — |
