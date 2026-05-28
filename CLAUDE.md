@@ -8,6 +8,7 @@ Guidance for Claude Code when working in this repository.
 - **Simplicity first.** No speculative features or premature abstractions. No error handling for impossible states. If it feels overcomplicated, it is.
 - **Surgical changes.** Don't refactor adjacent code or "improve" unrelated style. Match existing conventions. Every changed line must trace to the user's request.
 - **Define success criteria.** Turn requests into verifiable goals. State a brief plan for multi-step tasks.
+- **Keep docs in sync.** Update README.md and CLAUDE.md after major changes (new apps, new platforms, architecture shifts).
 
 ## Installation
 
