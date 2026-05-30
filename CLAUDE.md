@@ -13,12 +13,15 @@ Guidance for Claude Code when working in this repository.
 ## Installation
 
 ```sh
-python3 install.py          # normal run
-python3 install.py --debug  # verbose output
+python3 install.py                 # normal run
+python3 install.py --debug         # verbose output
+python3 install.py --proxy <URL>   # use specific proxy for downloads
 ```
 
 The script symlinks config files on macOS and copies them on Windows.
 On macOS, the Rime task uses plum (`~/Library/Rime/plum/`) to install schemas (rime-ice, cangjie5, quick5) if missing.
+
+Proxy detection order: `--proxy` flag > `https_proxy`/`http_proxy` env vars > auto-probe `127.0.0.1:7897`. All network operations (font downloads, git clone, schema install, extension install) route through the configured proxy. The active proxy is displayed alongside environment and platform at startup.
 
 ## Secrets
 

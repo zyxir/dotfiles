@@ -230,11 +230,12 @@ class Rime(Task):
         if dst.exists():
             return SKIPPED
         logging.debug("cloning plum into %s", dst)
-        subprocess.run(
-            ["git", "clone", "--depth", "1", PLUM_URL, str(dst)],
-            check=True,
-            capture_output=True,
-        )
+        cmd = ["git", "clone", "--depth", "1"]
+        proxy = _proxy_url()
+        if proxy:
+            cmd += ["-c", f"http.proxy={proxy}", "-c", f"https.proxy={proxy}"]
+        cmd += [PLUM_URL, str(dst)]
+        subprocess.run(cmd, check=True, capture_output=True)
 
     def _run(self) -> str | _Skipped | None:
         rime_dir = _rime_dir()
@@ -488,8 +489,13 @@ if ($Elevated) {
 """
 
 
-def _proxy_url() -> str | None:
-    """Return a working proxy URL from the environment, or probe 127.0.0.1:7897."""
+def _proxy_url(explicit: str | None = None) -> str | None:
+    """Return a working proxy URL.
+
+    Precedence: explicit argument > environment variables > probe 127.0.0.1:7897.
+    """
+    if explicit:
+        return explicit
     for key in ("https_proxy", "HTTPS_PROXY", "http_proxy", "HTTP_PROXY"):
         url = os.environ.get(key)
         if url:
@@ -558,6 +564,7 @@ if __name__ == "__main__":
     # Parse command line arguments
     parser = argparse.ArgumentParser(description="Install Zyxir's dotfiles.")
     parser.add_argument("--debug", help="turn on debug mode", action="store_true")
+    parser.add_argument("--proxy", help="proxy URL for downloads (e.g. http://127.0.0.1:7897)")
     args = parser.parse_args()
     debug: bool = args.debug
 
@@ -588,7 +595,7 @@ if __name__ == "__main__":
         sys.exit(0)
 
     # Detect and configure proxy for downloads
-    proxy_url = _proxy_url()
+    proxy_url = _proxy_url(args.proxy)
     if proxy_url:
         os.environ.setdefault("http_proxy", proxy_url)
         os.environ.setdefault("https_proxy", proxy_url)
@@ -617,7 +624,8 @@ if __name__ == "__main__":
 
     # Define platform-specific tasks
     env = _environment()
-    print(f"{C_INFO}▶{C_RESET} Environment: {C_INFO}{env}{C_RESET}  |  Platform: {C_INFO}{platform.system()}{C_RESET}")
+    proxy_display = proxy_url if proxy_url else "none"
+    print(f"{C_INFO}▶{C_RESET} Environment: {C_INFO}{env}{C_RESET}  |  Platform: {C_INFO}{platform.system()}{C_RESET}  |  Proxy: {C_INFO}{proxy_display}{C_RESET}")
     print()
 
     tasks: list[Task] = []
