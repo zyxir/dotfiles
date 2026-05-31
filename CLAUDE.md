@@ -48,6 +48,7 @@ Config files live under `apps/<app>/` and are installed by `install.py`:
 | Zsh | `apps/zsh/{zshenv,zshrc,p10k.zsh}` | `~/{.zshenv,.zshrc,.p10k.zsh}` | — |
 | PowerShell | `apps/PowerShell/Microsoft.PowerShell_profile.ps1` | — | `~/Documents/WindowsPowerShell/` |
 | VSCodium | `apps/vscodium/settings.json` | `~/Library/Application Support/VSCodium/User` | `~/AppData/Roaming/VSCodium/User` |
+| Clash Verge Rev | `apps/clash-verge/Script.js` | `~/Library/Application Support/io.github.clash-verge-rev.clash-verge-rev/profiles/Script.js` | — |
 
 `install.py` uses an abstract `Task` class—each app has a subclass that calls `link()`. To add a new app, create a `Task` subclass and append it to the platform's task list in `__main__`.
 
@@ -61,3 +62,4 @@ Fonts are installed by `Task` subclasses (`MesloLGSFont`, `SourceHanSansFont`) r
 - **Rime**: Uses rime-ice (double_pinyin), Cangjie5, and Quick5, installed via plum. Platform UI config in `squirrel.custom.yaml` (macOS) and `weasel.custom.yaml` (Windows).
 - **scripts/disable-ctrl-space.reg**: Windows registry patch to free up Ctrl+Space for Rime.
 - **VSCodium**: `apps/vscodium/extensions.txt` lists extensions. Regenerate with `codium --list-extensions > apps/vscodium/extensions.txt` after changes. The installer installs missing ones.
+- **Clash Verge Rev**: Manages the global extension Script.js via symlink. The script uses QuickJS and receives the Clash config object via `main(config, profileName)`. The app also supports a global Merge.yaml; add it to the task if needed.

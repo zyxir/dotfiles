@@ -391,6 +391,28 @@ class Ghostty(Task):
             return SKIPPED
 
 
+class ClashVerge(Task):
+    """Install Clash Verge Rev global extension config."""
+
+    def steps(self) -> list[Step]:
+        return [Step("Link global Script.js", self._run)]
+
+    def _run(self) -> str | _Skipped | None:
+        if platform.system() == "Darwin":
+            profiles_dir = (
+                "~/Library/Application Support/"
+                "io.github.clash-verge-rev.clash-verge-rev/profiles"
+            )
+        else:
+            # Windows path — to be confirmed
+            profiles_dir = (
+                "~/AppData/Roaming/"
+                "io.github.clash-verge-rev.clash-verge-rev/profiles"
+            )
+        if not link("./apps/clash-verge/Script.js", f"{profiles_dir}/Script.js"):
+            return SKIPPED
+
+
 class VSCodium(Task):
     """Install VSCodium config and extensions."""
 
@@ -637,6 +659,7 @@ if __name__ == "__main__":
             Vim(),
             Zsh(),
             VSCodium(),
+            ClashVerge(),
             Fonts(),
         ]
     elif platform.system() == "Windows":
