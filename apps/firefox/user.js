@@ -5,10 +5,16 @@
 // -- 0000: disable about:config warning --------------------------------------
 user_pref("browser.aboutConfig.showWarning", false);
 
-// -- 0100: startup pages (blank) ---------------------------------------------
-user_pref("browser.startup.page", 0);                                // blank on startup
-user_pref("browser.startup.homepage", "chrome://browser/content/blanktab.html");
-user_pref("browser.newtabpage.enabled", false);                      // blank new tab
+// -- 0100: startup pages (Firefox Home, no sponsored content) ---------------
+user_pref("browser.startup.page", 3);      // restore previous session
+user_pref("browser.startup.homepage", "about:home");
+user_pref("browser.warnOnQuit", true);     // warn before closing multiple tabs
+// Block sponsored content on Firefox Home
+user_pref("browser.newtabpage.activity-stream.showSponsored", false);
+user_pref("browser.newtabpage.activity-stream.showSponsoredTopSites", false);
+user_pref("browser.newtabpage.activity-stream.showSponsoredCheckboxes", false);
+// Clear the default top sites (you'll add your own)
+user_pref("browser.newtabpage.activity-stream.default.sites", "");
 
 // -- 0200: disable OS geolocation services -----------------------------------
 user_pref("geo.provider.ms-windows-location", false);                // [WINDOWS]
