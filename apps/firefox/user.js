@@ -120,10 +120,10 @@ user_pref("privacy.userContext.enabled", true);
 user_pref("privacy.userContext.ui.enabled", true);
 
 // -- 2000: WebRTC ------------------------------------------------------------
-// Force WebRTC through the proxy (Clash)
-user_pref("media.peerconnection.ice.proxy_only_if_behind_proxy", true);
-// Only advertise default network interface (no local IP leaks)
-user_pref("media.peerconnection.ice.default_address_only", true);
+// Disable WebRTC entirely — prevents local IP leaks. WebRTC is only needed
+// for browser-based voice/video calls (Google Meet, Discord Web, Zoom Web).
+// Native apps (FaceTime, Zoom, Slack desktop) are unaffected.
+user_pref("media.peerconnection.enabled", false);
 
 // -- 2400: DOM ----------------------------------------------------------------
 // Prevent scripts from moving/resizing windows
