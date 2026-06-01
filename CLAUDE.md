@@ -59,8 +59,8 @@ Fonts are installed by `Task` subclasses (`MesloLGSFont`, `SourceHanSansFont`) r
 
 ## Key Configuration Details
 
-- **Zsh**: Uses Antigen (auto-downloaded to `~/.antigen/`) with Powerlevel10k. Proxy is `http://127.0.0.1:7897` when reachable.
+- **Zsh**: Uses Antigen (auto-downloaded to `~/.antigen/`) with Powerlevel10k. System proxy env vars are omitted — Clash TUN mode handles traffic transparently at the network layer.
 - **Rime**: Uses rime-ice (double_pinyin), Cangjie5, and Quick5, installed via plum. Platform UI config in `squirrel.custom.yaml` (macOS) and `weasel.custom.yaml` (Windows).
 - **scripts/disable-ctrl-space.reg**: Windows registry patch to free up Ctrl+Space for Rime.
 - **VSCodium**: `apps/vscodium/extensions.txt` lists extensions. Regenerate with `codium --list-extensions > apps/vscodium/extensions.txt` after changes. The installer installs missing ones.
-- **Clash Verge Rev**: Symlinks `Script.js` (global extension script, QuickJS). The script manages DNS and rules. Disable the app's built-in DNS settings in the GUI so the script's DNS config takes effect.
+- **Clash Verge Rev**: Symlinks `Script.js` (global extension script, QuickJS). The script manages DNS (hardened DoH), TUN mode, and rules. Disable the app's built-in DNS settings in the GUI so the script's DNS config takes effect.
