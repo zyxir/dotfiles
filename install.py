@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import configparser
 import getpass
 import logging
 import os
@@ -399,17 +400,67 @@ class ClashVerge(Task):
 
     def _run(self) -> str | _Skipped | None:
         if platform.system() == "Darwin":
-            profiles_dir = (
+            clash_dir = (
                 "~/Library/Application Support/"
-                "io.github.clash-verge-rev.clash-verge-rev/profiles"
+                "io.github.clash-verge-rev.clash-verge-rev"
             )
         else:
             # Windows path — to be confirmed
-            profiles_dir = (
+            clash_dir = (
                 "~/AppData/Roaming/"
-                "io.github.clash-verge-rev.clash-verge-rev/profiles"
+                "io.github.clash-verge-rev.clash-verge-rev"
             )
-        if not link("./apps/clash-verge/Script.js", f"{profiles_dir}/Script.js"):
+        if not link(
+            "./apps/clash-verge/Script.js",
+            f"{clash_dir}/profiles/Script.js",
+        ):
+            return SKIPPED
+
+
+class Firefox(Task):
+    """Install Firefox user.js."""
+
+    def steps(self) -> list[Step]:
+        return [Step("Link user.js into profile", self._run)]
+
+    def _find_profile_dir(self) -> Path | None:
+        """Parse profiles.ini and return the active profile directory."""
+        if platform.system() == "Darwin":
+            firefox_dir = pathify("~/Library/Application Support/Firefox")
+        else:
+            # Windows / Linux — to be confirmed
+            firefox_dir = pathify("~/.mozilla/firefox")
+
+        ini_path = firefox_dir / "profiles.ini"
+        if not ini_path.exists():
+            return None
+
+        config = configparser.ConfigParser()
+        config.read(ini_path)
+
+        # 1) Look for [Install*] with Locked=1 (most reliable)
+        for section in config.sections():
+            if section.startswith("Install") and config[section].get("locked") == "1":
+                return firefox_dir / config[section].get("default", "")
+
+        # 2) StartWithLastProfile=0 points to a specific profile index
+        last = config.get("General", "startwithlastprofile", fallback="1")
+        profile_section = f"Profile{last}"
+        if config.has_section(profile_section):
+            return firefox_dir / config[profile_section].get("path", "")
+
+        # 3) Fall back to the first profile marked Default=1
+        for section in config.sections():
+            if section.startswith("Profile") and config[section].get("default") == "1":
+                return firefox_dir / config[section].get("path", "")
+
+        return None
+
+    def _run(self) -> str | _Skipped | None:
+        profile_dir = self._find_profile_dir()
+        if profile_dir is None:
+            return "❗Could not find Firefox profile. Create one and re-run."
+        if not link("./apps/firefox/user.js", f"{profile_dir}/user.js"):
             return SKIPPED
 
 
@@ -658,6 +709,7 @@ if __name__ == "__main__":
             Rime(),
             Vim(),
             Zsh(),
+            Firefox(),
             VSCodium(),
             ClashVerge(),
             Fonts(),
