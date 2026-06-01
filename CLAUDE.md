@@ -64,3 +64,4 @@ Fonts are installed by `Task` subclasses (`MesloLGSFont`, `SourceHanSansFont`) r
 - **scripts/disable-ctrl-space.reg**: Windows registry patch to free up Ctrl+Space for Rime.
 - **VSCodium**: `apps/vscodium/extensions.txt` lists extensions. Regenerate with `codium --list-extensions > apps/vscodium/extensions.txt` after changes. The installer installs missing ones.
 - **Clash Verge Rev**: Symlinks `Script.js` (global extension script, QuickJS). The script manages DNS (hardened DoH), TUN mode, and rules. Disable the app's built-in DNS settings in the GUI so the script's DNS config takes effect.
+- **scripts/test-doh.py**: Benchmarks DoH servers for reachability and latency. Tests domestic servers directly, foreign servers through the proxy at 7897. The DoH server lists in `Script.js` were selected using this tool — re-run it when changing DNS providers or if connectivity issues arise.
