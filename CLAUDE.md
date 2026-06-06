@@ -10,6 +10,7 @@ Guidance for Claude Code when working in this repository.
 - **Define success criteria.** Turn requests into verifiable goals. State a brief plan for multi-step tasks.
 - **Keep docs in sync.** Update README.md and CLAUDE.md after major changes (new apps, new platforms, architecture shifts).
 - **Never auto-commit.** Always ask before committing. The user reviews every commit.
+- **Accurate co-author.** Git commits end with the actual model name (e.g., `Co-Authored-By: DeepSeek V4 Pro <noreply@deepseek.com>`). Never hardcode "Claude Opus" — use whatever model the harness reports.
 
 ## Installation
 
