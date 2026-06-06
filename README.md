@@ -30,6 +30,7 @@ touch ~/.zshenv.secrets
 
 ## Project Structure
 
-- `apps/` — config files for each application.
+- `per_app/` — cross-platform application configs.
+- `per_host/` — machine-specific configs (matched by hostname).
 - `scripts/` — utility scripts (e.g., Windows registry patches).
 - `install.py` — cross-platform installation script.

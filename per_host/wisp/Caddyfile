@@ -1,0 +1,5 @@
+# Caddy reverse proxy — configure services below.
+# Example:
+#   app.ericzhuochen.com {
+#       reverse_proxy host.docker.internal:3000
+#   }

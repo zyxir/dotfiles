@@ -10,6 +10,7 @@ import logging
 import os
 import platform
 import shutil
+import socket
 import subprocess
 import sys
 import tempfile
@@ -141,14 +142,37 @@ class Step:
 class Task(ABC):
     """A task to perform."""
 
-    skip_envs: set[str] = set()
-
     @abstractmethod
     def steps(self) -> list[Step]:
         """Return the list of steps that make up this task."""
 
 
-class Git(Task):
+class AppTask(Task):
+    """Task for per-app configuration.
+
+    Uses `skip_envs` to opt out of specific environments.
+    """
+
+    skip_envs: set[str] = set()
+
+
+class HostTask(Task):
+    """Task for per-host configuration.
+
+    Active only when the current machine's hostname matches the task's
+    configured hostname.  No `skip_envs` — the hostname match is the
+    sole gate.
+    """
+
+    def __init__(self, hostname: str):
+        self.hostname = hostname
+
+    @property
+    def is_active(self) -> bool:
+        return socket.gethostname() == self.hostname
+
+
+class Git(AppTask):
     """Install git config."""
 
     skip_envs = {"corporate"}
@@ -157,7 +181,7 @@ class Git(Task):
         return [Step("Link ~/.gitconfig", self._run)]
 
     def _run(self) -> str | _Skipped | None:
-        if not link("./apps/git/gitconfig", "~/.gitconfig"):
+        if not link("./per_app/git/gitconfig", "~/.gitconfig"):
             return SKIPPED
 
 
@@ -184,7 +208,7 @@ def _rime_dir() -> Path:
     return pathify("~/AppData/Roaming/Rime")
 
 
-class Rime(Task):
+class Rime(AppTask):
     """Install rime config."""
 
     skip_envs = {"vps"}
@@ -240,21 +264,21 @@ class Rime(Task):
 
     def _run(self) -> str | _Skipped | None:
         rime_dir = _rime_dir()
-        created = link("./apps/rime", rime_dir)
+        created = link("./per_app/rime", rime_dir)
         if not created:
             return SKIPPED
 
 
-class Zsh(Task):
+class Zsh(AppTask):
     """Install zsh config."""
 
     def steps(self) -> list[Step]:
         return [Step("Link config files", self._run)]
 
     def _run(self) -> str | _Skipped | None:
-        a = link("./apps/zsh/zshenv", "~/.zshenv")
-        b = link("./apps/zsh/zshrc", "~/.zshrc")
-        c = link("./apps/zsh/p10k.zsh", "~/.p10k.zsh")
+        a = link("./per_app/zsh/zshenv", "~/.zshenv")
+        b = link("./per_app/zsh/zshrc", "~/.zshrc")
+        c = link("./per_app/zsh/p10k.zsh", "~/.p10k.zsh")
         secrets_file = pathify("~/.zshenv.secrets")
         if not secrets_file.exists():
             return "❗Create ~/.zshenv.secrets for secrets (e.g. ANTHROPIC_AUTH_TOKEN)."
@@ -264,7 +288,7 @@ class Zsh(Task):
             return SKIPPED
 
 
-class PowerShell(Task):
+class PowerShell(AppTask):
     """Install PowerShell config."""
 
     def steps(self) -> list[Step]:
@@ -272,7 +296,7 @@ class PowerShell(Task):
 
     def _run(self) -> str | _Skipped | None:
         if not link(
-            "./apps/PowerShell/Microsoft.PowerShell_profile.ps1",
+            "./per_app/PowerShell/Microsoft.PowerShell_profile.ps1",
             "~/Documents/WindowsPowerShell/Microsoft.PowerShell_profile.ps1",
         ):
             return SKIPPED
@@ -324,7 +348,7 @@ def install_fonts_from_zip(url: str, filenames: list[str] | None = None) -> list
     return installed
 
 
-class Fonts(Task):
+class Fonts(AppTask):
     """Install fonts."""
 
     skip_envs = {"vps"}
@@ -368,18 +392,18 @@ class Fonts(Task):
         return f"Installed {len(installed)} file(s): {', '.join(installed)}."
 
 
-class Vim(Task):
+class Vim(AppTask):
     """Install vim config."""
 
     def steps(self) -> list[Step]:
         return [Step("Link ~/.vimrc", self._run)]
 
     def _run(self) -> str | _Skipped | None:
-        if not link("./apps/vim/vimrc", "~/.vimrc"):
+        if not link("./per_app/vim/vimrc", "~/.vimrc"):
             return SKIPPED
 
 
-class Ghostty(Task):
+class Ghostty(AppTask):
     """Install Ghostty config."""
 
     skip_envs = {"vps"}
@@ -388,11 +412,11 @@ class Ghostty(Task):
         return [Step("Link ~/.config/ghostty", self._run)]
 
     def _run(self) -> str | _Skipped | None:
-        if not link("./apps/ghostty", "~/.config/ghostty"):
+        if not link("./per_app/ghostty", "~/.config/ghostty"):
             return SKIPPED
 
 
-class ClashVerge(Task):
+class ClashVerge(AppTask):
     """Install Clash Verge Rev global extension config."""
 
     def steps(self) -> list[Step]:
@@ -411,13 +435,13 @@ class ClashVerge(Task):
                 "io.github.clash-verge-rev.clash-verge-rev"
             )
         if not link(
-            "./apps/clash-verge/Script.js",
+            "./per_app/clash-verge/Script.js",
             f"{clash_dir}/profiles/Script.js",
         ):
             return SKIPPED
 
 
-class Firefox(Task):
+class Firefox(AppTask):
     """Install Firefox user.js."""
 
     def steps(self) -> list[Step]:
@@ -460,11 +484,11 @@ class Firefox(Task):
         profile_dir = self._find_profile_dir()
         if profile_dir is None:
             return "❗Could not find Firefox profile. Create one and re-run."
-        if not link("./apps/firefox/user.js", f"{profile_dir}/user.js"):
+        if not link("./per_app/firefox/user.js", f"{profile_dir}/user.js"):
             return SKIPPED
 
 
-class VSCodium(Task):
+class VSCodium(AppTask):
     """Install VSCodium config and extensions."""
 
     skip_envs = {"vps", "corporate"}
@@ -480,7 +504,7 @@ class VSCodium(Task):
             user_dir = "~/Library/Application Support/VSCodium/User"
         else:
             user_dir = "~/AppData/Roaming/VSCodium/User"
-        if not link("./apps/vscodium/settings.json", f"{user_dir}/settings.json"):
+        if not link("./per_app/vscodium/settings.json", f"{user_dir}/settings.json"):
             return SKIPPED
 
     def _install_extensions(self) -> str | _Skipped | None:
@@ -488,7 +512,7 @@ class VSCodium(Task):
         if codium is None:
             return "❗Install VSCodium to sync extensions (codium CLI not found)."
 
-        extensions_file = pathify("./apps/vscodium/extensions.txt")
+        extensions_file = pathify("./per_app/vscodium/extensions.txt")
         wanted = [
             line.strip()
             for line in extensions_file.read_text().splitlines()
@@ -516,6 +540,79 @@ class VSCodium(Task):
             return (
                 f"Installed {len(missing)} VSCodium extension(s): {', '.join(missing)}"
             )
+
+
+class VpsHost(HostTask):
+    """VPS host config (per_host/<hostname>/)."""
+
+    def __init__(self, hostname: str, skip_sudo: bool = False):
+        super().__init__(hostname)
+        self.skip_sudo = skip_sudo
+
+    def steps(self) -> list[Step]:
+        return [
+            Step("Fetch secrets from Bitwarden", self._fetch_secrets),
+            Step("Start Docker services", self._docker_up),
+        ]
+
+    @property
+    def _host_dir(self) -> Path:
+        return Path(f"./per_host/{self.hostname}")
+
+    def _fetch_secrets(self) -> str | _Skipped | None:
+        host_dir = self._host_dir
+        if not host_dir.is_dir():
+            return f"❗No config directory for host '{self.hostname}'."
+        if not (host_dir / "docker-compose.yml").exists():
+            return "❗No docker-compose.yml found."
+
+        env_file = host_dir / ".env"
+        if env_file.exists():
+            return SKIPPED
+
+        session = os.environ.get("BW_SESSION")
+        if not session:
+            return (
+                "❗Export BW_SESSION before running this script:\n"
+                "    bw login     # if not already logged in\n"
+                "    bw unlock    # prints 'export BW_SESSION=\"...\"'\n"
+                "    export BW_SESSION=\"...\"\n"
+                "  Then re-run install.py."
+            )
+
+        if not shutil.which("bw"):
+            return (
+                "❗Install Bitwarden CLI (bw) to fetch secrets:\n"
+                "    https://bitwarden.com/help/cli/"
+            )
+
+        result = subprocess.run(
+            ["bw", "get", "notes", f"vps/{self.hostname}"],
+            capture_output=True,
+            text=True,
+            env={**os.environ, "BW_SESSION": session},
+        )
+        if result.returncode != 0:
+            return (
+                f"❗Bitwarden note 'vps/{self.hostname}' not found.\n"
+                "  Create a secure note named 'vps/{self.hostname}'"
+                " containing the .env file contents."
+            )
+
+        env_file.write_text(result.stdout.strip())
+        return f"Wrote {env_file} from Bitwarden."
+
+    def _docker_up(self) -> str | _Skipped | None:
+        if self.skip_sudo:
+            return SKIPPED
+        if not (self._host_dir / ".env").exists():
+            return SKIPPED
+        subprocess.run(
+            ["sudo", "docker", "compose", "up", "-d", "--remove-orphans"],
+            cwd=self._host_dir,
+            check=True,
+        )
+        return "Docker services started."
 
 
 _ELEVATE_PS1 = """\
@@ -573,8 +670,6 @@ def _proxy_url(explicit: str | None = None) -> str | None:
         url = os.environ.get(key)
         if url:
             return url
-    import socket
-
     try:
         with socket.create_connection(("127.0.0.1", 7897), timeout=1):
             return "http://127.0.0.1:7897"
@@ -638,6 +733,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Install Zyxir's dotfiles.")
     parser.add_argument("--debug", help="turn on debug mode", action="store_true")
     parser.add_argument("--proxy", help="proxy URL for downloads (e.g. http://127.0.0.1:7897)")
+    parser.add_argument("--skip-sudo", help="skip sudo operations (docker compose, etc.)", action="store_true")
     args = parser.parse_args()
     debug: bool = args.debug
 
@@ -732,10 +828,15 @@ if __name__ == "__main__":
             VSCodium(),
             Fonts(),
         ]
+        for host_dir in sorted(Path("./per_host").iterdir()):
+            if host_dir.is_dir():
+                tasks.append(VpsHost(host_dir.name, skip_sudo=args.skip_sudo))
 
     # Perform the tasks
     for task in tasks:
-        if env in task.skip_envs:
+        if isinstance(task, AppTask) and env in task.skip_envs:
+            continue
+        if isinstance(task, HostTask) and not task.is_active:
             continue
         print("- {}...".format(task.__doc__), flush=True)
         try:

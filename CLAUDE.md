@@ -9,6 +9,7 @@ Guidance for Claude Code when working in this repository.
 - **Surgical changes.** Don't refactor adjacent code or "improve" unrelated style. Match existing conventions. Every changed line must trace to the user's request.
 - **Define success criteria.** Turn requests into verifiable goals. State a brief plan for multi-step tasks.
 - **Keep docs in sync.** Update README.md and CLAUDE.md after major changes (new apps, new platforms, architecture shifts).
+- **Never auto-commit.** Always ask before committing. The user reviews every commit.
 
 ## Installation
 
@@ -37,31 +38,42 @@ The installer warns if this file is missing.
 
 ## Architecture
 
-Config files live under `apps/<app>/` and are installed by `install.py`:
+Config files live under `per_app/<app>/` (cross-platform) or `per_host/<hostname>/` (machine-specific) and are installed by `install.py`:
+
+### Per-app configs (`AppTask`)
 
 | App | Source | Target (macOS) | Target (Windows) |
 |-----|--------|----------------|------------------|
-| Git | `apps/git/gitconfig` | `~/.gitconfig` | `~/.gitconfig` |
-| Ghostty | `apps/ghostty/` | `~/.config/ghostty/` | — |
-| Rime | `apps/rime/` | `~/Library/Rime/` | `~/AppData/Roaming/Rime/` |
-| Vim | `apps/vim/vimrc` | `~/.vimrc` | `~/.vimrc` |
-| Firefox | `apps/firefox/user.js` | `<profile>/user.js` (auto-discovered) | — |
-| Zsh | `apps/zsh/{zshenv,zshrc,p10k.zsh}` | `~/{.zshenv,.zshrc,.p10k.zsh}` | — |
-| PowerShell | `apps/PowerShell/Microsoft.PowerShell_profile.ps1` | — | `~/Documents/WindowsPowerShell/` |
-| VSCodium | `apps/vscodium/settings.json` | `~/Library/Application Support/VSCodium/User` | `~/AppData/Roaming/VSCodium/User` |
-| Clash Verge Rev | `apps/clash-verge/Script.js` | `~/Library/Application Support/io.github.clash-verge-rev.clash-verge-rev/profiles/Script.js` | — |
+| Git | `per_app/git/gitconfig` | `~/.gitconfig` | `~/.gitconfig` |
+| Ghostty | `per_app/ghostty/` | `~/.config/ghostty/` | — |
+| Rime | `per_app/rime/` | `~/Library/Rime/` | `~/AppData/Roaming/Rime/` |
+| Vim | `per_app/vim/vimrc` | `~/.vimrc` | `~/.vimrc` |
+| Firefox | `per_app/firefox/user.js` | `<profile>/user.js` (auto-discovered) | — |
+| Zsh | `per_app/zsh/{zshenv,zshrc,p10k.zsh}` | `~/{.zshenv,.zshrc,.p10k.zsh}` | — |
+| PowerShell | `per_app/PowerShell/Microsoft.PowerShell_profile.ps1` | — | `~/Documents/WindowsPowerShell/` |
+| VSCodium | `per_app/vscodium/settings.json` | `~/Library/Application Support/VSCodium/User` | `~/AppData/Roaming/VSCodium/User` |
+| Clash Verge Rev | `per_app/clash-verge/Script.js` | `~/Library/Application Support/io.github.clash-verge-rev.clash-verge-rev/profiles/Script.js` | — |
 
-`install.py` uses an abstract `Task` class—each app has a subclass that calls `link()`. To add a new app, create a `Task` subclass and append it to the platform's task list in `__main__`.
+### Per-host configs (`HostTask`)
+
+Each subdirectory under `per_host/` is named after a machine's hostname.
+The matching `VpsHost` task activates only when `socket.gethostname()` matches.
+
+| Host | Source |
+|------|--------|
+| wisp | `per_host/wisp/{docker-compose.yml,Caddyfile,.env.example}` |
+
+`install.py` uses two task types: `AppTask` (gated by `skip_envs`) and `HostTask` (gated by hostname match). To add a new app, subclass `AppTask` and append it to the platform's task list. To add a new host, create `per_host/<hostname>/` and the Linux task list auto-discovers it.
 
 `link()` delegates to `link_rec()` to create symlinks. On Windows, symlinks require Developer Mode or Administrator privileges. Wrong-target destinations are removed before linking.
 
-Fonts are installed by `Task` subclasses (`MesloLGSFont`, `SourceHanSansFont`) rather than symlinked. Only missing fonts are installed.
+Fonts are installed by `AppTask` subclasses (`Fonts`) rather than symlinked. Only missing fonts are installed.
 
 ## Key Configuration Details
 
 - **Zsh**: Uses Antigen (auto-downloaded to `~/.antigen/`) with Powerlevel10k. System proxy env vars are omitted — Clash TUN mode handles traffic transparently at the network layer.
 - **Rime**: Uses rime-ice (double_pinyin), Cangjie5, and Quick5, installed via plum. Platform UI config in `squirrel.custom.yaml` (macOS) and `weasel.custom.yaml` (Windows).
 - **scripts/disable-ctrl-space.reg**: Windows registry patch to free up Ctrl+Space for Rime.
-- **VSCodium**: `apps/vscodium/extensions.txt` lists extensions. Regenerate with `codium --list-extensions > apps/vscodium/extensions.txt` after changes. The installer installs missing ones.
+- **VSCodium**: `per_app/vscodium/extensions.txt` lists extensions. Regenerate with `codium --list-extensions > per_app/vscodium/extensions.txt` after changes. The installer installs missing ones.
 - **Clash Verge Rev**: Symlinks `Script.js` (global extension script, QuickJS). The script manages DNS (hardened DoH), TUN mode, and rules. Disable the app's built-in DNS settings in the GUI so the script's DNS config takes effect.
 - **scripts/test-doh.py**: Benchmarks DoH servers for reachability and latency. Tests domestic servers directly, foreign servers through the proxy at 7897. The DoH server lists in `Script.js` were selected using this tool — re-run it when changing DNS providers or if connectivity issues arise.
