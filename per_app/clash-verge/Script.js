@@ -442,8 +442,7 @@ const RULE_PROVIDERS = {
 
 // Custom rules (prepended before non-IP rules)
 const CUSTOM_RULES = [
-  // Add custom rules here, e.g.:
-  // "DOMAIN,example.com,DIRECT",
+  "DST-PORT,22/2222/9906,DIRECT",  // SSH — always direct, no proxy
 ];
 
 // Non-IP rules — checked first (domain/classical matching)
