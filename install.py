@@ -151,7 +151,7 @@ class Task(ABC):
 class Git(Task):
     """Install git config."""
 
-    skip_envs = {"vps", "corporate"}
+    skip_envs = {"corporate"}
 
     def steps(self) -> list[Step]:
         return [Step("Link ~/.gitconfig", self._run)]
