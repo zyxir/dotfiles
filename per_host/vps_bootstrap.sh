@@ -1,7 +1,10 @@
 #!/bin/bash
-# Vultr startup script for Debian 12 (bookworm).
-# Provisions a fresh VPS: Docker, SSH hardening, firewall, fail2ban.
+# VPS Bootstrap — shared Vultr startup script for Debian 12 (bookworm).
+# Provisions a fresh VPS: Docker, Bitwarden CLI, SSH hardening, firewall,
+# fail2ban, unattended-upgrades.
 # Idempotent --- delete /etc/.vps-setup-done to force re-run.
+#
+# Saved on Vultr as "VPS Bootstrap" and reused across instances.
 #
 # Usage:
 #   Paste this entire script into the Vultr "Startup Script" field
@@ -128,6 +131,20 @@ cat > /etc/apt/apt.conf.d/20auto-upgrades <<'UEOF'
 APT::Periodic::Update-Package-Lists "1";
 APT::Periodic::Unattended-Upgrade "1";
 UEOF
+
+# ===========================================================================
+# Bitwarden CLI --- needed by install.py to fetch secrets from Bitwarden
+# ===========================================================================
+echo "==> Installing Bitwarden CLI..."
+if ! command -v bw &>/dev/null; then
+    apt-get install -y -qq unzip
+    BW_VERSION="1.22.1"
+    curl -fsSL "https://github.com/bitwarden/cli/releases/download/v${BW_VERSION}/bw-linux-${BW_VERSION}.zip" \
+        -o /tmp/bw.zip
+    unzip -qo /tmp/bw.zip -d /tmp/bw
+    install -m 0755 /tmp/bw/bw /usr/local/bin/bw
+    rm -rf /tmp/bw.zip /tmp/bw
+fi
 
 # ===========================================================================
 # Done
