@@ -10,7 +10,9 @@ Guidance for Claude Code when working in this repository.
 - **Define success criteria.** Turn requests into verifiable goals. State a brief plan for multi-step tasks.
 - **Keep docs in sync.** Update README.md and CLAUDE.md after major changes (new apps, new platforms, architecture shifts).
 - **Never auto-commit.** Always ask before committing. The user reviews every commit.
-- **Accurate co-author.** Git commits end with the actual model name (e.g., `Co-Authored-By: DeepSeek V4 Pro <noreply@deepseek.com>`). Never hardcode "Claude Opus" — use whatever model the harness reports.
+- **Accurate co-author.** Every commit must end with the exact line:
+  `Co-Authored-By: <MODEL_NAME> <noreply@<VENDOR>.com>`
+  where `<MODEL_NAME>` and `<VENDOR>` come from the "powered by" line in the system prompt (e.g., "powered by the model deepseek-v4-pro" → `DeepSeek V4 Pro <noreply@deepseek.com>`).
 
 ## Installation
 
@@ -18,9 +20,10 @@ Guidance for Claude Code when working in this repository.
 python3 install.py                 # normal run
 python3 install.py --debug         # verbose output
 python3 install.py --proxy <URL>   # use specific proxy for downloads
+python3 install.py --skip-sudo     # skip docker compose operations
 ```
 
-The script symlinks config files on macOS and copies them on Windows.
+The script symlinks config files on all platforms. On Windows, symlinks require Developer Mode or Administrator privileges.
 On macOS, the Rime task uses plum (`~/Library/Rime/plum/`) to install schemas (rime-ice, cangjie5, quick5) if missing.
 
 Proxy detection order: `--proxy` flag > `https_proxy`/`http_proxy` env vars > auto-probe `127.0.0.1:7897`. All network operations (font downloads, git clone, schema install, extension install) route through the configured proxy. The active proxy is displayed alongside environment and platform at startup.
@@ -41,7 +44,7 @@ Config files live under `per_app/<app>/` (cross-platform) or `per_host/<hostname
 | Zsh | `per_app/zsh/{zshenv,zshrc,p10k.zsh}` | `~/{.zshenv,.zshrc,.p10k.zsh}` | — |
 | PowerShell | `per_app/PowerShell/Microsoft.PowerShell_profile.ps1` | — | `~/Documents/WindowsPowerShell/` |
 | VSCodium | `per_app/vscodium/settings.json` | `~/Library/Application Support/VSCodium/User` | `~/AppData/Roaming/VSCodium/User` |
-| Clash Verge Rev | `per_app/clash-verge/Script.js` | `~/Library/Application Support/io.github.clash-verge-rev.clash-verge-rev/profiles/Script.js` | — |
+| Clash Verge Rev | `per_app/clash-verge/Script.js` | `~/Library/Application Support/io.github.clash-verge-rev.clash-verge-rev/profiles/Script.js` | `~/AppData/Roaming/io.github.clash-verge-rev.clash-verge-rev/profiles/Script.js` |
 
 ### Per-host configs (`HostTask`)
 
@@ -55,6 +58,8 @@ The matching `VpsHost` task activates only when `socket.gethostname()` matches.
 `per_host/wisp/setup.sh` is a Vultr startup script for Debian 12. It installs Docker, hardens SSH (port 9906, key-only), configures UFW, fail2ban, and unattended-upgrades — everything before `docker-compose.yml`. Paste it into Vultr's "Startup Script" field when creating an instance.
 
 `install.py` uses two task types: `AppTask` (gated by `skip_envs`) and `HostTask` (gated by hostname match). To add a new app, subclass `AppTask` and append it to the platform's task list. To add a new host, create `per_host/<hostname>/` and the Linux task list auto-discovers it.
+
+`VpsHost` fetches `.env` from Bitwarden. Export `BW_SESSION` before running the installer on a VPS (`bw login` then `bw unlock`). The secure note must be named `vps/<hostname>`.
 
 `link()` delegates to `link_rec()` to create symlinks. On Windows, symlinks require Developer Mode or Administrator privileges. Wrong-target destinations are removed before linking.
 
