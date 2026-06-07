@@ -62,7 +62,9 @@ The matching `VpsHost` task activates only when `socket.gethostname()` matches.
 
 | Host | Source |
 |------|--------|
-| wisp | `per_host/wisp/{docker-compose.yml,Caddyfile,.env.example}` |
+| wisp | `per_host/wisp/{setup.sh,docker-compose.yml,Caddyfile,.env.example}` |
+
+`per_host/wisp/setup.sh` is a Vultr startup script for Debian 12. It installs Docker, hardens SSH (port 9906, key-only), configures UFW, fail2ban, and unattended-upgrades — everything before `docker-compose.yml`. Paste it into Vultr's "Startup Script" field when creating an instance.
 
 `install.py` uses two task types: `AppTask` (gated by `skip_envs`) and `HostTask` (gated by hostname match). To add a new app, subclass `AppTask` and append it to the platform's task list. To add a new host, create `per_host/<hostname>/` and the Linux task list auto-discovers it.
 
