@@ -25,18 +25,6 @@ On macOS, the Rime task uses plum (`~/Library/Rime/plum/`) to install schemas (r
 
 Proxy detection order: `--proxy` flag > `https_proxy`/`http_proxy` env vars > auto-probe `127.0.0.1:7897`. All network operations (font downloads, git clone, schema install, extension install) route through the configured proxy. The active proxy is displayed alongside environment and platform at startup.
 
-## Secrets
-
-Add secrets to an untracked local file:
-
-```sh
-touch ~/.zshenv.secrets
-# Add tokens like: export ANTHROPIC_AUTH_TOKEN="sk-..."
-source ~/.zshrc
-```
-
-The installer warns if this file is missing.
-
 ## Architecture
 
 Config files live under `per_app/<app>/` (cross-platform) or `per_host/<hostname>/` (machine-specific) and are installed by `install.py`:

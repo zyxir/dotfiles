@@ -279,9 +279,6 @@ class Zsh(AppTask):
         a = link("./per_app/zsh/zshenv", "~/.zshenv")
         b = link("./per_app/zsh/zshrc", "~/.zshrc")
         c = link("./per_app/zsh/p10k.zsh", "~/.p10k.zsh")
-        secrets_file = pathify("~/.zshenv.secrets")
-        if not secrets_file.exists():
-            return "❗Create ~/.zshenv.secrets for secrets (e.g. ANTHROPIC_AUTH_TOKEN)."
         if not os.environ.get("SHELL", "").endswith("zsh"):
             return "❗Consider setting zsh as your default shell."
         if not (a or b or c):
