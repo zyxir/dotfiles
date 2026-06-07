@@ -61,15 +61,14 @@ The matching `VpsHost` task activates only when `socket.gethostname()` matches.
 
 `VpsHost` fetches `.env` from Bitwarden. Export `BW_SESSION` before running the installer on a VPS (`bw login` then `bw unlock`). The secure note must be named `vps/<hostname>`.
 
-`link()` delegates to `link_rec()` to create symlinks. On Windows, symlinks require Developer Mode or Administrator privileges. Wrong-target destinations are removed before linking.
+### Task internals
+
+`link()` delegates to `link_rec()` to create symlinks. Wrong-target destinations are removed before linking.
 
 Fonts are installed by `AppTask` subclasses (`Fonts`) rather than symlinked. Only missing fonts are installed.
 
-## Key Configuration Details
+### Operational notes
 
-- **Zsh**: Uses Antigen (auto-downloaded to `~/.antigen/`) with Powerlevel10k. System proxy env vars are omitted — Clash TUN mode handles traffic transparently at the network layer.
-- **Rime**: Uses rime-ice (double_pinyin), Cangjie5, and Quick5, installed via plum. Platform UI config in `squirrel.custom.yaml` (macOS) and `weasel.custom.yaml` (Windows).
-- **scripts/disable-ctrl-space.reg**: Windows registry patch to free up Ctrl+Space for Rime.
-- **VSCodium**: `per_app/vscodium/extensions.txt` lists extensions. Regenerate with `codium --list-extensions > per_app/vscodium/extensions.txt` after changes. The installer installs missing ones.
-- **Clash Verge Rev**: Symlinks `Script.js` (global extension script, QuickJS). The script manages DNS (hardened DoH), TUN mode, and rules. Disable the app's built-in DNS settings in the GUI so the script's DNS config takes effect.
-- **scripts/test-doh.py**: Benchmarks DoH servers for reachability and latency. Tests domestic servers directly, foreign servers through the proxy at 7897. The DoH server lists in `Script.js` were selected using this tool — re-run it when changing DNS providers or if connectivity issues arise.
+- **Clash Verge Rev**: Disable the app's built-in DNS in the GUI — `Script.js` manages DNS (DoH) and TUN directly.
+- **VSCodium**: Regenerate `extensions.txt` with `codium --list-extensions > per_app/vscodium/extensions.txt` after installing or removing extensions.
+- **scripts/test-doh.py**: Benchmarks DoH servers for reachability and latency. Tests domestic servers directly, foreign servers through the proxy at 7897. Re-run when changing DNS providers or if connectivity issues arise.
