@@ -272,6 +272,8 @@ class Rime(AppTask):
 class Zsh(AppTask):
     """Install zsh config."""
 
+    skip_envs = {"vps"}
+
     def steps(self) -> list[Step]:
         return [Step("Link config files", self._run)]
 
