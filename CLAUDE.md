@@ -59,7 +59,7 @@ The matching `VpsHost` task activates only when `socket.gethostname()` matches.
 
 `install.py` uses two task types: `AppTask` (gated by `skip_envs`) and `HostTask` (gated by hostname match). To add a new app, subclass `AppTask` and append it to the platform's task list. To add a new host, create `per_host/<hostname>/` and the Linux task list auto-discovers it.
 
-`VpsHost` fetches `.env` from Bitwarden. Export `BW_SESSION` before running the installer on a VPS (`bw login` then `bw unlock`). The secure note must be named `vps/<hostname>`.
+`VpsHost` expects `.env` at `per_host/<hostname>/.env`. Copy it to the VPS manually (e.g., `scp .env wisp:~/dotfiles/per_host/wisp/.env`). The file is gitignored.
 
 ### Task internals
 

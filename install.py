@@ -548,7 +548,7 @@ class VpsHost(HostTask):
 
     def steps(self) -> list[Step]:
         return [
-            Step("Fetch secrets from Bitwarden", self._fetch_secrets),
+            Step("Check for .env file", self._check_env),
             Step("Start Docker services", self._docker_up),
         ]
 
@@ -556,7 +556,7 @@ class VpsHost(HostTask):
     def _host_dir(self) -> Path:
         return Path(f"./per_host/{self.hostname}")
 
-    def _fetch_secrets(self) -> str | _Skipped | None:
+    def _check_env(self) -> str | _Skipped | None:
         host_dir = self._host_dir
         if not host_dir.is_dir():
             return f"❗No config directory for host '{self.hostname}'."
@@ -567,37 +567,11 @@ class VpsHost(HostTask):
         if env_file.exists():
             return SKIPPED
 
-        session = os.environ.get("BW_SESSION")
-        if not session:
-            return (
-                "❗Export BW_SESSION before running this script:\n"
-                "    bw login     # if not already logged in\n"
-                "    bw unlock    # prints 'export BW_SESSION=\"...\"'\n"
-                "    export BW_SESSION=\"...\"\n"
-                "  Then re-run install.py."
-            )
-
-        if not shutil.which("bw"):
-            return (
-                "❗Install Bitwarden CLI (bw) to fetch secrets:\n"
-                "    https://bitwarden.com/help/cli/"
-            )
-
-        result = subprocess.run(
-            ["bw", "get", "notes", f"vps/{self.hostname}"],
-            capture_output=True,
-            text=True,
-            env={**os.environ, "BW_SESSION": session},
+        return (
+            f"❗No .env file found at {env_file}.\n"
+            "  Copy your .env to this location and re-run:\n"
+            f"    scp .env {self.hostname}:~/dotfiles/per_host/{self.hostname}/.env"
         )
-        if result.returncode != 0:
-            return (
-                f"❗Bitwarden note 'vps/{self.hostname}' not found.\n"
-                "  Create a secure note named 'vps/{self.hostname}'"
-                " containing the .env file contents."
-            )
-
-        env_file.write_text(result.stdout.strip())
-        return f"Wrote {env_file} from Bitwarden."
 
     def _docker_up(self) -> str | _Skipped | None:
         if self.skip_sudo:
