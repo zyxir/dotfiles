@@ -426,7 +426,6 @@ class ClashVerge(AppTask):
                 "io.github.clash-verge-rev.clash-verge-rev"
             )
         else:
-            # Windows path — to be confirmed
             clash_dir = (
                 "~/AppData/Roaming/"
                 "io.github.clash-verge-rev.clash-verge-rev"
@@ -448,8 +447,9 @@ class Firefox(AppTask):
         """Parse profiles.ini and return the active profile directory."""
         if platform.system() == "Darwin":
             firefox_dir = pathify("~/Library/Application Support/Firefox")
+        elif platform.system() == "Windows":
+            firefox_dir = pathify("~/AppData/Roaming/Mozilla/Firefox")
         else:
-            # Windows / Linux — to be confirmed
             firefox_dir = pathify("~/.mozilla/firefox")
 
         ini_path = firefox_dir / "profiles.ini"
@@ -788,6 +788,8 @@ if __name__ == "__main__":
             PowerShell(),
             Vim(),
             VSCodium(),
+            ClashVerge(),
+            Firefox(),
             Fonts(),
         ]
     elif platform.system() == "Linux":
