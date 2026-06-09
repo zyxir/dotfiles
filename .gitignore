@@ -4,4 +4,4 @@
 __pycache__/
 .env
 subconv/secret/
-subconv/subconv.env
+subconv.env

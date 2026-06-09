@@ -788,13 +788,12 @@ class VpsHost(HostTask):
     def _run_subconv(self) -> str | _Skipped | None:
         """Generate the subscription config immediately (cron would pick
         it up on the next cycle, but we want it available right away)."""
-        script = self._host_dir / "subconv" / "subconv.py"
+        script = (self._host_dir / "subconv" / "subconv.py").resolve()
         if not script.is_file():
             return SKIPPED
 
         result = subprocess.run(
             ["python3", str(script)],
-            cwd=self._host_dir,
             capture_output=True, text=True,
         )
         if result.returncode != 0:
