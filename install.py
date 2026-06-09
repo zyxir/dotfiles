@@ -418,27 +418,6 @@ class Ghostty(AppTask):
             return SKIPPED
 
 
-class ClashVerge(AppTask):
-    """Install Clash Verge Rev global extension config."""
-
-    def steps(self) -> list[Step]:
-        return [Step("Link global Script.js", self._run)]
-
-    def _run(self) -> str | _Skipped | None:
-        if platform.system() == "Darwin":
-            clash_dir = (
-                "~/Library/Application Support/"
-                "io.github.clash-verge-rev.clash-verge-rev"
-            )
-        else:
-            clash_dir = "~/AppData/Roaming/io.github.clash-verge-rev.clash-verge-rev"
-        if not link(
-            "./per_app/clash-verge/Script.js",
-            f"{clash_dir}/profiles/Script.js",
-        ):
-            return SKIPPED
-
-
 class Firefox(AppTask):
     """Install Firefox user.js."""
 
@@ -1034,7 +1013,6 @@ if __name__ == "__main__":
             Zsh(),
             Firefox(),
             VSCodium(),
-            ClashVerge(),
             Fonts(),
         ]
     elif platform.system() == "Windows":
@@ -1044,7 +1022,6 @@ if __name__ == "__main__":
             PowerShell(),
             Vim(),
             VSCodium(),
-            ClashVerge(),
             Firefox(),
             Fonts(),
         ]

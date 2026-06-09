@@ -44,7 +44,6 @@ Config files live under `per_app/<app>/` (cross-platform) or `per_host/<hostname
 | Zsh | `per_app/zsh/{zshenv,zshrc,p10k.zsh}` | `~/{.zshenv,.zshrc,.p10k.zsh}` | — |
 | PowerShell | `per_app/PowerShell/Microsoft.PowerShell_profile.ps1` | — | `~/Documents/WindowsPowerShell/` |
 | VSCodium | `per_app/vscodium/settings.json` | `~/Library/Application Support/VSCodium/User` | `~/AppData/Roaming/VSCodium/User` |
-| Clash Verge Rev | `per_app/clash-verge/Script.js` | `~/Library/Application Support/io.github.clash-verge-rev.clash-verge-rev/profiles/Script.js` | `~/AppData/Roaming/io.github.clash-verge-rev.clash-verge-rev/profiles/Script.js` |
 
 ### Per-host configs (`HostTask`)
 
@@ -71,7 +70,6 @@ Fonts are installed by `AppTask` subclasses (`Fonts`) rather than symlinked. Onl
 
 ### Operational notes
 
-- **Clash Verge Rev**: Disable the app's built-in DNS in the GUI — `Script.js` manages DNS (DoH) and TUN directly.
 - **VSCodium**: Regenerate `extensions.txt` with `codium --list-extensions > per_app/vscodium/extensions.txt` after installing or removing extensions.
 - **scripts/test-doh.py**: Benchmarks DoH servers for reachability and latency. Tests domestic servers directly, foreign servers through the proxy at 7897. Re-run when changing DNS providers or if connectivity issues arise.
-- **subconv.py (wisp)**: Subscription converter that reuses `per_app/clash-verge/Script.js` directly — reads it at runtime, appends a stdin/stdout CLI wrapper, runs it via `node`. Python handles YAML/HTTP; Script.js handles transform logic. Reads `subconv.env` for the subscription URL (separate from `.env` — changes more often). Outputs to `subconv/<secret>/ZyProxy`, served as a static file by Caddy, protected by a random path prefix (secret in `subconv.env`). Run via cron every 30 min. Depends on `nodejs` and `python3-yaml` (installed by `vps_bootstrap.sh`). Both per-device (Clash Verge Rev) and centralized workflows use the same Script.js — edit once.
+- **subconv.py (wisp)**: Subscription converter that reuses `per_host/wisp/Script.js` directly — reads it at runtime, appends a stdin/stdout CLI wrapper, runs it via `node`. Python handles YAML/HTTP; Script.js handles transform logic. Reads `subconv.env` for the subscription URL (separate from `.env` — changes more often). Outputs to `subconv/<secret>/ZyProxy`, served as a static file by Caddy, protected by a random path prefix (secret in `subconv.env`). Run via cron every 30 min. Depends on `nodejs` and `python3-yaml` (installed by `vps_bootstrap.sh`). `Script.js` can also be copied manually into Clash Verge Rev as a backup when the VPS is unavailable.

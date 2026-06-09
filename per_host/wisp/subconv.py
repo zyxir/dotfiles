@@ -27,8 +27,7 @@ import yaml
 # --- Configuration ----------------------------------------------------
 
 HERE = Path(__file__).resolve().parent
-REPO_ROOT = HERE / ".." / ".."
-SCRIPT_JS = REPO_ROOT / "per_app" / "clash-verge" / "Script.js"
+SCRIPT_JS = HERE / "Script.js"
 OUTPUT_DIR = HERE / "subconv"   # subdirectory set below after reading SECRET
 OUTPUT_FILE = None
 
