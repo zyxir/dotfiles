@@ -6,14 +6,17 @@ from __future__ import annotations
 import argparse
 import configparser
 import getpass
+import json
 import logging
 import os
 import platform
+import re
 import shutil
 import socket
 import subprocess
 import sys
 import tempfile
+import urllib.parse
 import urllib.request
 import zipfile
 from abc import ABC, abstractmethod
@@ -550,7 +553,8 @@ class VpsHost(HostTask):
 
     def steps(self) -> list[Step]:
         return [
-            Step("Check for .env file", self._check_env),
+            Step("Check for .env files", self._check_env),
+            Step("Configure DNS records", self._configure_dns),
             Step("Start Docker services", self._docker_up),
         ]
 
@@ -565,15 +569,179 @@ class VpsHost(HostTask):
         if not (host_dir / "docker-compose.yml").exists():
             return "❗No docker-compose.yml found."
 
-        env_file = host_dir / ".env"
-        if env_file.exists():
+        missing = []
+        for name in (".env", "subconv.env"):
+            if not (host_dir / name).exists():
+                missing.append(
+                    f"    scp {name} {self.hostname}:~/dotfiles/per_host/{self.hostname}/{name}"
+                )
+
+        if not missing:
             return SKIPPED
 
-        return (
-            f"❗No .env file found at {env_file}.\n"
-            "  Copy your .env to this location and re-run:\n"
-            f"    scp .env {self.hostname}:~/dotfiles/per_host/{self.hostname}/.env"
-        )
+        return "❗Missing env files:\n" + "\n".join(missing)
+
+    # ----- DNS helpers -------------------------------------------------
+
+    @staticmethod
+    def _read_env(host_dir: Path) -> dict[str, str]:
+        """Parse KEY=VALUE from a .env file (no shell expansion)."""
+        env_file = host_dir / ".env"
+        if not env_file.is_file():
+            return {}
+        result: dict[str, str] = {}
+        for line in env_file.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            if "=" in line:
+                key, _, value = line.partition("=")
+                result[key.strip()] = value.strip().strip("\"'")
+        return result
+
+    @staticmethod
+    def _parse_caddyfile(host_dir: Path, env: dict[str, str]) -> list[str]:
+        """Extract domain names from Caddyfile blocks, resolving {$VAR} placeholders."""
+        caddyfile = host_dir / "Caddyfile"
+        if not caddyfile.is_file():
+            return []
+
+        domains: list[str] = []
+        for line in caddyfile.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            m = re.match(r"^(\S+)\s*\{", line)
+            if m:
+                domain = m.group(1)
+                # Resolve {$VAR:default} placeholders
+                domain = re.sub(
+                    r"\{\$(\w+)(?::(\S+))?\}",
+                    lambda m: env.get(m.group(1), m.group(2) or m.group(0)),
+                    domain,
+                )
+                domains.append(domain)
+        return domains
+
+    @staticmethod
+    def _cf_zone_id(token: str, domain: str,
+                    cache: dict[str, str]) -> str | None:
+        """Look up the Cloudflare Zone ID for a domain's root zone.
+
+        The root zone is the last two labels of the domain (e.g.,
+        ``example.com`` from ``sub.example.com``).  Results are cached
+        so subdomains of the same zone don't repeat the lookup.
+        """
+        parts = domain.rsplit(".", 2)
+        root = ".".join(parts[-2:]) if len(parts) >= 2 else domain
+
+        if root in cache:
+            return cache[root]
+
+        url = f"https://api.cloudflare.com/client/v4/zones?name={urllib.parse.quote(root, safe='')}"
+        headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+        req = urllib.request.Request(url, headers=headers, method="GET")
+        try:
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                data = json.loads(resp.read())
+        except OSError:
+            return None
+
+        if data.get("success") and data.get("result"):
+            zone_id = data["result"][0]["id"]
+            cache[root] = zone_id
+            return zone_id
+        return None
+
+    @staticmethod
+    def _cf_api(token: str, zone_id: str, method: str, path: str,
+                body: dict | None = None) -> dict:
+        """Call Cloudflare API. Raises on HTTP / network errors."""
+        url = f"https://api.cloudflare.com/client/v4/zones/{zone_id}/{path}"
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        }
+        data = json.dumps(body).encode() if body else None
+        req = urllib.request.Request(url, data=data, headers=headers, method=method)
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            return json.loads(resp.read())
+
+    def _configure_dns(self) -> str | _Skipped | None:
+        """Upsert A records on Cloudflare for every domain in the Caddyfile.
+
+        Requires CLOUDFLARE_API_TOKEN in .env.  Zone IDs are looked up via
+        the API (the token needs Zone.Zone read + Zone.DNS edit).
+        Skipped silently when the token is absent.
+        """
+        env = self._read_env(self._host_dir)
+
+        token = env.get("CLOUDFLARE_API_TOKEN")
+        if not token:
+            return SKIPPED
+
+        domains = self._parse_caddyfile(self._host_dir, env)
+        if not domains:
+            return "No domain blocks found in Caddyfile."
+
+        # Discover public IP (this runs on the VPS, so it IS the VPS IP)
+        try:
+            with urllib.request.urlopen("https://api.ipify.org", timeout=10) as resp:
+                public_ip = resp.read().decode().strip()
+        except OSError as e:
+            return f"⚠ Could not determine public IP: {e}"
+
+        # Cache zone IDs so we don't re-fetch for subdomains of the same zone
+        zone_cache: dict[str, str] = {}
+
+        results: list[str] = []
+        for domain in domains:
+            zone_id = self._cf_zone_id(token, domain, zone_cache)
+            if not zone_id:
+                results.append(f"  {domain}: zone not found — check API token permissions")
+                continue
+
+            # Look up existing A record
+            try:
+                resp = self._cf_api(
+                    token, zone_id, "GET",
+                    f"dns_records?type=A&name={urllib.parse.quote(domain, safe='')}",
+                )
+            except OSError as e:
+                results.append(f"  {domain}: API error — {e}")
+                continue
+
+            if not resp.get("success"):
+                errs = resp.get("errors", ["unknown"])
+                results.append(f"  {domain}: API error — {errs}")
+                continue
+
+            records = resp.get("result", [])
+            if records:
+                existing = records[0]
+                if existing.get("content") == public_ip:
+                    results.append(f"  {domain}: unchanged ({public_ip})")
+                    continue
+                # Update
+                body = {"type": "A", "name": domain, "content": public_ip,
+                        "ttl": 1, "proxied": False}
+                try:
+                    self._cf_api(token, zone_id, "PUT",
+                                 f"dns_records/{existing['id']}", body)
+                    results.append(f"  {domain}: updated → {public_ip}")
+                except OSError as e:
+                    results.append(f"  {domain}: update failed — {e}")
+            else:
+                # Create
+                body = {"type": "A", "name": domain, "content": public_ip,
+                        "ttl": 1, "proxied": False}
+                try:
+                    self._cf_api(token, zone_id, "POST", "dns_records", body)
+                    results.append(f"  {domain}: created → {public_ip}")
+                except OSError as e:
+                    results.append(f"  {domain}: create failed — {e}")
+
+        return "DNS records:\n" + "\n".join(results)
 
     def _docker_up(self) -> str | _Skipped | None:
         if self.skip_sudo:

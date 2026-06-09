@@ -78,6 +78,12 @@ else
 fi
 
 # ===========================================================================
+# Runtime dependencies for per-host scripts
+# ===========================================================================
+echo "==> Installing runtime dependencies..."
+apt-get install -y -qq nodejs python3-yaml
+
+# ===========================================================================
 # UFW firewall --- allow SSH (9906), HTTP, HTTPS
 # ===========================================================================
 echo "==> Configuring UFW firewall..."

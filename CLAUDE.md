@@ -61,6 +61,8 @@ The matching `VpsHost` task activates only when `socket.gethostname()` matches.
 
 `VpsHost` expects `.env` at `per_host/<hostname>/.env`. Copy it to the VPS manually (e.g., `scp .env wisp:~/dotfiles/per_host/wisp/.env`). The file is gitignored.
 
+`VpsHost` also expects `subconv.env` alongside `.env` and reads `CLOUDFLARE_API_TOKEN` from `.env` for automatic DNS record management (zone IDs are looked up via the API). When configured, the installer upserts A records on Cloudflare for every domain in the Caddyfile before starting Docker services.
+
 ### Task internals
 
 `link()` delegates to `link_rec()` to create symlinks. Wrong-target destinations are removed before linking.
@@ -72,3 +74,4 @@ Fonts are installed by `AppTask` subclasses (`Fonts`) rather than symlinked. Onl
 - **Clash Verge Rev**: Disable the app's built-in DNS in the GUI — `Script.js` manages DNS (DoH) and TUN directly.
 - **VSCodium**: Regenerate `extensions.txt` with `codium --list-extensions > per_app/vscodium/extensions.txt` after installing or removing extensions.
 - **scripts/test-doh.py**: Benchmarks DoH servers for reachability and latency. Tests domestic servers directly, foreign servers through the proxy at 7897. Re-run when changing DNS providers or if connectivity issues arise.
+- **subconv.py (wisp)**: Subscription converter that reuses `per_app/clash-verge/Script.js` directly — reads it at runtime, appends a stdin/stdout CLI wrapper, runs it via `node`. Python handles YAML/HTTP; Script.js handles transform logic. Reads `subconv.env` for the subscription URL (separate from `.env` — changes more often). Outputs to `subconv/config.yaml`, served as a static file by Caddy, protected by a random path prefix (secret in `subconv.env`). Run via cron every 30 min. Depends on `nodejs` and `python3-yaml` (installed by `vps_bootstrap.sh`). Both per-device (Clash Verge Rev) and centralized workflows use the same Script.js — edit once.
