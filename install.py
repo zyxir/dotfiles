@@ -548,7 +548,7 @@ class VpsHost(HostTask):
             return "❗No docker-compose.yml found."
 
         missing = []
-        for name in (".env", "subconv.env"):
+        for name in (".env", "subconv/subconv.env"):
             if not (host_dir / name).exists():
                 example = f"{name}.example"
                 missing.append(f"  {name} (copy from {example})")
@@ -743,10 +743,6 @@ class VpsHost(HostTask):
             return SKIPPED
         if not (self._host_dir / ".env").exists():
             return SKIPPED
-        # Create subconv/ before Docker does — otherwise Docker creates it
-        # as root and the cron job (running as a normal user) can't write.
-        (self._host_dir / "subconv").mkdir(exist_ok=True)
-
         subprocess.run(
             ["sudo", "docker", "compose", "up", "-d", "--remove-orphans"],
             cwd=self._host_dir,
@@ -756,7 +752,7 @@ class VpsHost(HostTask):
 
     def _setup_cron(self) -> str | _Skipped | None:
         """Ensure subconv.py runs every 30 minutes via the user's crontab."""
-        script = (self._host_dir / "subconv.py").resolve()
+        script = (self._host_dir / "subconv" / "subconv.py").resolve()
         cron_entry = f"*/30 * * * * python3 {script}"
 
         # Read current crontab (may not exist yet)
@@ -795,7 +791,7 @@ class VpsHost(HostTask):
 
         # Read SECRET from subconv.env
         secret = None
-        sub_env = self._host_dir / "subconv.env"
+        sub_env = self._host_dir / "subconv" / "subconv.env"
         if sub_env.is_file():
             for line in sub_env.read_text(encoding="utf-8").splitlines():
                 line = line.strip()

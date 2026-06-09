@@ -7,7 +7,7 @@ in sync — edit Script.js once, both per-device and centralized methods
 pick up the change.
 
 Requires: python3-yaml, nodejs   (installed by vps_bootstrap.sh)
-Output:  ./subconv/<secret>/ZyProxy (served by Caddy)
+Output:  ./<secret>/ZyProxy (served by Caddy from subconv/ root)
 
 The installer creates a cron job that runs this script every 30 min.
 """
@@ -28,8 +28,7 @@ import yaml
 
 HERE = Path(__file__).resolve().parent
 SCRIPT_JS = HERE / "Script.js"
-OUTPUT_DIR = HERE / "subconv"   # subdirectory set below after reading SECRET
-OUTPUT_FILE = None
+OUTPUT_DIR = HERE   # set to HERE/SECRET below
 
 # Read configuration from subconv.env (separate file — changes more often
 # than .env passwords)
@@ -51,7 +50,7 @@ if not SECRET:
     print(f"Error: SECRET not found in {SUB_ENV}", file=sys.stderr)
     sys.exit(1)
 
-OUTPUT_DIR = HERE / "subconv" / SECRET
+OUTPUT_DIR = HERE / SECRET
 OUTPUT_FILE = OUTPUT_DIR / "ZyProxy"
 
 # --- Fetch upstream subscription --------------------------------------

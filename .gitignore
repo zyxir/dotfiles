@@ -3,5 +3,5 @@
 .DS_Store
 __pycache__/
 .env
-subconv/
-subconv.env
+subconv/*/
+subconv/subconv.env
