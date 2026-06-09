@@ -572,9 +572,8 @@ class VpsHost(HostTask):
         missing = []
         for name in (".env", "subconv.env"):
             if not (host_dir / name).exists():
-                missing.append(
-                    f"    scp {name} {self.hostname}:~/dotfiles/per_host/{self.hostname}/{name}"
-                )
+                example = f"{name}.example"
+                missing.append(f"  {name} (copy from {example})")
 
         if not missing:
             return SKIPPED
@@ -741,7 +740,7 @@ class VpsHost(HostTask):
                 except OSError as e:
                     results.append(f"  {domain}: create failed — {e}")
 
-        return "DNS records:\n" + "\n".join(results)
+        return "\n".join(results)
 
     def _docker_up(self) -> str | _Skipped | None:
         if self.skip_sudo:
