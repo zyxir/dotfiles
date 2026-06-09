@@ -533,6 +533,7 @@ class VpsHost(HostTask):
             Step("Configure DNS records", self._configure_dns),
             Step("Start Docker services", self._docker_up),
             Step("Setup cron job for subconv.py", self._setup_cron),
+            Step("Generate subscription config", self._run_subconv),
             Step("Subscription URL", self._show_sub_url),
         ]
 
@@ -783,6 +784,22 @@ class VpsHost(HostTask):
             text=True, check=True,
         )
         return "Cron entry added."
+
+    def _run_subconv(self) -> str | _Skipped | None:
+        """Generate the subscription config immediately (cron would pick
+        it up on the next cycle, but we want it available right away)."""
+        script = self._host_dir / "subconv" / "subconv.py"
+        if not script.is_file():
+            return SKIPPED
+
+        result = subprocess.run(
+            ["python3", str(script)],
+            cwd=self._host_dir,
+            capture_output=True, text=True,
+        )
+        if result.returncode != 0:
+            return f"⚠ {result.stderr.strip().splitlines()[-1]}"
+        return result.stdout.strip().splitlines()[-1]
 
     def _show_sub_url(self) -> str | _Skipped | None:
         """Print the subscription URL so the user can copy it into their
