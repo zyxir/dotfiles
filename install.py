@@ -553,6 +553,8 @@ class VpsHost(HostTask):
             Step("Check for .env files", self._check_env),
             Step("Configure DNS records", self._configure_dns),
             Step("Start Docker services", self._docker_up),
+            Step("Setup cron job for subconv.py", self._setup_cron),
+            Step("Subscription URL", self._show_sub_url),
         ]
 
     @property
@@ -772,6 +774,66 @@ class VpsHost(HostTask):
             check=True,
         )
         return "Docker services started."
+
+    def _setup_cron(self) -> str | _Skipped | None:
+        """Ensure subconv.py runs every 30 minutes via the user's crontab."""
+        script = (self._host_dir / "subconv.py").resolve()
+        cron_entry = f"*/30 * * * * python3 {script}"
+
+        # Read current crontab (may not exist yet)
+        result = subprocess.run(
+            ["crontab", "-l"], capture_output=True, text=True,
+        )
+        current = result.stdout if result.returncode == 0 else ""
+
+        lines = [ln for ln in current.splitlines() if ln.strip()]
+
+        # Check for an existing subconv.py entry
+        for i, line in enumerate(lines):
+            if "subconv.py" in line and not line.strip().startswith("#"):
+                if line.strip() == cron_entry:
+                    return SKIPPED
+                # Entry exists but differs — update it
+                lines[i] = cron_entry
+                subprocess.run(
+                    ["crontab", "-"], input="\n".join(lines) + "\n",
+                    text=True, check=True,
+                )
+                return "Cron entry updated."
+
+        # No existing entry — append
+        lines.append(cron_entry)
+        subprocess.run(
+            ["crontab", "-"], input="\n".join(lines) + "\n",
+            text=True, check=True,
+        )
+        return "Cron entry added."
+
+    def _show_sub_url(self) -> str | _Skipped | None:
+        """Print the subscription URL so the user can copy it into their
+        Clash client."""
+        env = self._read_env(self._host_dir)
+
+        # Read SECRET from subconv.env
+        secret = None
+        sub_env = self._host_dir / "subconv.env"
+        if sub_env.is_file():
+            for line in sub_env.read_text(encoding="utf-8").splitlines():
+                line = line.strip()
+                if line.startswith("SECRET="):
+                    secret = line.split("=", 1)[1].strip().strip("\"'")
+                    break
+
+        if not secret:
+            return "No SECRET found in subconv.env."
+
+        domains = self._parse_caddyfile(self._host_dir, env)
+        if not domains:
+            return "No domain blocks found in Caddyfile."
+
+        return "\n".join(
+            f"  https://{d}/{secret}/config.yaml" for d in domains
+        )
 
 
 _ELEVATE_PS1 = """\

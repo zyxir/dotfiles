@@ -9,8 +9,7 @@ pick up the change.
 Requires: python3-yaml, nodejs   (installed by vps_bootstrap.sh)
 Output:  ./subconv/<secret>/config.yaml (served by Caddy)
 
-Run via cron every 30 min:
-  */30 * * * * python3 ~/dotfiles/per_host/wisp/subconv.py
+The installer creates a cron job that runs this script every 30 min.
 """
 
 import json
