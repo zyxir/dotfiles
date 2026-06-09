@@ -7,7 +7,7 @@ in sync — edit Script.js once, both per-device and centralized methods
 pick up the change.
 
 Requires: python3-yaml, nodejs   (installed by vps_bootstrap.sh)
-Output:  ./subconv/<secret>/config.yaml (served by Caddy)
+Output:  ./subconv/<secret>/ZyProxy (served by Caddy)
 
 The installer creates a cron job that runs this script every 30 min.
 """
@@ -53,7 +53,7 @@ if not SECRET:
     sys.exit(1)
 
 OUTPUT_DIR = HERE / "subconv" / SECRET
-OUTPUT_FILE = OUTPUT_DIR / "config.yaml"
+OUTPUT_FILE = OUTPUT_DIR / "ZyProxy"
 
 # --- Fetch upstream subscription --------------------------------------
 

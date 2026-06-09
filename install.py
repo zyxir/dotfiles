@@ -832,7 +832,7 @@ class VpsHost(HostTask):
             return "No domain blocks found in Caddyfile."
 
         return "\n".join(
-            f"  https://{d}/{secret}/config.yaml" for d in domains
+            f"  https://{d}/{secret}/ZyProxy" for d in domains
         )
 
 
