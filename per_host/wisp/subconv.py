@@ -138,7 +138,15 @@ except json.JSONDecodeError as e:
     print(f"Error: invalid JSON from transform: {e}", file=sys.stderr)
     sys.exit(1)
 
-OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+try:
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+except PermissionError:
+    print(f"Error: Cannot write to {OUTPUT_DIR.parent} — "
+          f"it may be owned by root (Docker creates it on first run).\n"
+          f"Fix: sudo chown -R $(whoami) {OUTPUT_DIR.parent}",
+          file=sys.stderr)
+    sys.exit(1)
+
 output_yaml = yaml.dump(transformed, allow_unicode=True, sort_keys=False)
 
 with open(OUTPUT_FILE, "w", encoding="utf-8") as f:

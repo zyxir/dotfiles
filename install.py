@@ -431,10 +431,7 @@ class ClashVerge(AppTask):
                 "io.github.clash-verge-rev.clash-verge-rev"
             )
         else:
-            clash_dir = (
-                "~/AppData/Roaming/"
-                "io.github.clash-verge-rev.clash-verge-rev"
-            )
+            clash_dir = "~/AppData/Roaming/io.github.clash-verge-rev.clash-verge-rev"
         if not link(
             "./per_app/clash-verge/Script.js",
             f"{clash_dir}/profiles/Script.js",
@@ -623,8 +620,7 @@ class VpsHost(HostTask):
         return domains
 
     @staticmethod
-    def _cf_zone_id(token: str, domain: str,
-                    cache: dict[str, str]) -> str | None:
+    def _cf_zone_id(token: str, domain: str, cache: dict[str, str]) -> str | None:
         """Look up the Cloudflare Zone ID for a domain's root zone.
 
         The root zone is the last two labels of the domain (e.g.,
@@ -638,7 +634,10 @@ class VpsHost(HostTask):
             return cache[root]
 
         url = f"https://api.cloudflare.com/client/v4/zones?name={urllib.parse.quote(root, safe='')}"
-        headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        }
         req = urllib.request.Request(url, headers=headers, method="GET")
         try:
             with urllib.request.urlopen(req, timeout=10) as resp:
@@ -653,8 +652,9 @@ class VpsHost(HostTask):
         return None
 
     @staticmethod
-    def _cf_api(token: str, zone_id: str, method: str, path: str,
-                body: dict | None = None) -> dict:
+    def _cf_api(
+        token: str, zone_id: str, method: str, path: str, body: dict | None = None
+    ) -> dict:
         """Call Cloudflare API. Raises on HTTP / network errors."""
         url = f"https://api.cloudflare.com/client/v4/zones/{zone_id}/{path}"
         headers = {
@@ -697,13 +697,17 @@ class VpsHost(HostTask):
         for domain in domains:
             zone_id = self._cf_zone_id(token, domain, zone_cache)
             if not zone_id:
-                results.append(f"  {domain}: zone not found — check API token permissions")
+                results.append(
+                    f"  {domain}: zone not found — check API token permissions"
+                )
                 continue
 
             # Look up existing A record
             try:
                 resp = self._cf_api(
-                    token, zone_id, "GET",
+                    token,
+                    zone_id,
+                    "GET",
                     f"dns_records?type=A&name={urllib.parse.quote(domain, safe='')}",
                 )
             except OSError as e:
@@ -722,18 +726,29 @@ class VpsHost(HostTask):
                     results.append(f"  {domain}: unchanged ({public_ip})")
                     continue
                 # Update
-                body = {"type": "A", "name": domain, "content": public_ip,
-                        "ttl": 1, "proxied": False}
+                body = {
+                    "type": "A",
+                    "name": domain,
+                    "content": public_ip,
+                    "ttl": 1,
+                    "proxied": False,
+                }
                 try:
-                    self._cf_api(token, zone_id, "PUT",
-                                 f"dns_records/{existing['id']}", body)
+                    self._cf_api(
+                        token, zone_id, "PUT", f"dns_records/{existing['id']}", body
+                    )
                     results.append(f"  {domain}: updated → {public_ip}")
                 except OSError as e:
                     results.append(f"  {domain}: update failed — {e}")
             else:
                 # Create
-                body = {"type": "A", "name": domain, "content": public_ip,
-                        "ttl": 1, "proxied": False}
+                body = {
+                    "type": "A",
+                    "name": domain,
+                    "content": public_ip,
+                    "ttl": 1,
+                    "proxied": False,
+                }
                 try:
                     self._cf_api(token, zone_id, "POST", "dns_records", body)
                     results.append(f"  {domain}: created → {public_ip}")
@@ -747,6 +762,10 @@ class VpsHost(HostTask):
             return SKIPPED
         if not (self._host_dir / ".env").exists():
             return SKIPPED
+        # Create subconv/ before Docker does — otherwise Docker creates it
+        # as root and the cron job (running as a normal user) can't write.
+        (self._host_dir / "subconv").mkdir(exist_ok=True)
+
         subprocess.run(
             ["sudo", "docker", "compose", "up", "-d", "--remove-orphans"],
             cwd=self._host_dir,
@@ -872,8 +891,14 @@ if __name__ == "__main__":
     # Parse command line arguments
     parser = argparse.ArgumentParser(description="Install Zyxir's dotfiles.")
     parser.add_argument("--debug", help="turn on debug mode", action="store_true")
-    parser.add_argument("--proxy", help="proxy URL for downloads (e.g. http://127.0.0.1:7897)")
-    parser.add_argument("--skip-sudo", help="skip sudo operations (docker compose, etc.)", action="store_true")
+    parser.add_argument(
+        "--proxy", help="proxy URL for downloads (e.g. http://127.0.0.1:7897)"
+    )
+    parser.add_argument(
+        "--skip-sudo",
+        help="skip sudo operations (docker compose, etc.)",
+        action="store_true",
+    )
     args = parser.parse_args()
     debug: bool = args.debug
 
@@ -912,9 +937,7 @@ if __name__ == "__main__":
         proxy_handler = urllib.request.ProxyHandler(
             {"http": proxy_url, "https": proxy_url}
         )
-        urllib.request.install_opener(
-            urllib.request.build_opener(proxy_handler)
-        )
+        urllib.request.install_opener(urllib.request.build_opener(proxy_handler))
 
     # Setup logging
     tracker = setup_logging(debug=debug)
@@ -934,7 +957,9 @@ if __name__ == "__main__":
     # Define platform-specific tasks
     env = _environment()
     proxy_display = proxy_url if proxy_url else "none"
-    print(f"{C_INFO}▶{C_RESET} Environment: {C_INFO}{env}{C_RESET}  |  Platform: {C_INFO}{platform.system()}{C_RESET}  |  Proxy: {C_INFO}{proxy_display}{C_RESET}")
+    print(
+        f"{C_INFO}▶{C_RESET} Environment: {C_INFO}{env}{C_RESET}  |  Platform: {C_INFO}{platform.system()}{C_RESET}  |  Proxy: {C_INFO}{proxy_display}{C_RESET}"
+    )
     print()
 
     tasks: list[Task] = []
