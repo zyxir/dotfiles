@@ -1,7 +1,16 @@
+# VS Code
 /.vscode/*
 !/.vscode/settings.json
+
+# macOS
 .DS_Store
+
+# Python
 __pycache__/
+
+# env secrets
 .env
-subconv/secret/
-subconv.env
+
+# Wisp subconv
+per_host/wisp/subconv/secret/
+per_host/wisp/subconv/subconv.env
