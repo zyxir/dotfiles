@@ -1,0 +1,26 @@
+# Minimal macOS packages — every entry is audited and intentional.
+# Usage: brew bundle install --file=bootstrap/macos/Brewfile
+
+# --- Terminal & shell tools ---
+brew "ripgrep"
+brew "fd"
+cask "ghostty"
+
+# --- Editors ---
+brew "neovim"
+cask "vscodium"
+
+# --- Browsers ---
+cask "firefox"
+cask "google-chrome"
+
+# --- Python toolchain ---
+brew "python@3.13"
+brew "uv"
+
+# --- Input & knowledge ---
+cask "squirrel-app"
+cask "logseq"
+
+# --- Connectivity ---
+cask "tailscale-app"

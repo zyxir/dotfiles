@@ -54,13 +54,24 @@ The matching `VpsHost` task activates only when `socket.gethostname()` matches.
 |------|--------|
 | wisp | `per_host/wisp/{docker-compose.yml,Caddyfile,.env.example}` |
 
-`per_host/vps_bootstrap.sh` is a shared Vultr startup script for Debian 12 (saved as "VPS Bootstrap"). It installs Docker, hardens SSH (port 9906, key-only), configures UFW, fail2ban, and unattended-upgrades — everything before `docker-compose.yml`. Paste it into Vultr's "Startup Script" field when creating an instance.
-
 `install.py` uses two task types: `AppTask` (gated by `skip_envs`) and `HostTask` (gated by hostname match). To add a new app, subclass `AppTask` and append it to the platform's task list. To add a new host, create `per_host/<hostname>/` and the Linux task list auto-discovers it.
 
 `VpsHost` expects `.env` at `per_host/<hostname>/.env`. Copy it to the VPS manually (e.g., `scp .env wisp:~/dotfiles/per_host/wisp/.env`). The file is gitignored.
 
 `VpsHost` also expects `subconv/subconv.env` alongside `.env` and reads `CLOUDFLARE_API_TOKEN` from `.env` for automatic DNS record management (zone IDs are looked up via the API). When configured, the installer upserts A records on Cloudflare for every domain in the Caddyfile before starting Docker services.
+
+### Bootstrap assets (`bootstrap/`)
+
+Files for cold-starting a machine — referenced by setup docs, not used by `install.py` directly.
+
+| Platform | Asset | Purpose |
+|----------|-------|---------|
+| macOS | `bootstrap/macos/Brewfile` | Minimal package list (`brew bundle install --file=...`) |
+| Windows | `bootstrap/windows/winget-packages.json` | Minimal package list (`winget import -i ...`) |
+| Windows | `bootstrap/windows/disable-ctrl-space.reg` | Disable Ctrl+Space IME shortcut (conflicts with editor hotkeys) |
+| VPS | `bootstrap/vps/vps_bootstrap.sh` | Shared Vultr startup script for Debian 12 — installs Docker, hardens SSH (port 9906, key-only), configures UFW, fail2ban, unattended-upgrades. Paste into Vultr's "Startup Script" field when creating an instance. |
+
+The Brewfile and winget JSON are minimal, audited lists — not a full dump of every installed package. They contain only what's essential on any machine.
 
 ### Task internals
 
@@ -72,4 +83,4 @@ Fonts are installed by `AppTask` subclasses (`Fonts`) rather than symlinked. Onl
 
 - **VSCodium**: Regenerate `extensions.txt` with `codium --list-extensions > per_app/vscodium/extensions.txt` after installing or removing extensions.
 - **scripts/test-doh.py**: Benchmarks DoH servers for reachability and latency. Tests domestic servers directly, foreign servers through the proxy at 7897. Re-run when changing DNS providers or if connectivity issues arise.
-- **subconv (wisp)**: Subscription converter under `per_host/wisp/subconv/`. `subconv.py` reuses `Script.js` directly — reads it at runtime, appends a stdin/stdout CLI wrapper, runs it via `node`. Python handles YAML/HTTP; Script.js handles transform logic. Reads `subconv/subconv.env` for the subscription URL (separate from `.env` — changes more often). Outputs to `subconv/secret/<secret>/ZyProxy`, served as a static file by Caddy at `subconv.<domain>/<secret>/ZyProxy`. Run via cron every 30 min. Depends on `nodejs` and `python3-yaml` (installed by `vps_bootstrap.sh`). `Script.js` can also be copied manually into Clash Verge Rev as a backup when the VPS is unavailable.
+- **subconv (wisp)**: Subscription converter under `per_host/wisp/subconv/`. `subconv.py` reuses `Script.js` directly — reads it at runtime, appends a stdin/stdout CLI wrapper, runs it via `node`. Python handles YAML/HTTP; Script.js handles transform logic. Reads `subconv/subconv.env` for the subscription URL (separate from `.env` — changes more often). Outputs to `subconv/secret/<secret>/ZyProxy`, served as a static file by Caddy at `subconv.<domain>/<secret>/ZyProxy`. Run via cron every 30 min. Depends on `nodejs` and `python3-yaml` (installed by `bootstrap/vps/vps_bootstrap.sh`). `Script.js` can also be copied manually into Clash Verge Rev as a backup when the VPS is unavailable.

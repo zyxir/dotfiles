@@ -6,7 +6,7 @@ It runs the *same* Script.js logic through Node.js so both workflows stay
 in sync — edit Script.js once, both per-device and centralized methods
 pick up the change.
 
-Requires: python3-yaml, nodejs   (installed by vps_bootstrap.sh)
+Requires: python3-yaml, nodejs   (installed by bootstrap/vps/vps_bootstrap.sh)
 Output:  ./secret/<secret>/ZyProxy (served by Caddy from subconv/ root)
 
 The installer creates a cron job that runs this script every 30 min.

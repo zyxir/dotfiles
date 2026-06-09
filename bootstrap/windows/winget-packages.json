@@ -1,0 +1,7 @@
+{
+  "$schema": "https://aka.ms/winget-packages.schema.json",
+  "Sources": [{
+    "$comment": "Minimal Windows packages — every entry is audited and intentional. Usage: winget import -i bootstrap/windows/winget-packages.json",
+    "Packages": []
+  }]
+}
