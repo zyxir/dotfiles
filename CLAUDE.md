@@ -60,6 +60,8 @@ The matching `VpsHost` task activates only when `socket.gethostname()` matches.
 
 `VpsHost` also expects `subconv/subconv.env` alongside `.env` and reads `CLOUDFLARE_API_TOKEN` from `.env` for automatic DNS record management (zone IDs are looked up via the API). When configured, the installer upserts A records on Cloudflare for every domain in the Caddyfile before starting Docker services.
 
+`VpsHost` includes a Tailscale check step. If Tailscale is installed but not authenticated, it prints a hint to run `sudo tailscale up --ssh`. Auth is manual (OAuth via browser) — no secrets needed in `.env`.
+
 ### Bootstrap assets (`bootstrap/`)
 
 Files for cold-starting a machine — referenced by setup docs, not used by `install.py` directly.
@@ -69,7 +71,7 @@ Files for cold-starting a machine — referenced by setup docs, not used by `ins
 | macOS | `bootstrap/macos/Brewfile` | Minimal package list (`brew bundle install --file=...`) |
 | Windows | `bootstrap/windows/winget-packages.json` | Minimal package list (`winget import -i ...`) |
 | Windows | `bootstrap/windows/disable-ctrl-space.reg` | Disable Ctrl+Space IME shortcut (conflicts with editor hotkeys) |
-| VPS | `bootstrap/vps/vps_bootstrap.sh` | Shared Vultr startup script for Debian 12 — installs Docker, hardens SSH (port 9906, key-only), configures UFW, fail2ban, unattended-upgrades. Paste into Vultr's "Startup Script" field when creating an instance. |
+| VPS | `bootstrap/vps/vps_bootstrap.sh` | Shared Vultr startup script for Debian 12 — installs Docker and Tailscale, hardens SSH (port 9906, key-only), configures UFW (including tailscale0 interface), fail2ban, unattended-upgrades. Paste into Vultr's "Startup Script" field when creating an instance. |
 
 The Brewfile and winget JSON are minimal, audited lists — not a full dump of every installed package. They contain only what's essential on any machine.
 

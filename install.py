@@ -534,6 +534,7 @@ class VpsHost(HostTask):
             Step("Start Docker services", self._docker_up),
             Step("Setup cron job for subconv.py", self._setup_cron),
             Step("Generate subscription config", self._run_subconv),
+            Step("Check Tailscale", self._tailscale_check),
             Step("Subscription URL", self._show_sub_url),
         ]
 
@@ -784,6 +785,32 @@ class VpsHost(HostTask):
             text=True, check=True,
         )
         return "Cron entry added."
+
+    def _tailscale_check(self) -> str | _Skipped | None:
+        """If Tailscale is installed but not authenticated, print a hint."""
+        if shutil.which("tailscale") is None:
+            return "Tailscale not installed (bootstrap may not have run)."
+
+        result = subprocess.run(
+            ["tailscale", "status", "--json"], capture_output=True, text=True
+        )
+        if result.returncode != 0:
+            return "⚠ tailscaled not running (check systemctl status tailscaled)."
+
+        try:
+            status = json.loads(result.stdout)
+        except json.JSONDecodeError:
+            return "⚠ Could not parse Tailscale status."
+
+        backend = status.get("BackendState", "")
+        if backend != "NeedsLogin":
+            return SKIPPED
+
+        return (
+            "Tailscale is installed but not yet authenticated.\n"
+            "  Run: sudo tailscale up --ssh\n"
+            "  Then visit the URL shown to join this machine to your tailnet."
+        )
 
     def _run_subconv(self) -> str | _Skipped | None:
         """Generate the subscription config immediately (cron would pick

@@ -78,6 +78,15 @@ else
 fi
 
 # ===========================================================================
+# Tailscale --- mesh VPN for SSH and internal services
+# ===========================================================================
+echo "==> Installing Tailscale..."
+if ! command -v tailscale &>/dev/null; then
+    curl -fsSL https://tailscale.com/install.sh | sh
+    systemctl enable tailscaled
+fi
+
+# ===========================================================================
 # Runtime dependencies for per-host scripts
 # ===========================================================================
 echo "==> Installing runtime dependencies..."
@@ -96,6 +105,7 @@ ufw allow 9906/tcp comment 'SSH'
 ufw allow 80/tcp   comment 'HTTP'
 ufw allow 443/tcp  comment 'HTTPS'
 ufw allow 443/udp  comment 'HTTP/3 QUIC'
+ufw allow in on tailscale0 comment 'Tailscale mesh'
 ufw --force enable
 
 # ===========================================================================
