@@ -52,7 +52,7 @@ The matching `VpsHost` task activates only when `socket.gethostname()` matches.
 
 | Host | Source |
 |------|--------|
-| wisp | `per_host/wisp/{docker-compose.yml,Caddyfile,.env.example}` |
+| wisp | `per_host/wisp/{docker-compose.yml,Caddyfile,.env.example,mirror/,subconv/}` |
 
 `install.py` uses two task types: `AppTask` (gated by `skip_envs`) and `HostTask` (gated by hostname match). To add a new app, subclass `AppTask` and append it to the platform's task list. To add a new host, create `per_host/<hostname>/` and the Linux task list auto-discovers it.
 
@@ -85,4 +85,6 @@ Fonts are installed by `AppTask` subclasses (`Fonts`) rather than symlinked. Onl
 
 - **VSCodium**: Regenerate `extensions.txt` with `codium --list-extensions > per_app/vscodium/extensions.txt` after installing or removing extensions.
 - **scripts/test-doh.py**: Benchmarks DoH servers for reachability and latency. Tests domestic servers directly, foreign servers through the proxy at 7897. Re-run when changing DNS providers or if connectivity issues arise.
-- **subconv (wisp)**: Subscription converter under `per_host/wisp/subconv/`. `subconv.py` reuses `Script.js` directly — reads it at runtime, appends a stdin/stdout CLI wrapper, runs it via `node`. Python handles YAML/HTTP; Script.js handles transform logic. Reads `subconv/subconv.env` for the subscription URL (separate from `.env` — changes more often). Outputs to `subconv/secret/<secret>/ZyProxy`, served as a static file by Caddy at `subconv.<domain>/<secret>/ZyProxy`. Run via cron every 30 min. Depends on `nodejs` and `python3-yaml` (installed by `bootstrap/vps/vps_bootstrap.sh`). `Script.js` can also be copied manually into Clash Verge Rev as a backup when the VPS is unavailable.
+- **subconv (wisp)**: Subscription converter under `per_host/wisp/subconv/`. `subconv.py` reuses `Script.js` directly — reads it at runtime, appends a stdin/stdout CLI wrapper, runs it via `node`. Python handles YAML/HTTP; Script.js handles transform logic. Reads `subconv/subconv.env` for the subscription URL (separate from `.env` — changes more often). Outputs to `subconv/srv/<secret>/ZyProxy`, served as a static file by Caddy at `subconv.<domain>/<secret>/ZyProxy`. Run via cron every 30 min. Depends on `nodejs` and `python3-yaml` (installed by `bootstrap/vps/vps_bootstrap.sh`). `Script.js` can also be copied manually into Clash Verge Rev as a backup when the VPS is unavailable.
+
+- **mirror (wisp)**: Download mirror under `per_host/wisp/mirror/`. `mirror.py` fetches files (e.g., font zips) from upstream sources into `mirror/srv/`, served by Caddy at `mirror.<domain>/`. Run via cron weekly (Sunday 3am). Add new download targets in `mirror.py` as needed.

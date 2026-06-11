@@ -534,7 +534,7 @@ class VpsHost(HostTask):
             Step("Check for .env files", self._check_env),
             Step("Configure DNS records", self._configure_dns),
             Step("Start Docker services", self._docker_up),
-            Step("Setup cron job for subconv.py", self._setup_cron),
+            Step("Setup cron jobs", self._setup_crons),
             Step("Generate subscription config", self._run_subconv),
             Step("Check Tailscale", self._tailscale_check),
             Step("Subscription URL", self._show_sub_url),
@@ -769,12 +769,14 @@ class VpsHost(HostTask):
         )
         return "Docker services started."
 
-    def _setup_cron(self) -> str | _Skipped | None:
-        """Ensure subconv.py runs every 30 minutes via the user's crontab."""
-        script = (self._host_dir / "subconv" / "subconv.py").resolve()
-        cron_entry = f"*/30 * * * * python3 {script}"
+    def _ensure_cron(
+        self, keyword: str, entry: str
+    ) -> str | _Skipped | None:
+        """Ensure *entry* is present in the user's crontab.
 
-        # Read current crontab (may not exist yet)
+        Uses *keyword* to find an existing entry (matched by substring).
+        Returns SKIPPED if the entry is already present, or a status string.
+        """
         result = subprocess.run(
             ["crontab", "-l"], capture_output=True, text=True,
         )
@@ -782,26 +784,53 @@ class VpsHost(HostTask):
 
         lines = [ln for ln in current.splitlines() if ln.strip()]
 
-        # Check for an existing subconv.py entry
         for i, line in enumerate(lines):
-            if "subconv.py" in line and not line.strip().startswith("#"):
-                if line.strip() == cron_entry:
+            if keyword in line and not line.strip().startswith("#"):
+                if line.strip() == entry:
                     return SKIPPED
-                # Entry exists but differs — update it
-                lines[i] = cron_entry
+                lines[i] = entry
                 subprocess.run(
                     ["crontab", "-"], input="\n".join(lines) + "\n",
                     text=True, check=True,
                 )
-                return "Cron entry updated."
+                return "updated"
 
-        # No existing entry — append
-        lines.append(cron_entry)
+        lines.append(entry)
         subprocess.run(
             ["crontab", "-"], input="\n".join(lines) + "\n",
             text=True, check=True,
         )
-        return "Cron entry added."
+        return "added"
+
+    def _setup_crons(self) -> str | _Skipped | None:
+        """Ensure subconv.py and mirror.py cron entries exist, then show status."""
+        subconv = (self._host_dir / "subconv" / "subconv.py")
+        mirror = (self._host_dir / "mirror" / "mirror.py")
+
+        jobs: list[tuple[str, str, Path]] = [
+            ("subconv", "every 30 min", subconv),
+            ("mirror",  "Sun 3am",       mirror),
+        ]
+
+        for name, schedule, script in jobs:
+            entry = self._schedule_to_cron(schedule) + f" python3 {script.resolve()}"
+            status = self._ensure_cron(name, entry)
+            action = status  # "added", "updated", or SKIPPED
+            logging.debug("cron %s: %s", name, "ok" if action == SKIPPED else action)
+
+        lines = ["  Cron jobs:"]
+        for name, schedule, script in jobs:
+            lines.append(f"    {name}: {schedule}  →  python3 {script.resolve()}")
+
+        return "\n".join(lines)
+
+    @staticmethod
+    def _schedule_to_cron(schedule: str) -> str:
+        """Convert a human schedule label to a cron expression."""
+        return {
+            "every 30 min": "*/30 * * * *",
+            "Sun 3am": "0 3 * * 0",
+        }[schedule]
 
     def _tailscale_check(self) -> str | _Skipped | None:
         """If Tailscale is installed but not authenticated, print a hint."""

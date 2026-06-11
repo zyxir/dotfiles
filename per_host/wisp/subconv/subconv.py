@@ -7,7 +7,7 @@ in sync — edit Script.js once, both per-device and centralized methods
 pick up the change.
 
 Requires: python3-yaml, nodejs   (installed by bootstrap/vps/vps_bootstrap.sh)
-Output:  ./secret/<secret>/ZyProxy (served by Caddy from subconv/ root)
+Output:  ./srv/<secret>/ZyProxy (served by Caddy from subconv/ root)
 
 The installer creates a cron job that runs this script every 30 min.
 """
@@ -50,7 +50,7 @@ if not SECRET:
     print(f"Error: SECRET not found in {SUB_ENV}", file=sys.stderr)
     sys.exit(1)
 
-OUTPUT_DIR = HERE / "secret" / SECRET
+OUTPUT_DIR = HERE / "srv" / SECRET
 OUTPUT_FILE = OUTPUT_DIR / "ZyProxy"
 
 # --- Fetch upstream subscription --------------------------------------

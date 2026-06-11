@@ -4,6 +4,11 @@
 # Protected by a random path prefix (same approach your subscription
 # provider uses).  The secret lives in subconv.env.
 subconv.{$DOMAIN:localhost} {
-    root * /srv/subconv/secret
+    root * /srv/subconv
+    file_server
+}
+
+mirror.{$DOMAIN:localhost} {
+    root * /srv/mirror
     file_server
 }

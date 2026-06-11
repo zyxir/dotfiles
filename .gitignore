@@ -12,5 +12,11 @@ __pycache__/
 .env
 
 # Wisp subconv
-per_host/wisp/subconv/secret/
+per_host/wisp/subconv/srv/*
+!per_host/wisp/subconv/srv/.gitkeep
 per_host/wisp/subconv/subconv.env
+
+# Wisp mirror
+per_host/wisp/mirror/srv/*
+!per_host/wisp/mirror/srv/.gitkeep
+per_host/wisp/mirror/mirror.env
