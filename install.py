@@ -664,7 +664,7 @@ class VpsHost(HostTask):
 
         domains = self._parse_caddyfile(self._host_dir, env)
         if not domains:
-            return "No domain blocks found in Caddyfile."
+            return "⚠ No domain blocks found in Caddyfile."
 
         # Discover public IP (this runs on the VPS, so it IS the VPS IP)
         try:
@@ -676,13 +676,15 @@ class VpsHost(HostTask):
         # Cache zone IDs so we don't re-fetch for subdomains of the same zone
         zone_cache: dict[str, str] = {}
 
-        results: list[str] = []
+        unchanged = 0
+        updated: list[str] = []
+        created: list[str] = []
+        errors: list[str] = []
+
         for domain in domains:
             zone_id = self._cf_zone_id(token, domain, zone_cache)
             if not zone_id:
-                results.append(
-                    f"  {domain}: zone not found — check API token permissions"
-                )
+                errors.append(f"{domain}: zone not found")
                 continue
 
             # Look up existing A record
@@ -694,19 +696,19 @@ class VpsHost(HostTask):
                     f"dns_records?type=A&name={urllib.parse.quote(domain, safe='')}",
                 )
             except OSError as e:
-                results.append(f"  {domain}: API error — {e}")
+                errors.append(f"{domain}: {e}")
                 continue
 
             if not resp.get("success"):
                 errs = resp.get("errors", ["unknown"])
-                results.append(f"  {domain}: API error — {errs}")
+                errors.append(f"{domain}: {errs}")
                 continue
 
             records = resp.get("result", [])
             if records:
                 existing = records[0]
                 if existing.get("content") == public_ip:
-                    results.append(f"  {domain}: unchanged ({public_ip})")
+                    unchanged += 1
                     continue
                 # Update
                 body = {
@@ -720,9 +722,9 @@ class VpsHost(HostTask):
                     self._cf_api(
                         token, zone_id, "PUT", f"dns_records/{existing['id']}", body
                     )
-                    results.append(f"  {domain}: updated → {public_ip}")
+                    updated.append(domain)
                 except OSError as e:
-                    results.append(f"  {domain}: update failed — {e}")
+                    errors.append(f"{domain}: update failed — {e}")
             else:
                 # Create
                 body = {
@@ -734,11 +736,24 @@ class VpsHost(HostTask):
                 }
                 try:
                     self._cf_api(token, zone_id, "POST", "dns_records", body)
-                    results.append(f"  {domain}: created → {public_ip}")
+                    created.append(domain)
                 except OSError as e:
-                    results.append(f"  {domain}: create failed — {e}")
+                    errors.append(f"{domain}: create failed — {e}")
 
-        return "\n".join(results)
+        parts: list[str] = []
+        if updated:
+            parts.append(f"{len(updated)} updated")
+        if created:
+            parts.append(f"{len(created)} created")
+        if unchanged:
+            parts.append(f"{len(unchanged)} unchanged")
+        summary = ", ".join(parts) if parts else "no records evaluated"
+
+        lines = [f"{summary} ({public_ip})."]
+        for err in errors:
+            lines.append(f"  ⚠ {err}")
+
+        return "\n".join(lines)
 
     def _docker_up(self) -> str | _Skipped | None:
         if self.skip_sudo:
@@ -789,7 +804,7 @@ class VpsHost(HostTask):
     def _tailscale_check(self) -> str | _Skipped | None:
         """If Tailscale is installed but not authenticated, print a hint."""
         if shutil.which("tailscale") is None:
-            return "Tailscale not installed (bootstrap may not have run)."
+            return "⚠ Tailscale not installed — run bootstrap script first."
 
         result = subprocess.run(
             ["tailscale", "status", "--json"], capture_output=True, text=True
@@ -807,9 +822,7 @@ class VpsHost(HostTask):
             return SKIPPED
 
         return (
-            "Tailscale is installed but not yet authenticated.\n"
-            "  Run: sudo tailscale up --ssh\n"
-            "  Then visit the URL shown to join this machine to your tailnet."
+            "⚠ Tailscale not authenticated — run: sudo tailscale up"
         )
 
     def _run_subconv(self) -> str | _Skipped | None:
@@ -843,11 +856,11 @@ class VpsHost(HostTask):
                     break
 
         if not secret:
-            return "No SECRET found in subconv.env."
+            return "⚠ No SECRET found in subconv.env."
 
         domains = self._parse_caddyfile(self._host_dir, env)
         if not domains:
-            return "No domain blocks found in Caddyfile."
+            return "⚠ No domain blocks found in Caddyfile."
 
         return "\n".join(
             f"  https://{d}/{secret}/ZyProxy" for d in domains
