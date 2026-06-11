@@ -818,7 +818,7 @@ class VpsHost(HostTask):
 
         jobs: list[tuple[str, str, Path]] = [
             ("subconv", "every 30 min", subconv),
-            ("mirror",  "Sun 3am",       mirror),
+            ("mirror",  "daily",          mirror),
         ]
 
         for name, schedule, script in jobs:
@@ -838,7 +838,7 @@ class VpsHost(HostTask):
         """Convert a human schedule label to a cron expression."""
         return {
             "every 30 min": "*/30 * * * *",
-            "Sun 3am": "0 3 * * 0",
+            "daily": "0 3 * * *",
         }[schedule]
 
     def _tailscale_check(self) -> str | _Skipped | None:
