@@ -1025,6 +1025,7 @@ if __name__ == "__main__":
 
     # Detect and configure proxy for downloads
     proxy_url = _proxy_url(args.proxy)
+    proxy_status = ""
     if proxy_url:
         os.environ.setdefault("http_proxy", proxy_url)
         os.environ.setdefault("https_proxy", proxy_url)
@@ -1033,6 +1034,12 @@ if __name__ == "__main__":
             {"http": proxy_url, "https": proxy_url}
         )
         urllib.request.install_opener(urllib.request.build_opener(proxy_handler))
+        try:
+            req = urllib.request.Request("https://github.com", method="HEAD")
+            urllib.request.urlopen(req, timeout=5)
+            proxy_status = " (reachable)"
+        except Exception:
+            proxy_status = " (unreachable)"
 
     # Setup logging
     tracker = setup_logging(debug=debug)
@@ -1051,7 +1058,7 @@ if __name__ == "__main__":
 
     # Define platform-specific tasks
     env = _environment()
-    proxy_display = proxy_url if proxy_url else "none"
+    proxy_display = (proxy_url or "none") + proxy_status
     print(
         f"{C_INFO}▶{C_RESET} Environment: {C_INFO}{env}{C_RESET}  |  Platform: {C_INFO}{platform.system()}{C_RESET}  |  Proxy: {C_INFO}{proxy_display}{C_RESET}"
     )
