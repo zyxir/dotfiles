@@ -1,6 +1,15 @@
 // Clash Verge Rev Extension Script
 // Edit below and refresh the profile in the app to apply.
 
+// Wisp's Tailscale IP, injected by subconv.py via TAILSCALE_WISP_IP env var.
+// Falls back to null in Clash Verge Rev extension context (no process.env).
+var WISP_TAILSCALE_IP = null;
+try {
+  WISP_TAILSCALE_IP = process.env.TAILSCALE_WISP_IP || null;
+} catch (e) {
+  // Not running in Node.js — ignore
+}
+
 function main(config, profileName) {
 
   if (!config) return config;
@@ -46,6 +55,15 @@ const NAMESERVER_POLICY = {
 
 function overwriteDns(config) {
 
+  // Build hosts map — wisp resolves to its Tailscale IP so we don't need
+  // MagicDNS (which is incompatible with Clash's fake-ip DNS hijacking).
+  var hosts = {};
+  var fakeIpFilterExtra = [];
+  if (WISP_TAILSCALE_IP) {
+    hosts["wisp"] = WISP_TAILSCALE_IP;
+    fakeIpFilterExtra.push("wisp");
+  }
+
   config.dns = Object.assign({}, config.dns, {
     "default-nameserver": BOOTSTRAP_RESOLVERS,
     nameserver: DIRECT_DOH,
@@ -55,11 +73,12 @@ function overwriteDns(config) {
 
     "prefer-h3": true,
     "ipv6": false,
-    "use-hosts": false,
+    "use-hosts": true,
     "use-system-hosts": false,
+    hosts: hosts,
 
     // Domains excluded from the fake-ip range — must resolve to real IPs
-    "fake-ip-filter": [
+    "fake-ip-filter": [].concat([
       "+.local",
       "+.lan",
       "+.internal",
@@ -80,7 +99,7 @@ function overwriteDns(config) {
       "lancache.steamcontent.com",
       "dns.msftncsi.com",
       "+.push.apple.com",
-    ],
+    ], fakeIpFilterExtra),
   });
 
 }
@@ -476,6 +495,7 @@ const NON_IP_RULES = [
 
 // IP rules — checked after non-IP (IP/CIDR matching)
 const IP_RULES = [
+  "IP-CIDR,100.64.0.0/10,DIRECT",  // Tailscale — bypass proxy for all tailnet traffic
   "RULE-SET,telegram_ip,✈️ 电报信息",
   "RULE-SET,stream_ip,US - 自动选择",
   "RULE-SET,lan_ip,DIRECT",

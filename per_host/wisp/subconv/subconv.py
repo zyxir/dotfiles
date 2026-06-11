@@ -62,6 +62,30 @@ if not SECRET:
 OUTPUT_DIR = HERE / "srv" / SECRET
 OUTPUT_FILE = OUTPUT_DIR / "ZyProxy"
 
+# --- Get Wisp's Tailscale IP (for hosts-based DNS bypass) --------------
+
+WISP_TAILSCALE_IP = None
+try:
+    result = subprocess.run(
+        ["tailscale", "ip", "-4"],
+        capture_output=True, text=True, timeout=5,
+    )
+    if result.returncode == 0:
+        ip = result.stdout.strip()
+        if ip:  # validate it looks like an IPv4 address
+            WISP_TAILSCALE_IP = ip
+            print(f"Wisp Tailscale IP: {WISP_TAILSCALE_IP}")
+        else:
+            print("Warning: tailscale ip -4 returned empty output")
+    else:
+        print(f"Warning: tailscale ip -4 failed: {result.stderr.strip()}")
+except FileNotFoundError:
+    print("Warning: tailscale CLI not found — skipping hosts entry for wisp")
+except subprocess.TimeoutExpired:
+    print("Warning: tailscale ip -4 timed out — skipping hosts entry for wisp")
+except OSError as e:
+    print(f"Warning: cannot run tailscale: {e}")
+
 # --- Fetch upstream subscription --------------------------------------
 
 print(f"Fetching subscription...")
@@ -122,12 +146,19 @@ try:
         f.write(wrapper)
         node_script = f.name
 
+    # Pass wisp's Tailscale IP to Script.js via env var so it can create
+    # a hosts entry (bypassing MagicDNS which is incompatible with Clash).
+    env = os.environ.copy()
+    if WISP_TAILSCALE_IP:
+        env["TAILSCALE_WISP_IP"] = WISP_TAILSCALE_IP
+
     result = subprocess.run(
         ["node", node_script],
         input=config_json,
         capture_output=True,
         text=True,
         timeout=30,
+        env=env,
     )
 finally:
     os.unlink(node_script)
