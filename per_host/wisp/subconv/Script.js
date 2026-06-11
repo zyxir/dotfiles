@@ -22,23 +22,22 @@ function main(config, profileName) {
 // ===========================================================================
 
 const DIRECT_DOH = [
+  "https://dns.alidns.com/dns-query",         // AliDNS, domestic
   "https://doh.pub/dns-query",               // DNSPod DoH, domestic
-  "https://sm2.doh.pub/dns-query",           // DNSPod DoH (backup)
+  "https://doh.360.cn/dns-query",            // 360 DoH, domestic
 ];
 
 const PROXY_DOH = [
+  "https://dns.nextdns.io",                  // NextDNS
   "https://cloudflare-dns.com/dns-query",    // Cloudflare
   "https://dns.quad9.net/dns-query",         // Quad9
   "https://doh.mullvad.net/dns-query",       // Mullvad
-  "https://dns.google/dns-query",            // Google
-  "https://doh.opendns.com/dns-query",       // OpenDNS (Cisco)
-  "https://dns.adguard-dns.com/dns-query",   // AdGuard
 ];
 
 const BOOTSTRAP_RESOLVERS = [
-  "9.9.9.9",                // Quad9
-  "1.1.1.1",                // Cloudflare
-  "8.8.8.8",                // Google
+  "223.5.5.5",               // AliDNS
+  "119.29.29.29",            // DNSPod
+  "101.226.4.6",             // 360
 ];
 
 const NAMESERVER_POLICY = {
