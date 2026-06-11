@@ -10,5 +10,5 @@ subconv.{$DOMAIN:localhost} {
 
 mirror.{$DOMAIN:localhost} {
     root * /srv/mirror
-    file_server
+    file_server browse
 }
