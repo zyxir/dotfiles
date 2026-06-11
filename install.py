@@ -421,6 +421,8 @@ class Ghostty(AppTask):
 class Firefox(AppTask):
     """Install Firefox user.js."""
 
+    skip_envs = {"corporate"}
+
     def steps(self) -> list[Step]:
         return [Step("Link user.js into profile", self._run)]
 
