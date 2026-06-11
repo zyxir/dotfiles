@@ -42,6 +42,7 @@ Config files live under `per_app/<app>/` (cross-platform) or `per_host/<hostname
 | Vim | `per_app/vim/vimrc` | `~/.vimrc` | `~/.vimrc` |
 | Firefox | `per_app/firefox/user.js` | `<profile>/user.js` (auto-discovered) | — |
 | Zsh | `per_app/zsh/{zshenv,zshrc,p10k.zsh}` | `~/{.zshenv,.zshrc,.p10k.zsh}` | — |
+| PowerToys | `per_app/powertoys/` | — | `~/AppData/Local/Microsoft/PowerToys/` |
 | PowerShell | `per_app/PowerShell/Microsoft.PowerShell_profile.ps1` | — | `~/Documents/WindowsPowerShell/` |
 | VSCodium | `per_app/vscodium/settings.json` | `~/Library/Application Support/VSCodium/User` | `~/AppData/Roaming/VSCodium/User` |
 
@@ -69,11 +70,11 @@ Files for cold-starting a machine — referenced by setup docs, not used by `ins
 | Platform | Asset | Purpose |
 |----------|-------|---------|
 | macOS | `bootstrap/macos/Brewfile` | Minimal package list (`brew bundle install --file=...`) |
-| Windows | `bootstrap/windows/winget-packages.json` | Minimal package list (`winget import -i ...`) |
+| Windows | `bootstrap/windows/install-packages.ps1` | Minimal package list (`powershell -ExecutionPolicy Bypass -File ...`) |
 | Windows | `bootstrap/windows/disable-ctrl-space.reg` | Disable Ctrl+Space IME shortcut (conflicts with editor hotkeys) |
 | VPS | `bootstrap/vps/vps_bootstrap.sh` | Shared Vultr startup script for Debian 12 — installs Docker and Tailscale, hardens SSH (port 9906, key-only), configures UFW (including tailscale0 interface), fail2ban, unattended-upgrades. Paste into Vultr's "Startup Script" field when creating an instance. |
 
-The Brewfile and winget JSON are minimal, audited lists — not a full dump of every installed package. They contain only what's essential on any machine.
+The Brewfile and PowerShell script are minimal, audited lists — not a full dump of every installed package. They contain only what's essential on any machine.
 
 ### Task internals
 

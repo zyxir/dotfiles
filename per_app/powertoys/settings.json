@@ -1,0 +1,59 @@
+{
+  "startup": true,
+  "enabled": {
+    "AdvancedPaste": false,
+    "AlwaysOnTop": true,
+    "Awake": false,
+    "CmdNotFound": false,
+    "CmdPal": false,
+    "ColorPicker": false,
+    "CropAndLock": false,
+    "EnvironmentVariables": false,
+    "FancyZones": false,
+    "File Explorer": true,
+    "File Locksmith": true,
+    "FindMyMouse": true,
+    "Hosts": false,
+    "Image Resizer": false,
+    "Keyboard Manager": true,
+    "LightSwitch": false,
+    "Measure Tool": false,
+    "MouseHighlighter": false,
+    "MouseJump": false,
+    "MousePointerCrosshairs": false,
+    "MouseWithoutBorders": false,
+    "NewPlus": false,
+    "Peek": false,
+    "PowerRename": false,
+    "PowerToys Run": false,
+    "QuickAccent": false,
+    "RegistryPreview": false,
+    "Shortcut Guide": false,
+    "TextExtractor": false,
+    "Workspaces": false,
+    "ZoomIt": false
+  },
+  "show_tray_icon": true,
+  "is_elevated": true,
+  "run_elevated": true,
+  "show_new_updates_toast_notification": false,
+  "download_updates_automatically": false,
+  "show_whats_new_after_updates": false,
+  "enable_experimentation": false,
+  "is_admin": true,
+  "enable_warnings_elevated_apps": true,
+  "theme": "system",
+  "system_theme": "light",
+  "ignored_conflict_properties": {
+    "ignored_shortcuts": [
+      {
+        "win": true,
+        "ctrl": true,
+        "alt": false,
+        "shift": false,
+        "code": 84,
+        "key": ""
+      }
+    ]
+  }
+}

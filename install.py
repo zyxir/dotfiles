@@ -563,6 +563,22 @@ class VSCodium(AppTask):
             )
 
 
+class PowerToys(AppTask):
+    """Install PowerToys config."""
+
+    skip_envs = {"vps", "corporate"}
+
+    def steps(self) -> list[Step]:
+        return [Step("Link config", self._run)]
+
+    def _run(self) -> str | _Skipped | None:
+        if not link(
+            "./per_app/powertoys",
+            "~/AppData/Local/Microsoft/PowerToys",
+        ):
+            return SKIPPED
+
+
 class VpsHost(HostTask):
     """VPS host config (per_host/<hostname>/)."""
 
@@ -1112,6 +1128,7 @@ if __name__ == "__main__":
             Vim(),
             VSCodium(),
             Firefox(),
+            PowerToys(),
             Fonts(),
         ]
     elif platform.system() == "Linux":
