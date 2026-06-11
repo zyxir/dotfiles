@@ -322,8 +322,21 @@ def _system_font_dir() -> Path:
     return pathify("~/AppData/Local/Microsoft/Windows/Fonts")
 
 
-def install_fonts_from_zip(url: str, filenames: list[str] | None = None) -> list[str]:
+MIRROR = "mirror.ericzhuochen.com"
+
+
+def _mirror_url(path: str) -> str:
+    """Return the full URL for *path* on the download mirror."""
+    return f"https://{MIRROR}/{path.lstrip('/')}"
+
+
+def install_fonts_from_zip(
+    url: str, filenames: list[str] | None = None, fallback: str | None = None
+) -> list[str]:
     """Download and extract missing fonts from a zip archive.
+
+    Tries *url* first.  If it fails and *fallback* is provided, retries
+    with the fallback URL.
 
     Returns the list of filenames that were actually installed.
     """
@@ -334,8 +347,19 @@ def install_fonts_from_zip(url: str, filenames: list[str] | None = None) -> list
         logging.debug("all fonts already installed, skipping download")
         return []
 
+    def _download(src: str, dest: str) -> None:
+        logging.debug("downloading %s", src)
+        urllib.request.urlretrieve(src, dest)
+
     with tempfile.NamedTemporaryFile(suffix=".zip", delete=False) as tmp:
-        urllib.request.urlretrieve(url, tmp.name)
+        try:
+            _download(url, tmp.name)
+        except Exception:
+            if fallback:
+                logging.debug("mirror failed, trying fallback: %s", fallback)
+                _download(fallback, tmp.name)
+            else:
+                raise
         tmp_path = Path(tmp.name)
 
     try:
@@ -373,23 +397,28 @@ class Fonts(AppTask):
         ]
 
     def _jetbrains_mono(self) -> str | _Skipped | None:
+        upstream = "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip"
         installed = install_fonts_from_zip(
-            "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip",
+            _mirror_url("fonts/JetBrainsMono.zip"),
             [
                 "JetBrainsMonoNerdFontMono-Regular.ttf",
                 "JetBrainsMonoNerdFontMono-Bold.ttf",
                 "JetBrainsMonoNerdFontMono-Italic.ttf",
                 "JetBrainsMonoNerdFontMono-BoldItalic.ttf",
             ],
+            fallback=upstream,
         )
         if not installed:
             return SKIPPED
         return f"Installed {len(installed)} file(s): {', '.join(installed)}."
 
     def _source_han_sans(self) -> str | _Skipped | None:
-        installed = install_fonts_from_zip(
+        upstream = (
             "https://github.com/adobe-fonts/source-han-sans/"
-            "releases/download/2.005R/09_SourceHanSansSC.zip",
+            "releases/download/2.005R/09_SourceHanSansSC.zip"
+        )
+        installed = install_fonts_from_zip(
+            _mirror_url("fonts/09_SourceHanSansSC.zip"),
             [
                 "SourceHanSansSC-ExtraLight.otf",
                 "SourceHanSansSC-Light.otf",
@@ -399,6 +428,7 @@ class Fonts(AppTask):
                 "SourceHanSansSC-Bold.otf",
                 "SourceHanSansSC-Heavy.otf",
             ],
+            fallback=upstream,
         )
         if not installed:
             return SKIPPED
