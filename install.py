@@ -759,7 +759,7 @@ class VpsHost(HostTask):
         if created:
             parts.append(f"{len(created)} created")
         if unchanged:
-            parts.append(f"{len(unchanged)} unchanged")
+            parts.append(f"{unchanged} unchanged")
         summary = ", ".join(parts) if parts else "no records evaluated"
 
         lines = [f"{summary} ({public_ip})."]
@@ -1150,8 +1150,7 @@ if __name__ == "__main__":
             for step in task.steps():
                 indent += 2
                 label = f"+ {step.description}..."
-                sys.stdout.write(f"{' ' * indent}{label}")
-                sys.stdout.flush()
+                print(f"{' ' * indent}{label}", flush=True)
                 tracker.reset()
                 result = step.run()
                 if isinstance(result, _Skipped):
