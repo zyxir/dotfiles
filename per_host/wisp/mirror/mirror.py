@@ -21,6 +21,15 @@ FONTS: list[tuple[str, str]] = [
 
 SRV_DIR = Path(__file__).resolve().parent / "srv"
 
+# Read domain from parent .env for printing access URLs
+DOTENV = SRV_DIR.parent.parent / ".env"
+DOMAIN = None
+if DOTENV.is_file():
+    for line in DOTENV.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if line.startswith("DOMAIN="):
+            DOMAIN = line.split("=", 1)[1].strip().strip('"').strip("'")
+
 
 def main() -> None:
     SRV_DIR.mkdir(parents=True, exist_ok=True)
@@ -30,6 +39,9 @@ def main() -> None:
         urllib.request.urlretrieve(url, dest)
         size = dest.stat().st_size / 1024 / 1024
         print(f"  → {dest} ({size:.1f} MB)")
+
+    if DOMAIN:
+        print(f"  https://mirror.{DOMAIN}/")
 
 
 if __name__ == "__main__":

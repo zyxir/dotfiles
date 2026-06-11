@@ -546,9 +546,7 @@ class VpsHost(HostTask):
             Step("Configure DNS records", self._configure_dns),
             Step("Start Docker services", self._docker_up),
             Step("Setup cron jobs", self._setup_crons),
-            Step("Generate subscription config", self._run_subconv),
             Step("Check Tailscale", self._tailscale_check),
-            Step("Subscription URL", self._show_sub_url),
         ]
 
     @property
@@ -867,46 +865,6 @@ class VpsHost(HostTask):
             "⚠ Tailscale not authenticated — run: sudo tailscale up"
         )
 
-    def _run_subconv(self) -> str | _Skipped | None:
-        """Generate the subscription config immediately (cron would pick
-        it up on the next cycle, but we want it available right away)."""
-        script = (self._host_dir / "subconv" / "subconv.py").resolve()
-        if not script.is_file():
-            return SKIPPED
-
-        result = subprocess.run(
-            ["python3", str(script)],
-            capture_output=True, text=True,
-        )
-        if result.returncode != 0:
-            return f"⚠ {result.stderr.strip().splitlines()[-1]}"
-        return result.stdout.strip().splitlines()[-1]
-
-    def _show_sub_url(self) -> str | _Skipped | None:
-        """Print the subscription URL so the user can copy it into their
-        Clash client."""
-        env = self._read_env(self._host_dir)
-
-        # Read SECRET from subconv.env
-        secret = None
-        sub_env = self._host_dir / "subconv" / "subconv.env"
-        if sub_env.is_file():
-            for line in sub_env.read_text(encoding="utf-8").splitlines():
-                line = line.strip()
-                if line.startswith("SECRET="):
-                    secret = line.split("=", 1)[1].strip().strip("\"'")
-                    break
-
-        if not secret:
-            return "⚠ No SECRET found in subconv.env."
-
-        domains = self._parse_caddyfile(self._host_dir, env)
-        if not domains:
-            return "⚠ No domain blocks found in Caddyfile."
-
-        return "\n".join(
-            f"https://{d}/{secret}/ZyProxy" for d in domains
-        )
 
 
 _ELEVATE_PS1 = """\
@@ -1145,7 +1103,7 @@ if __name__ == "__main__":
             continue
         if isinstance(task, HostTask) and not task.is_active:
             continue
-        print_indented(f"- {task.__doc__}...", 0)
+        print_indented(f"{C_INFO}- {task.__doc__}...{C_RESET}", 0)
         try:
             for step in task.steps():
                 indent += 2

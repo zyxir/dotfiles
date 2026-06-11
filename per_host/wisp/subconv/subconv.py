@@ -30,6 +30,15 @@ HERE = Path(__file__).resolve().parent
 SCRIPT_JS = HERE / "Script.js"
 OUTPUT_DIR = HERE   # set to HERE/SECRET below
 
+# Read domain from parent .env for printing access URLs
+DOTENV = HERE.parent / ".env"
+DOMAIN = None
+if DOTENV.is_file():
+    for line in DOTENV.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if line.startswith("DOMAIN="):
+            DOMAIN = line.split("=", 1)[1].strip().strip('"').strip("'")
+
 # Read configuration from subconv.env (separate file — changes more often
 # than .env passwords)
 SUB_ENV = HERE / "subconv.env"
@@ -150,3 +159,5 @@ with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
     f.write(output_yaml)
 
 print(f"Written {len(output_yaml)} bytes to {OUTPUT_FILE}")
+if DOMAIN:
+    print(f"  https://subconv.{DOMAIN}/{SECRET}/ZyProxy")
