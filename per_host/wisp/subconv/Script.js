@@ -97,7 +97,17 @@ const TUN_OPTIONS = {
   "auto-route": true,
   "auto-detect-interface": true,
   "strict-route": true,
-  "route-exclude-address": [],
+  "route-exclude-address": [
+    // Windows mobile hotspot
+    "192.168.137.0/24",
+    // macOS Internet Sharing
+    "192.168.2.0/24",
+    // Linux (NetworkManager hotspot)
+    "10.42.0.0/24",
+    // Android tethering
+    "192.168.42.0/24",
+    "192.168.43.0/24",
+  ],
 };
 
 function overwriteTun(config) {
