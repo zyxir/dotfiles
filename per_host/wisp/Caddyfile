@@ -6,9 +6,11 @@
 subconv.{$DOMAIN:localhost} {
     root * /srv/subconv
     file_server
+    header Cache-Control "no-store"
 }
 
 mirror.{$DOMAIN:localhost} {
     root * /srv/mirror
     file_server browse
+    header Cache-Control "no-store"
 }

@@ -757,7 +757,7 @@ class VpsHost(HostTask):
                     "name": domain,
                     "content": public_ip,
                     "ttl": 1,
-                    "proxied": False,
+                    "proxied": True,
                 }
                 try:
                     self._cf_api(
@@ -773,7 +773,7 @@ class VpsHost(HostTask):
                     "name": domain,
                     "content": public_ip,
                     "ttl": 1,
-                    "proxied": False,
+                    "proxied": True,
                 }
                 try:
                     self._cf_api(token, zone_id, "POST", "dns_records", body)

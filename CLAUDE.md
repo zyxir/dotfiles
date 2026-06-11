@@ -58,7 +58,7 @@ The matching `VpsHost` task activates only when `socket.gethostname()` matches.
 
 `VpsHost` expects `.env` at `per_host/<hostname>/.env`. Copy it to the VPS manually (e.g., `scp .env wisp:~/dotfiles/per_host/wisp/.env`). The file is gitignored.
 
-`VpsHost` also expects `subconv/subconv.env` alongside `.env` and reads `CLOUDFLARE_API_TOKEN` from `.env` for automatic DNS record management (zone IDs are looked up via the API). When configured, the installer upserts A records on Cloudflare for every domain in the Caddyfile before starting Docker services.
+`VpsHost` also expects `subconv/subconv.env` alongside `.env` and reads `CLOUDFLARE_API_TOKEN` from `.env` for automatic DNS record management (zone IDs are looked up via the API). When configured, the installer upserts A records on Cloudflare for every domain in the Caddyfile before starting Docker services. DNS records are created with proxying enabled (orange cloud). Caddy sends `Cache-Control: no-store` on all responses so Cloudflare does not cache any content. SSL/TLS mode should be set to Full (strict) in the Cloudflare dashboard (one-time).
 
 `VpsHost` includes a Tailscale check step. If Tailscale is installed but not authenticated, it prints a hint to run `sudo tailscale up --ssh`. Auth is manual (OAuth via browser) — no secrets needed in `.env`.
 
