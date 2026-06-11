@@ -130,6 +130,17 @@ class _Skipped:
 
 SKIPPED = _Skipped()
 
+# Global indentation — incremented by task/step nesting so hints
+# align automatically without manual leading spaces.
+indent = 0
+
+
+def print_indented(msg: str, extra: int = 0) -> None:
+    """Print *msg* with each line prefixed by indent+extra spaces."""
+    prefix = " " * (indent + extra)
+    for line in msg.splitlines() or [""]:
+        print(f"{prefix}{line}", flush=True)
+
 
 class Step:
     """A named sub-action within a task."""
@@ -818,9 +829,9 @@ class VpsHost(HostTask):
             action = status  # "added", "updated", or SKIPPED
             logging.debug("cron %s: %s", name, "ok" if action == SKIPPED else action)
 
-        lines = ["  Cron jobs:"]
+        lines = ["Cron jobs:"]
         for name, schedule, script in jobs:
-            lines.append(f"    {name}: {schedule}  →  python3 {script.resolve()}")
+            lines.append(f"  {name}: {schedule}  →  python3 {script.resolve()}")
 
         return "\n".join(lines)
 
@@ -894,7 +905,7 @@ class VpsHost(HostTask):
             return "⚠ No domain blocks found in Caddyfile."
 
         return "\n".join(
-            f"  https://{d}/{secret}/ZyProxy" for d in domains
+            f"https://{d}/{secret}/ZyProxy" for d in domains
         )
 
 
@@ -1134,11 +1145,13 @@ if __name__ == "__main__":
             continue
         if isinstance(task, HostTask) and not task.is_active:
             continue
-        print("- {}...".format(task.__doc__), flush=True)
+        print_indented(f"- {task.__doc__}...", 0)
         try:
             for step in task.steps():
-                label = "  + {}...".format(step.description)
-                print(label, flush=True)
+                indent += 2
+                label = f"+ {step.description}..."
+                sys.stdout.write(f"{' ' * indent}{label}")
+                sys.stdout.flush()
                 tracker.reset()
                 result = step.run()
                 if isinstance(result, _Skipped):
@@ -1148,10 +1161,11 @@ if __name__ == "__main__":
                     status = f"{C_DONE}DONE{C_RESET}"
                     hint = result
                 if tracker.fired:
-                    print("  " + status)
+                    print_indented(status, 0)
                 else:
-                    print(f"{C_CLEAR}{label} {status}")
+                    print(f"{C_CLEAR}{' ' * indent}{label} {status}")
                 if hint:
-                    print(hint)
+                    print_indented(hint, 2)
+                indent -= 2
         except Exception as e:
-            print(f"  {C_FAIL}FAILED{C_RESET} {C_WARN}{e}{C_RESET}")
+            print_indented(f"{C_FAIL}FAILED{C_RESET} {C_WARN}{e}{C_RESET}", 2)
