@@ -5,6 +5,9 @@
 # Packages that are already winget-managed will be upgraded if a newer
 # version is available unless --exact is pinned.
 
+# Allow local scripts to run without -ExecutionPolicy Bypass on every launch
+Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
+
 # --- Terminal & shell tools ---
 winget install BurntSushi.ripgrep.MSVC
 winget install sharkdp.fd
@@ -33,3 +36,6 @@ winget install voidtools.Everything
 
 # --- Connectivity ---
 winget install tailscale.tailscale
+
+# --- PowerShell modules ---
+Install-Module PSReadLine -Force -AllowClobber -Scope CurrentUser -SkipPublisherCheck
