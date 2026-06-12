@@ -42,18 +42,28 @@ if DOTENV.is_file():
 # Read configuration from subconv.env (separate file — changes more often
 # than .env passwords)
 SUB_ENV = HERE / "subconv.env"
-SUBSCRIPTION_URL = None
-SECRET = None
-if SUB_ENV.is_file():
-    for line in SUB_ENV.read_text(encoding="utf-8").splitlines():
-        line = line.strip()
-        if line.startswith("SUBSCRIPTION_URL="):
-            SUBSCRIPTION_URL = line.split("=", 1)[1].strip().strip('"').strip("'")
-        elif line.startswith("SECRET="):
-            SECRET = line.split("=", 1)[1].strip().strip('"').strip("'")
 
-if not SUBSCRIPTION_URL:
-    print(f"Error: SUBSCRIPTION_URL not found in {SUB_ENV}", file=sys.stderr)
+# Parse all env vars into a dict
+_env_vars = {}
+if SUB_ENV.is_file():
+    for _line in SUB_ENV.read_text(encoding="utf-8").splitlines():
+        _line = _line.strip()
+        if "=" in _line and not _line.startswith("#"):
+            _key, _, _val = _line.partition("=")
+            _env_vars[_key.strip()] = _val.strip().strip('"').strip("'")
+
+SECRET = _env_vars.get("SECRET")
+
+SUBSCRIPTION_URLS = []
+i = 1
+while f"SUBSCRIPTION_URL_{i}" in _env_vars:
+    url = _env_vars[f"SUBSCRIPTION_URL_{i}"]
+    if url:
+        SUBSCRIPTION_URLS.append(url)
+    i += 1
+
+if not SUBSCRIPTION_URLS:
+    print(f"Error: No SUBSCRIPTION_URL_1 (etc.) found in {SUB_ENV}", file=sys.stderr)
     sys.exit(1)
 if not SECRET:
     print(f"Error: SECRET not found in {SUB_ENV}", file=sys.stderr)
@@ -62,40 +72,88 @@ if not SECRET:
 OUTPUT_DIR = HERE / "srv" / SECRET
 OUTPUT_FILE = OUTPUT_DIR / "ZyProxy"
 
-# --- Fetch upstream subscription --------------------------------------
+# --- Fetch & merge all subscriptions ----------------------------------
 
-print(f"Fetching subscription...")
-req = Request(SUBSCRIPTION_URL, headers={"User-Agent": "ClashVerge/2.0"})
-try:
-    with urlopen(req, timeout=15) as resp:
-        raw_yaml = resp.read().decode("utf-8")
-except HTTPError as e:
-    print(f"Error: upstream returned {e.code}", file=sys.stderr)
+UPSTREAM_STRIP = (
+    "external-controller", "secret", "allow-lan", "redir-port",
+    "interval", "port", "socks-port", "mode", "log-level", "ipv6",
+)
+
+all_proxies = []          # merged proxy list
+seen_names = set()        # for dedup-rename
+base_config = None        # first successful config (minus proxies)
+
+for idx, url in enumerate(SUBSCRIPTION_URLS, start=1):
+    label = f"[{idx}/{len(SUBSCRIPTION_URLS)}]"
+
+    # --- Fetch ---
+    print(f"{label} Fetching: {url}")
+    req = Request(url, headers={"User-Agent": "ClashVerge/2.0"})
+    try:
+        with urlopen(req, timeout=15) as resp:
+            raw_yaml = resp.read().decode("utf-8")
+    except HTTPError as e:
+        print(f"{label}  WARNING: upstream returned {e.code}, skipping", file=sys.stderr)
+        continue
+    except (URLError, OSError) as e:
+        print(f"{label}  WARNING: cannot reach upstream: {e}, skipping", file=sys.stderr)
+        continue
+
+    # --- Parse ---
+    try:
+        config = yaml.safe_load(raw_yaml)
+    except yaml.YAMLError as e:
+        print(f"{label}  WARNING: invalid YAML: {e}, skipping", file=sys.stderr)
+        continue
+
+    if not isinstance(config, dict) or "proxies" not in config:
+        print(f"{label}  WARNING: missing 'proxies', skipping", file=sys.stderr)
+        continue
+
+    upstream_proxies = config.get("proxies", [])
+    if not upstream_proxies:
+        print(f"{label}  WARNING: 0 proxies in this subscription, skipping", file=sys.stderr)
+        continue
+
+    # --- Merge proxies with rename-on-collision ---
+    added = 0
+    renamed = 0
+    for proxy in upstream_proxies:
+        name = proxy.get("name", "")
+        if not name:
+            continue
+        if name in seen_names:
+            proxy = dict(proxy)                           # shallow copy
+            proxy["name"] = f"{name} (sub{idx})"
+            renamed += 1
+        seen_names.add(proxy["name"])
+        all_proxies.append(proxy)
+        added += 1
+
+    suffix = f" ({added} proxies, {renamed} renamed)" if renamed else f" ({added} proxies)"
+    print(f"{label}  OK{suffix}")
+
+    # Use first successful config as the base (Script.js only reads proxies;
+    # other upstream fields are stripped or overwritten anyway)
+    if base_config is None:
+        for key in UPSTREAM_STRIP:
+            config.pop(key, None)
+        base_config = config
+
+# --- Check we have something to work with ---
+
+if not all_proxies:
+    print("Error: 0 proxies after merging all subscriptions", file=sys.stderr)
     sys.exit(1)
-except (URLError, OSError) as e:
-    print(f"Error: cannot reach upstream: {e}", file=sys.stderr)
+
+if base_config is None:
+    print("Error: no subscription could be fetched", file=sys.stderr)
     sys.exit(1)
 
-# --- Parse upstream YAML → JSON (for Node interop) --------------------
+base_config["proxies"] = all_proxies
+print(f"Total: {len(all_proxies)} proxies from {len(SUBSCRIPTION_URLS)} subscription(s)")
 
-try:
-    config = yaml.safe_load(raw_yaml)
-except yaml.YAMLError as e:
-    print(f"Error: invalid YAML from upstream: {e}", file=sys.stderr)
-    sys.exit(1)
-
-if not isinstance(config, dict) or "proxies" not in config:
-    print("Error: upstream config missing 'proxies'", file=sys.stderr)
-    sys.exit(1)
-
-print(f"Loaded {len(config['proxies'])} proxies")
-
-# Strip upstream fields that would leak into client configs as defaults
-for key in ("external-controller", "secret", "allow-lan", "redir-port",
-            "interval", "port", "socks-port", "mode", "log-level", "ipv6"):
-    config.pop(key, None)
-
-config_json = json.dumps(config, ensure_ascii=False)
+config_json = json.dumps(base_config, ensure_ascii=False)
 
 # --- Load Script.js (the canonical transform logic) -------------------
 
