@@ -174,7 +174,7 @@ function overwriteProxyGroups(config) {
       autoGroups.push({
         name: key + " - 自动选择",
         type: "url-test",
-        url: "https://cp.cloudflare.com",
+        url: "https://www.gstatic.com/generate_204",
         interval: 300,
         tolerance: 50,
         proxies: matched,
@@ -189,7 +189,7 @@ function overwriteProxyGroups(config) {
     autoGroups.push({
       name: "其它 - 自动选择",
       type: "url-test",
-      url: "https://cp.cloudflare.com",
+      url: "https://www.gstatic.com/generate_204",
       interval: 300,
       tolerance: 50,
       proxies: otherProxies,
@@ -260,7 +260,7 @@ function overwriteProxyGroups(config) {
     {
       name: "⚖️ 负载均衡",
       type: "load-balance",
-      url: "https://cp.cloudflare.com",
+      url: "https://www.gstatic.com/generate_204",
       interval: 300,
       strategy: "consistent-hashing",
       proxies: allProxies,
@@ -269,7 +269,7 @@ function overwriteProxyGroups(config) {
     {
       name: "ALL - 自动选择",
       type: "url-test",
-      url: "https://cp.cloudflare.com",
+      url: "https://www.gstatic.com/generate_204",
       interval: 300,
       tolerance: 50,
       proxies: allProxies,
