@@ -42,6 +42,7 @@ const BOOTSTRAP_RESOLVERS = [
 
 const NAMESERVER_POLICY = {
   "+.ts.net": ["100.100.100.100"],  // Tailscale MagicDNS
+  "geosite:gfw": PROXY_DOH,         // GFW-blocked domains → foreign DNS, bypass domestic poisoning
 };
 
 function overwriteDns(config) {
