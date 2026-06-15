@@ -50,7 +50,7 @@ function overwriteDns(config) {
     "default-nameserver": BOOTSTRAP_RESOLVERS,
     nameserver: DIRECT_DOH,
     "proxy-server-nameserver": PROXY_DOH,
-    fallback: DIRECT_DOH,
+    fallback: PROXY_DOH,
     "nameserver-policy": NAMESERVER_POLICY,
 
     "prefer-h3": true,
