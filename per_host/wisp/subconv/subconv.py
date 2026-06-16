@@ -89,7 +89,7 @@ for idx, url in enumerate(SUBSCRIPTION_URLS, start=1):
 
     # --- Fetch ---
     print(f"{label} Fetching: {url}")
-    req = Request(url, headers={"User-Agent": "ClashVerge/2.0"})
+    req = Request(url, headers={"User-Agent": "clash-verge/v2.0.0"})
     try:
         with urlopen(req, timeout=15) as resp:
             raw_yaml = resp.read().decode("utf-8")
