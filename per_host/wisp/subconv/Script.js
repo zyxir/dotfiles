@@ -123,7 +123,7 @@ function overwriteTun(config) {
 
 // Exclusion terms — nodes with these in the name are discarded (expired,
 // promotional, informational, etc.)
-const EXCLUDE_TERMS = "剩余|到期|主页|官网|游戏|关注|网站|地址|有效|网址|禁止|邮箱|发布|客服|订阅|节点|问题|联系";
+const EXCLUDE_TERMS = "剩余|到期|主页|官网|游戏|关注|网站|地址|有效|网址|禁止|邮箱|发布|客服|订阅|问题|联系";
 
 // Country/region keywords used to classify proxy nodes
 const REGIONS = {
