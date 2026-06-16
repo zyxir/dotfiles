@@ -82,6 +82,7 @@ UPSTREAM_STRIP = (
 all_proxies = []          # merged proxy list
 seen_names = set()        # for dedup-rename
 base_config = None        # first successful config (minus proxies)
+fetch_warnings = []       # (label, reason) for client-visible alerts
 
 for idx, url in enumerate(SUBSCRIPTION_URLS, start=1):
     label = f"[{idx}/{len(SUBSCRIPTION_URLS)}]"
@@ -93,9 +94,11 @@ for idx, url in enumerate(SUBSCRIPTION_URLS, start=1):
         with urlopen(req, timeout=15) as resp:
             raw_yaml = resp.read().decode("utf-8")
     except HTTPError as e:
+        fetch_warnings.append((label, f"upstream returned {e.code}"))
         print(f"{label}  WARNING: upstream returned {e.code}, skipping", file=sys.stderr)
         continue
     except (URLError, OSError) as e:
+        fetch_warnings.append((label, f"cannot reach upstream"))
         print(f"{label}  WARNING: cannot reach upstream: {e}, skipping", file=sys.stderr)
         continue
 
@@ -103,15 +106,18 @@ for idx, url in enumerate(SUBSCRIPTION_URLS, start=1):
     try:
         config = yaml.safe_load(raw_yaml)
     except yaml.YAMLError as e:
+        fetch_warnings.append((label, "invalid YAML"))
         print(f"{label}  WARNING: invalid YAML: {e}, skipping", file=sys.stderr)
         continue
 
     if not isinstance(config, dict) or "proxies" not in config:
+        fetch_warnings.append((label, "missing 'proxies' key"))
         print(f"{label}  WARNING: missing 'proxies', skipping", file=sys.stderr)
         continue
 
     upstream_proxies = config.get("proxies", [])
     if not upstream_proxies:
+        fetch_warnings.append((label, "0 proxies in subscription"))
         print(f"{label}  WARNING: 0 proxies in this subscription, skipping", file=sys.stderr)
         continue
 
@@ -139,6 +145,14 @@ for idx, url in enumerate(SUBSCRIPTION_URLS, start=1):
         for key in UPSTREAM_STRIP:
             config.pop(key, None)
         base_config = config
+
+# --- Inject client-visible warning proxies for failed subscriptions ---
+
+for label, reason in fetch_warnings:
+    # Prepend as 'direct' proxies — visible in the node list but harmless.
+    # '⚠' prefix sorts them to the top in most Clash clients.
+    name = f"⚠ {label} FAILED: {reason}"
+    all_proxies.insert(0, {"name": name, "type": "direct"})
 
 # --- Check we have something to work with ---
 
