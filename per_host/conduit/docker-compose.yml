@@ -10,10 +10,31 @@ services:
       - "80:80"
       - "443:443"
       - "443:443/udp"
+      - "8443:443"   # Tailscale DERP (non-standard, avoids ICP port-blocking)
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - caddy_data:/data
       - caddy_config:/config
+    networks:
+      - internal_network
+
+  # Tailscale DERP relay server
+  derper:
+    image: fredliang/derper
+    container_name: derper
+    restart: unless-stopped
+    environment:
+      - DERP_DOMAIN=derp.${DOMAIN}
+      - DERP_ADDR=:8080
+      - DERP_CERT_MODE=manual
+      - DERP_VERIFY_CLIENTS=true
+      - DERP_STUN=true
+      - DERP_STUN_PORT=33478
+      - DERP_HTTP_PORT=-1
+    ports:
+      - "33478:33478/udp"   # STUN (direct host exposure, can't go through Caddy)
+    volumes:
+      - /var/run/tailscale/tailscaled.sock:/var/run/tailscale/tailscaled.sock
     networks:
       - internal_network
 

@@ -256,6 +256,8 @@ ufw allow 80/tcp   comment 'HTTP'
 ufw allow 443/tcp  comment 'HTTPS'
 ufw allow 443/udp  comment 'HTTP/3 QUIC'
 ufw allow in on tailscale0 comment 'Tailscale mesh'
+ufw allow 8443/tcp comment 'Tailscale DERP'
+ufw allow 33478/udp comment 'Tailscale DERP STUN'
 ufw --force enable
 
 # ===========================================================================

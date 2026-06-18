@@ -1,5 +1,11 @@
 # Caddy reverse proxy — configure services below.
 
+# Tailscale DERP relay (non-standard port, SNI-routed)
+derp.{$DOMAIN:localhost} {
+    reverse_proxy derper:8080
+    header Cache-Control "no-store"
+}
+
 {$DOMAIN:localhost} {
     respond "conduit" 200
     header Cache-Control "no-store"
