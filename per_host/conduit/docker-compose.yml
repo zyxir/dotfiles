@@ -20,20 +20,17 @@ services:
 
   # Tailscale DERP relay server
   derper:
-    image: fredliang/derper
+    build: ./derper
     container_name: derper
     restart: unless-stopped
     environment:
       - DERP_DOMAIN=derp.${DOMAIN}
-      - DERP_ADDR=:8080
-      - DERP_CERT_MODE=manual
-      - DERP_VERIFY_CLIENTS=true
-      - DERP_STUN=true
       - DERP_STUN_PORT=33478
-      - DERP_HTTP_PORT=-1
+      - DERP_VERIFY_CLIENTS=true
     ports:
       - "33478:33478/udp"   # STUN (direct host exposure, can't go through Caddy)
     volumes:
+      - derper_certs:/certs
       - /var/run/tailscale/tailscaled.sock:/var/run/tailscale/tailscaled.sock
     networks:
       - internal_network
@@ -45,3 +42,4 @@ networks:
 volumes:
   caddy_data:
   caddy_config:
+  derper_certs:

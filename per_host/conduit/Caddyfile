@@ -2,7 +2,11 @@
 
 # Tailscale DERP relay (non-standard port, SNI-routed)
 derp.{$DOMAIN:localhost} {
-    reverse_proxy derper:8080
+    reverse_proxy https://derper:8080 {
+        transport http {
+            tls_insecure_skip_verify
+        }
+    }
     header Cache-Control "no-store"
 }
 
