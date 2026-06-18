@@ -6,8 +6,8 @@
     "Regions": {
       "900": {
         "RegionID": 900,
-        "RegionCode": "cn-conduit",
-        "RegionName": "Conduit (China)",
+        "RegionCode": "shc",
+        "RegionName": "Shanghai (Conduit)",
         "Nodes": [
           {
             "Name": "1",
