@@ -693,6 +693,10 @@ class VpsHost(HostTask):
 
     # ----- DNS helpers -------------------------------------------------
 
+    # Domain prefixes that must bypass Cloudflare proxying because they
+    # serve on non-standard ports (Cloudflare only proxies 80/443).
+    _BYPASS_PROXY_PREFIXES = {"derp."}
+
     @staticmethod
     def _read_env(host_dir: Path) -> dict[str, str]:
         """Parse KEY=VALUE from a .env file (no shell expansion)."""
@@ -853,12 +857,15 @@ class VpsHost(HostTask):
                     unchanged += 1
                     continue
                 # Update
+                proxied = not any(
+                    domain.startswith(p) for p in self._BYPASS_PROXY_PREFIXES
+                )
                 body = {
                     "type": "A",
                     "name": domain,
                     "content": public_ip,
                     "ttl": 1,
-                    "proxied": True,
+                    "proxied": proxied,
                 }
                 try:
                     self._cf_api(
@@ -869,12 +876,15 @@ class VpsHost(HostTask):
                     errors.append(f"{domain}: update failed — {e}")
             else:
                 # Create
+                proxied = not any(
+                    domain.startswith(p) for p in self._BYPASS_PROXY_PREFIXES
+                )
                 body = {
                     "type": "A",
                     "name": domain,
                     "content": public_ip,
                     "ttl": 1,
-                    "proxied": True,
+                    "proxied": proxied,
                 }
                 try:
                     self._cf_api(token, zone_id, "POST", "dns_records", body)
