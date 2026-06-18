@@ -15,7 +15,8 @@
             "HostName": "derp.<YOUR_DOMAIN>",
             "IPv4": "<YOUR_VPS_IP>",
             "DERPPort": 8443,
-            "STUNPort": 33478
+            "STUNPort": 33478,
+            "InsecureForTests": true
           }
         ]
       }
