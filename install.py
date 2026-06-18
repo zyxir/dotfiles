@@ -634,6 +634,7 @@ class VpsHost(HostTask):
     def __init__(self, hostname: str, skip_sudo: bool = False):
         super().__init__(hostname)
         self.skip_sudo = skip_sudo
+        self.__doc__ = f"VPS host config (per_host/{hostname}/)"
 
     def steps(self) -> list[Step]:
         return [
@@ -973,7 +974,7 @@ class VpsHost(HostTask):
             return SKIPPED
 
         return (
-            "⚠ Tailscale not authenticated — run: sudo tailscale up"
+            "⚠ Tailscale not authenticated — run: sudo tailscale up --ssh"
         )
 
 
