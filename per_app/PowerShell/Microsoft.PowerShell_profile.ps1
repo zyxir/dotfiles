@@ -9,8 +9,10 @@ $OutputEncoding = [console]::InputEncoding = [console]::OutputEncoding = New-Obj
 # Use Emacs style shortcuts
 Import-Module PSReadLine
 Set-PSReadLineOption -EditMode Emacs
-Set-PSReadLineOption -PredictionSource History
-Set-PSReadLineOption -Colors @{ InlinePrediction = '#666666' }
+if ((Get-Module PSReadLine).Version -ge [Version]"2.2.0") {
+    Set-PSReadLineOption -PredictionSource History
+    Set-PSReadLineOption -Colors @{ InlinePrediction = '#666666' }
+}
 
 # Set up proxy if the proxy port is listening
 $proxyPort = 7897
