@@ -53,6 +53,11 @@ if [ -f ~root/.ssh/authorized_keys ]; then
     chown -R linuxuser:linuxuser ~linuxuser/.ssh
     echo "   SSH keys synced from root"
 fi
+# Passwordless sudo — same as Vultr's default linuxuser config.
+cat > /etc/sudoers.d/linuxuser <<'SUDOEOF'
+linuxuser ALL=(ALL:ALL) NOPASSWD: ALL
+SUDOEOF
+chmod 440 /etc/sudoers.d/linuxuser
 
 # ===========================================================================
 # Docker Engine + Compose plugin
@@ -149,7 +154,7 @@ echo "==> Hardening SSH..."
 # directory.
 cat > /etc/ssh/sshd_config.d/00-hardening.conf <<'SSHEOF'
 Port 9906
-PermitRootLogin prohibit-password
+PermitRootLogin no
 PasswordAuthentication no
 PubkeyAuthentication yes
 SSHEOF
@@ -185,7 +190,7 @@ fi
 # Runtime dependencies for per-host scripts
 # ===========================================================================
 echo "==> Installing runtime dependencies..."
-apt-get install -y -qq nodejs python3-yaml
+apt-get install -y -qq nodejs python3-yaml rsync
 
 # ===========================================================================
 # UFW firewall --- allow SSH (9906), HTTP, HTTPS

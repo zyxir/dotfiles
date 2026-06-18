@@ -907,20 +907,25 @@ class VpsHost(HostTask):
         return "added"
 
     def _setup_crons(self) -> str | _Skipped | None:
-        """Ensure subconv.py and mirror.py cron entries exist, then show status."""
-        subconv = (self._host_dir / "subconv" / "subconv.py")
-        mirror = (self._host_dir / "mirror" / "mirror.py")
+        """Create cron entries for scripts that exist under this host dir.
 
-        jobs: list[tuple[str, str, Path]] = [
-            ("subconv", "every 30 min", subconv),
-            ("mirror",  "daily",          mirror),
+        Only adds cron jobs for scripts that are actually present — a host
+        with no scripts (e.g., a skeleton VPS) gets no cron entries.
+        """
+        candidates: list[tuple[str, str, Path]] = [
+            ("subconv", "every 30 min", self._host_dir / "subconv" / "subconv.py"),
+            ("mirror",  "daily",         self._host_dir / "mirror" / "mirror.py"),
         ]
+        jobs = [(name, schedule, path) for name, schedule, path in candidates if path.is_file()]
 
         for name, schedule, script in jobs:
             entry = self._schedule_to_cron(schedule) + f" python3 {script.resolve()}"
             status = self._ensure_cron(name, entry)
             action = status  # "added", "updated", or SKIPPED
             logging.debug("cron %s: %s", name, "ok" if action == SKIPPED else action)
+
+        if not jobs:
+            return SKIPPED
 
         lines = ["Cron jobs:"]
         for name, schedule, script in jobs:
