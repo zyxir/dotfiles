@@ -1,18 +1,18 @@
 #!/bin/bash
-# VPS Bootstrap — shared setup script for Debian 12 (bookworm) instances.
+# VPS Bootstrap -- shared setup script for Debian 12 (bookworm) instances.
 # Provisions a fresh VPS: Docker, SSH hardening, firewall, fail2ban,
 # unattended-upgrades.
-# Idempotent — delete /etc/.vps-setup-done to force re-run.
+# Idempotent -- delete /etc/.vps-setup-done to force re-run.
 #
 # Works on any provider (Vultr, Aliyun, Hetzner, etc.).
 # Docker repo detection: probes the official repo first; if unreachable
 # (e.g., from within China), falls back to domestic mirrors automatically.
 #
-# Usage — provider startup script:
+# Usage -- provider startup script:
 #   Paste into the "Startup Script" / "User Data" field when creating
 #   a Debian 12 instance.
 #
-# Usage — manual run (e.g., provider without startup-script support):
+# Usage -- manual run (e.g., provider without startup-script support):
 #   ssh root@<ip> 'bash -s' < vps_bootstrap.sh
 #
 # DNS detection is automatic: probes google.com reachability to decide
@@ -35,7 +35,7 @@ apt-get update -qq
 apt-get upgrade -y -qq
 
 # ===========================================================================
-# User setup — ensure linuxuser exists (Vultr creates it, Aliyun doesn't)
+# User setup -- ensure linuxuser exists (Vultr creates it, Aliyun doesn't)
 # ===========================================================================
 echo "==> Ensuring linuxuser user..."
 if id linuxuser &>/dev/null; then
@@ -54,7 +54,7 @@ else
         echo "   SSH keys synced from root"
     fi
 fi
-# Passwordless sudo — always apply (may have been missing).
+# Passwordless sudo -- always apply (may have been missing).
 cat > /etc/sudoers.d/linuxuser <<'SUDOEOF'
 linuxuser ALL=(ALL:ALL) NOPASSWD: ALL
 SUDOEOF
@@ -68,7 +68,7 @@ if ! command -v docker &>/dev/null; then
     apt-get install -y -qq ca-certificates curl
     install -m 0755 -d /etc/apt/keyrings
 
-    # Probe Docker mirrors — try official first; if unreachable (e.g.,
+    # Probe Docker mirrors -- try official first; if unreachable (e.g.,
     # GFW blocks download.docker.com), fall back to domestic mirrors.
     # The GPG key is a small, reliable canary for mirror reachability.
     MIRRORS=(
@@ -100,7 +100,7 @@ if ! command -v docker &>/dev/null; then
     apt-get install -y -qq docker-ce docker-ce-cli containerd.io docker-compose-plugin
     systemctl enable docker
 
-    # Docker Hub is blocked domestically — configure registry mirrors.
+    # Docker Hub is blocked domestically -- configure registry mirrors.
     # Written unconditionally: on foreign VPSes the mirrors are simply
     # unreachable and the daemon falls back to docker.io transparently.
     cat > /etc/docker/daemon.json <<'DOCKEREOF'
@@ -115,14 +115,14 @@ DOCKEREOF
 fi
 
 # ===========================================================================
-# DNS — systemd-resolved with DoT
+# DNS -- systemd-resolved with DoT
 # ===========================================================================
 echo "==> Configuring encrypted DNS..."
 apt-get install -y -qq systemd-resolved
 # Providers hand out ISP resolvers that often return poisoned results.
 # Route all system DNS through DoT (DNS over TLS, port 853).
 #
-# Auto-detection: if google.com is reachable, we're outside China → foreign
+# Auto-detection: if google.com is reachable, we're outside China -> foreign
 # DNS.  Otherwise domestic.  Can be overridden with DNS_MODE=foreign|domestic.
 if [ -z "${DNS_MODE:-}" ]; then
     if curl -s --connect-timeout 3 --max-time 5 https://www.google.com >/dev/null 2>&1; then
@@ -141,7 +141,7 @@ DNS=223.5.5.5#dns.alidns.com
 DNS=223.6.6.6#dns.alidns.com
 DNSOverTLS=yes
 RESOLVEOF
-    echo "   DNS → AliDNS (DoT, domestic)"
+    echo "   DNS -> AliDNS (DoT, domestic)"
 else
     cat > /etc/systemd/resolved.conf.d/dot.conf <<'RESOLVEOF'
 [Resolve]
@@ -151,7 +151,7 @@ DNS=9.9.9.9#dns.quad9.net
 DNS=149.112.112.112#dns.quad9.net
 DNSOverTLS=yes
 RESOLVEOF
-    echo "   DNS → Cloudflare + Quad9 (DoT, foreign)"
+    echo "   DNS -> Cloudflare + Quad9 (DoT, foreign)"
 fi
 systemctl enable systemd-resolved
 systemctl restart systemd-resolved
@@ -269,14 +269,14 @@ UEOF
 date > "$SENTINEL"
 echo "==> VPS setup complete."
 echo
-echo "    ╔══════════════════════════════════════════════════════════╗"
-echo "    ║  Set hostname so install.py activates the right config: ║"
-echo "    ║                                                        ║"
-echo "    ║  hostnamectl set-hostname conduit                       ║"
-echo "    ║                                                        ║"
-echo "    ║  Then clone and install:                                ║"
-echo "    ║  git clone https://github.com/<you>/dotfiles.git        ║"
-echo "    ║  cd dotfiles && cp per_host/conduit/.env.example \      ║"
-echo "    ║    per_host/conduit/.env   # then fill from Bitwarden   ║"
-echo "    ║  python3 install.py                                     ║"
-echo "    ╚══════════════════════════════════════════════════════════╝"
+echo "    +==========================================================+"
+echo "    |  Set hostname so install.py activates the right config: |"
+echo "    |                                                        |"
+echo "    |  hostnamectl set-hostname conduit                       |"
+echo "    |                                                        |"
+echo "    |  Then clone and install:                                |"
+echo "    |  git clone https://github.com/<you>/dotfiles.git        |"
+echo "    |  cd dotfiles && cp per_host/conduit/.env.example \\      |"
+echo "    |    per_host/conduit/.env   # then fill from Bitwarden   |"
+echo "    |  python3 install.py                                     |"
+echo "    +==========================================================+"
