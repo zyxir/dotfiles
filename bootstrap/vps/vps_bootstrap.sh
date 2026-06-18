@@ -117,6 +117,7 @@ fi
 # DNS — systemd-resolved with DoT
 # ===========================================================================
 echo "==> Configuring encrypted DNS..."
+apt-get install -y -qq systemd-resolved
 # Providers hand out ISP resolvers that often return poisoned results.
 # Route all system DNS through DoT (DNS over TLS, port 853).
 #
