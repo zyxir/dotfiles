@@ -662,6 +662,7 @@ class VpsHost(HostTask):
             Step("Setup cron jobs", self._setup_crons),
             Step("Check Tailscale", self._tailscale_check),
             Step("Check cloud firewall", self._cloud_firewall_hint),
+            Step("Tailscale DERP ACL", self._derp_acl_hint),
         ]
 
     @property
@@ -1012,6 +1013,32 @@ class VpsHost(HostTask):
         for port, proto in nonstandard:
             lines.append(f"  - {port}/{proto}")
         return "\n".join(lines)
+
+    def _derp_acl_hint(self) -> str | _Skipped | None:
+        """If a derper service is configured, point to the Tailscale ACL docs."""
+        compose_file = self._host_dir / "docker-compose.yml"
+        if not compose_file.is_file():
+            return SKIPPED
+
+        # Check whether derper service exists
+        if yaml is not None:
+            try:
+                with compose_file.open() as f:
+                    doc = yaml.safe_load(f)
+                if "derper" not in (doc.get("services") or {}):
+                    return SKIPPED
+            except (yaml.YAMLError, AttributeError):
+                return SKIPPED
+        else:
+            text = compose_file.read_text(encoding="utf-8")
+            if "derper:" not in text:
+                return SKIPPED
+
+        domain = self._read_env(self._host_dir).get("DOMAIN", "<YOUR_DOMAIN>")
+        return (
+            f"DERP detected at derp.{domain} — configure your Tailscale ACL:\n"
+            "  https://tailscale.com/kb/1118/custom-derp-servers"
+        )
 
     def _tailscale_check(self) -> str | _Skipped | None:
         """If Tailscale is installed but not authenticated, print a hint."""
