@@ -15,9 +15,9 @@
 # Usage -- manual run (e.g., provider without startup-script support):
 #   ssh root@<ip> 'bash -s' < vps_bootstrap.sh
 #
-# DNS detection is automatic: probes google.com reachability to decide
-# between domestic (AliDNS DoT) and foreign (Cloudflare + Quad9 DoT).
-# Override with DNS_MODE=domestic or DNS_MODE=foreign if needed.
+# Environment detection is automatic: probes google.com reachability
+# to decide between domestic and foreign configuration (Docker mirrors,
+# etc.).  Override with DNS_MODE=domestic or DNS_MODE=foreign if needed.
 
 set -euo pipefail
 
@@ -158,39 +158,6 @@ DOCKEREOF
 else
     echo "==> Skipping Docker registry mirrors (foreign VPS)"
 fi
-
-# ===========================================================================
-# DNS -- systemd-resolved with DoT
-# ===========================================================================
-echo "==> Configuring encrypted DNS..."
-apt-get install -y -qq systemd-resolved
-# Providers hand out ISP resolvers that often return poisoned results.
-# Route all system DNS through DoT (DNS over TLS, port 853).
-#
-# DNS_MODE is set by the early environment probe above.
-mkdir -p /etc/systemd/resolved.conf.d
-if [ "$DNS_MODE" = "domestic" ]; then
-    cat > /etc/systemd/resolved.conf.d/dot.conf <<'RESOLVEOF'
-[Resolve]
-DNS=223.5.5.5#dns.alidns.com
-DNS=223.6.6.6#dns.alidns.com
-DNSOverTLS=yes
-RESOLVEOF
-    echo "   DNS -> AliDNS (DoT, domestic)"
-else
-    cat > /etc/systemd/resolved.conf.d/dot.conf <<'RESOLVEOF'
-[Resolve]
-DNS=1.1.1.1#cloudflare-dns.com
-DNS=1.0.0.1#cloudflare-dns.com
-DNS=9.9.9.9#dns.quad9.net
-DNS=149.112.112.112#dns.quad9.net
-DNSOverTLS=yes
-RESOLVEOF
-    echo "   DNS -> Cloudflare + Quad9 (DoT, foreign)"
-fi
-systemctl enable systemd-resolved
-systemctl restart systemd-resolved
-ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
 
 # ===========================================================================
 # SSH hardening --- port 9906, key-only, no password auth
