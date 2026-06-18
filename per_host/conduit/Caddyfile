@@ -1,6 +1,0 @@
-# Caddy reverse proxy — configure services below.
-
-{$DOMAIN:localhost} {
-    respond "conduit — nothing here yet" 200
-    header Cache-Control "no-store"
-}
