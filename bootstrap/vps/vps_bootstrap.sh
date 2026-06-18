@@ -35,6 +35,22 @@ apt-get update -qq
 apt-get upgrade -y -qq
 
 # ===========================================================================
+# Environment detection -- probe once, used by all downstream sections.
+# ===========================================================================
+# Detect whether we're inside China (google.com unreachable).
+# Sets DNS_MODE=domestic or DNS_MODE=foreign.
+# Override with DNS_MODE=domestic or DNS_MODE=foreign if needed.
+if [ -z "${DNS_MODE:-}" ]; then
+    echo "==> Detecting environment..."
+    if curl -fsSL --connect-timeout 3 --max-time 5 https://www.google.com >/dev/null 2>&1; then
+        DNS_MODE=foreign
+    else
+        DNS_MODE=domestic
+    fi
+fi
+echo "   Environment: $DNS_MODE"
+
+# ===========================================================================
 # User setup -- ensure linuxuser exists (Vultr creates it, Aliyun doesn't)
 # ===========================================================================
 echo "==> Ensuring linuxuser user..."
@@ -99,19 +115,48 @@ if ! command -v docker &>/dev/null; then
     apt-get update -qq
     apt-get install -y -qq docker-ce docker-ce-cli containerd.io docker-compose-plugin
     systemctl enable docker
+    fi
 
-    # Docker Hub is blocked domestically -- configure registry mirrors.
-    # Written unconditionally: on foreign VPSes the mirrors are simply
-    # unreachable and the daemon falls back to docker.io transparently.
-    cat > /etc/docker/daemon.json <<'DOCKEREOF'
+# Docker Hub is blocked domestically -- configure registry mirrors.
+# Only applied when DNS_MODE=domestic (set by the early environment probe).
+# Probe a list of known mirrors; only keep the ones that respond.
+if [ "$DNS_MODE" = "domestic" ]; then
+    echo "==> Probing Docker registry mirrors..."
+    DOCKER_MIRRORS=(
+        "https://docker.m.daocloud.io"
+        "https://docker.1panel.live"
+        "https://docker.1ms.run"
+        "https://docker.xuanyuan.me"
+        "https://hub.rat.dev"
+        "https://dockerpull.org"
+        "https://dockerhub.icu"
+    )
+
+    WORKING=()
+    for mirror in "${DOCKER_MIRRORS[@]}"; do
+        if curl -fsSL --connect-timeout 5 --max-time 10 "${mirror}/v2/" -o /dev/null 2>/dev/null; then
+            WORKING+=("\"$mirror\"")
+            echo "   + $mirror"
+        else
+            echo "   - $mirror (unreachable)"
+        fi
+    done
+
+    if [ ${#WORKING[@]} -gt 0 ]; then
+        # Build JSON array with comma separators
+        MIRROR_LIST=$(IFS=,; echo "${WORKING[*]}")
+        cat > /etc/docker/daemon.json <<DOCKEREOF
 {
-  "registry-mirrors": [
-    "https://docker.m.daocloud.io",
-    "https://docker.mirrors.ustc.edu.cn"
-  ]
+  "registry-mirrors": [${MIRROR_LIST}]
 }
 DOCKEREOF
-    systemctl restart docker
+        systemctl restart docker
+        echo "   Configured ${#WORKING[@]} registry mirror(s)"
+    else
+        echo "   !! No working mirrors found -- Docker Hub may be unreachable"
+    fi
+else
+    echo "==> Skipping Docker registry mirrors (foreign VPS)"
 fi
 
 # ===========================================================================
@@ -122,17 +167,7 @@ apt-get install -y -qq systemd-resolved
 # Providers hand out ISP resolvers that often return poisoned results.
 # Route all system DNS through DoT (DNS over TLS, port 853).
 #
-# Auto-detection: if google.com is reachable, we're outside China -> foreign
-# DNS.  Otherwise domestic.  Can be overridden with DNS_MODE=foreign|domestic.
-if [ -z "${DNS_MODE:-}" ]; then
-    if curl -s --connect-timeout 3 --max-time 5 https://www.google.com >/dev/null 2>&1; then
-        DNS_MODE=foreign
-    else
-        DNS_MODE=domestic
-    fi
-    echo "   Detected: $DNS_MODE"
-fi
-
+# DNS_MODE is set by the early environment probe above.
 mkdir -p /etc/systemd/resolved.conf.d
 if [ "$DNS_MODE" = "domestic" ]; then
     cat > /etc/systemd/resolved.conf.d/dot.conf <<'RESOLVEOF'
