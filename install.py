@@ -13,6 +13,7 @@ import platform
 import re
 import shutil
 import socket
+import ssl
 import subprocess
 import sys
 import tempfile
@@ -323,6 +324,7 @@ def _system_font_dir() -> Path:
 
 
 MIRROR = "mirror.ericzhuochen.com"
+USER_AGENT = "Mozilla/5.0"
 
 
 def _mirror_url(path: str) -> str:
@@ -347,19 +349,37 @@ def install_fonts_from_zip(
         logging.debug("all fonts already installed, skipping download")
         return []
 
-    def _download(src: str, dest: str) -> None:
+    def _download(src: str, dest: str, verify_ssl: bool = True) -> None:
         logging.debug("downloading %s", src)
-        urllib.request.urlretrieve(src, dest)
+        req = urllib.request.Request(src, headers={"User-Agent": USER_AGENT})
+        if verify_ssl:
+            urllib.request.urlretrieve(req, dest)
+        else:
+            # Corporate proxies often perform SSL inspection — retry
+            # without certificate verification so the download can
+            # still go through the proxy.
+            ctx = ssl._create_unverified_context()
+            https_handler = urllib.request.HTTPSHandler(context=ctx)
+            proxy_handler = urllib.request.ProxyHandler()
+            handler = urllib.request.build_opener(https_handler, proxy_handler)
+            with handler.open(req) as resp, open(dest, "wb") as f:
+                shutil.copyfileobj(resp, f)
 
     with tempfile.NamedTemporaryFile(suffix=".zip", delete=False) as tmp:
         try:
             _download(url, tmp.name)
         except Exception:
-            if fallback:
-                logging.debug("mirror failed, trying fallback: %s", fallback)
-                _download(fallback, tmp.name)
-            else:
-                raise
+            try:
+                _download(url, tmp.name, verify_ssl=False)
+            except Exception:
+                if fallback:
+                    logging.debug("mirror failed, trying fallback: %s", fallback)
+                    try:
+                        _download(fallback, tmp.name)
+                    except Exception:
+                        _download(fallback, tmp.name, verify_ssl=False)
+                else:
+                    raise
         tmp_path = Path(tmp.name)
 
     try:
