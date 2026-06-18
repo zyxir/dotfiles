@@ -326,6 +326,11 @@ def _system_font_dir() -> Path:
 MIRROR = "mirror.ericzhuochen.com"
 USER_AGENT = "Mozilla/5.0"
 
+# Set to True during proxy setup when the proxy URL came from an
+# environment variable, indicating a corporate proxy that likely
+# requires integrated Windows auth and performs SSL inspection.
+_CORPORATE_PROXY = False
+
 
 def _mirror_url(path: str) -> str:
     """Return the full URL for *path* on the download mirror."""
@@ -349,8 +354,32 @@ def install_fonts_from_zip(
         logging.debug("all fonts already installed, skipping download")
         return []
 
+    def _pwsh_download(src: str, dest: str) -> None:
+        """Download *src* to *dest* via PowerShell's Invoke-WebRequest.
+
+        PowerShell uses the Windows HTTP stack, which supports integrated
+        proxy authentication (NTLM/Kerberos) and trusts the corporate CA.
+        """
+        logging.debug("downloading via PowerShell: %s", src)
+        subprocess.run(
+            [
+                "powershell",
+                "-NoProfile",
+                "-Command",
+                "Invoke-WebRequest",
+                "-Uri", src,
+                "-OutFile", dest,
+                "-UserAgent", USER_AGENT,
+            ],
+            check=True,
+            capture_output=True,
+        )
+
     def _download(src: str, dest: str, verify_ssl: bool = True) -> None:
         logging.debug("downloading %s", src)
+        if _CORPORATE_PROXY and platform.system() == "Windows":
+            _pwsh_download(src, dest)
+            return
         req = urllib.request.Request(src, headers={"User-Agent": USER_AGENT})
         if verify_ssl:
             urllib.request.urlretrieve(req, dest)
@@ -1090,6 +1119,13 @@ if __name__ == "__main__":
     # Detect and configure proxy for downloads
     proxy_url = _proxy_url(args.proxy)
     proxy_status = ""
+    if proxy_url and not args.proxy:
+        # If the proxy came from an environment variable (not --proxy
+        # and not the Clash port probe), assume it is a corporate proxy.
+        for key in ("https_proxy", "HTTPS_PROXY", "http_proxy", "HTTP_PROXY"):
+            if os.environ.get(key) == proxy_url:
+                _CORPORATE_PROXY = True
+                break
     if proxy_url:
         os.environ.setdefault("http_proxy", proxy_url)
         os.environ.setdefault("https_proxy", proxy_url)
