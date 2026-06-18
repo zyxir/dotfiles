@@ -1,14 +1,23 @@
 #!/bin/bash
-# VPS Bootstrap — shared Vultr startup script for Debian 12 (bookworm).
+# VPS Bootstrap — shared setup script for Debian 12 (bookworm) instances.
 # Provisions a fresh VPS: Docker, SSH hardening, firewall, fail2ban,
 # unattended-upgrades.
-# Idempotent --- delete /etc/.vps-setup-done to force re-run.
+# Idempotent — delete /etc/.vps-setup-done to force re-run.
 #
-# Saved on Vultr as "VPS Bootstrap" and reused across instances.
+# Works on any provider (Vultr, Aliyun, Hetzner, etc.).
+# Docker repo detection: probes the official repo first; if unreachable
+# (e.g., from within China), falls back to domestic mirrors automatically.
 #
-# Usage:
-#   Paste this entire script into the Vultr "Startup Script" field
-#   when creating a Debian 12 instance.
+# Usage — provider startup script:
+#   Paste into the "Startup Script" / "User Data" field when creating
+#   a Debian 12 instance.
+#
+# Usage — manual run (e.g., provider without startup-script support):
+#   ssh root@<ip> 'bash -s' < vps_bootstrap.sh
+#
+# DNS detection is automatic: probes google.com reachability to decide
+# between domestic (AliDNS DoT) and foreign (Cloudflare + Quad9 DoT).
+# Override with DNS_MODE=domestic or DNS_MODE=foreign if needed.
 
 set -euo pipefail
 
@@ -26,21 +35,107 @@ apt-get update -qq
 apt-get upgrade -y -qq
 
 # ===========================================================================
+# User setup — ensure linuxuser exists (Vultr creates it, Aliyun doesn't)
+# ===========================================================================
+echo "==> Ensuring linuxuser user..."
+if id linuxuser &>/dev/null; then
+    echo "   linuxuser already exists"
+else
+    useradd -m -s /bin/bash -G sudo linuxuser
+    echo "   linuxuser created"
+fi
+# Sync SSH keys from root so linuxuser can log in with the same keys.
+mkdir -p ~linuxuser/.ssh
+if [ -f ~root/.ssh/authorized_keys ]; then
+    cp ~root/.ssh/authorized_keys ~linuxuser/.ssh/authorized_keys
+    chmod 700 ~linuxuser/.ssh
+    chmod 600 ~linuxuser/.ssh/authorized_keys
+    chown -R linuxuser:linuxuser ~linuxuser/.ssh
+    echo "   SSH keys synced from root"
+fi
+
+# ===========================================================================
 # Docker Engine + Compose plugin
 # ===========================================================================
 echo "==> Installing Docker Engine..."
 if ! command -v docker &>/dev/null; then
     apt-get install -y -qq ca-certificates curl
     install -m 0755 -d /etc/apt/keyrings
-    curl -fsSL https://download.docker.com/linux/debian/gpg \
-        -o /etc/apt/keyrings/docker.asc
+
+    # Probe Docker mirrors — try official first; if unreachable (e.g.,
+    # GFW blocks download.docker.com), fall back to domestic mirrors.
+    # The GPG key is a small, reliable canary for mirror reachability.
+    MIRRORS=(
+        "official|https://download.docker.com/linux/debian"
+        "Tsinghua|https://mirrors.tuna.tsinghua.edu.cn/docker-ce/linux/debian"
+        "Aliyun|https://mirrors.aliyun.com/docker-ce/linux/debian"
+    )
+    DOCKER_BASE=""
+    for entry in "${MIRRORS[@]}"; do
+        label="${entry%%|*}"
+        base="${entry#*|}"
+        if curl -fsSL --connect-timeout 5 --max-time 10 "${base}/gpg" -o /dev/null 2>/dev/null; then
+            DOCKER_BASE="$base"
+            echo "   Using $label mirror"
+            break
+        fi
+    done
+
+    if [ -z "$DOCKER_BASE" ]; then
+        echo "!! Cannot reach any Docker mirror (official or domestic)."
+        exit 1
+    fi
+
+    curl -fsSL "${DOCKER_BASE}/gpg" -o /etc/apt/keyrings/docker.asc
     chmod a+r /etc/apt/keyrings/docker.asc
-    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian $(. /etc/os-release && echo "$VERSION_CODENAME") stable" \
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] ${DOCKER_BASE} $(. /etc/os-release && echo "$VERSION_CODENAME") stable" \
         > /etc/apt/sources.list.d/docker.list
     apt-get update -qq
     apt-get install -y -qq docker-ce docker-ce-cli containerd.io docker-compose-plugin
     systemctl enable docker
 fi
+
+# ===========================================================================
+# DNS — systemd-resolved with DoT
+# ===========================================================================
+echo "==> Configuring encrypted DNS..."
+# Providers hand out ISP resolvers that often return poisoned results.
+# Route all system DNS through DoT (DNS over TLS, port 853).
+#
+# Auto-detection: if google.com is reachable, we're outside China → foreign
+# DNS.  Otherwise domestic.  Can be overridden with DNS_MODE=foreign|domestic.
+if [ -z "${DNS_MODE:-}" ]; then
+    if curl -s --connect-timeout 3 --max-time 5 https://www.google.com >/dev/null 2>&1; then
+        DNS_MODE=foreign
+    else
+        DNS_MODE=domestic
+    fi
+    echo "   Detected: $DNS_MODE"
+fi
+
+mkdir -p /etc/systemd/resolved.conf.d
+if [ "$DNS_MODE" = "domestic" ]; then
+    cat > /etc/systemd/resolved.conf.d/dot.conf <<'RESOLVEOF'
+[Resolve]
+DNS=223.5.5.5#dns.alidns.com
+DNS=223.6.6.6#dns.alidns.com
+DNSOverTLS=yes
+RESOLVEOF
+    echo "   DNS → AliDNS (DoT, domestic)"
+else
+    cat > /etc/systemd/resolved.conf.d/dot.conf <<'RESOLVEOF'
+[Resolve]
+DNS=1.1.1.1#cloudflare-dns.com
+DNS=1.0.0.1#cloudflare-dns.com
+DNS=9.9.9.9#dns.quad9.net
+DNS=149.112.112.112#dns.quad9.net
+DNSOverTLS=yes
+RESOLVEOF
+    echo "   DNS → Cloudflare + Quad9 (DoT, foreign)"
+fi
+systemctl enable systemd-resolved
+systemctl restart systemd-resolved
+ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
 
 # ===========================================================================
 # SSH hardening --- port 9906, key-only, no password auth
@@ -153,5 +248,15 @@ UEOF
 # ===========================================================================
 date > "$SENTINEL"
 echo "==> VPS setup complete."
-echo "    Next: copy docker-compose.yml, Caddyfile, and .env to /root/ via scp,"
-echo "    then run 'docker compose up -d'."
+echo
+echo "    ╔══════════════════════════════════════════════════════════╗"
+echo "    ║  Set hostname so install.py activates the right config: ║"
+echo "    ║                                                        ║"
+echo "    ║  hostnamectl set-hostname conduit                       ║"
+echo "    ║                                                        ║"
+echo "    ║  Then clone and install:                                ║"
+echo "    ║  git clone https://github.com/<you>/dotfiles.git        ║"
+echo "    ║  cd dotfiles && cp per_host/conduit/.env.example \      ║"
+echo "    ║    per_host/conduit/.env   # then fill from Bitwarden   ║"
+echo "    ║  python3 install.py                                     ║"
+echo "    ╚══════════════════════════════════════════════════════════╝"
