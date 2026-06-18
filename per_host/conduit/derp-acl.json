@@ -1,0 +1,23 @@
+{
+  "// NOTE": "Merge this into your Tailscale ACL (Access Controls) — do NOT replace the whole file.",
+  "// DOCS": "https://tailscale.com/kb/1118/custom-derp-servers",
+  "derpMap": {
+    "OmitDefaultRegions": false,
+    "Regions": {
+      "900": {
+        "RegionID": 900,
+        "RegionCode": "cn-conduit",
+        "RegionName": "Conduit (China)",
+        "Nodes": [
+          {
+            "Name": "1",
+            "RegionID": 900,
+            "HostName": "derp.<YOUR_DOMAIN>",
+            "DERPPort": 8443,
+            "STUNPort": 33478
+          }
+        ]
+      }
+    }
+  }
+}
