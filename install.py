@@ -851,21 +851,22 @@ class VpsHost(HostTask):
                 continue
 
             records = resp.get("result", [])
+            desired_proxied = not any(
+                domain.startswith(p) for p in self._BYPASS_PROXY_PREFIXES
+            )
             if records:
                 existing = records[0]
-                if existing.get("content") == public_ip:
+                if (existing.get("content") == public_ip
+                        and existing.get("proxied") == desired_proxied):
                     unchanged += 1
                     continue
                 # Update
-                proxied = not any(
-                    domain.startswith(p) for p in self._BYPASS_PROXY_PREFIXES
-                )
                 body = {
                     "type": "A",
                     "name": domain,
                     "content": public_ip,
                     "ttl": 1,
-                    "proxied": proxied,
+                    "proxied": desired_proxied,
                 }
                 try:
                     self._cf_api(
@@ -876,15 +877,12 @@ class VpsHost(HostTask):
                     errors.append(f"{domain}: update failed — {e}")
             else:
                 # Create
-                proxied = not any(
-                    domain.startswith(p) for p in self._BYPASS_PROXY_PREFIXES
-                )
                 body = {
                     "type": "A",
                     "name": domain,
                     "content": public_ip,
                     "ttl": 1,
-                    "proxied": proxied,
+                    "proxied": desired_proxied,
                 }
                 try:
                     self._cf_api(token, zone_id, "POST", "dns_records", body)
