@@ -98,6 +98,19 @@ if ! command -v docker &>/dev/null; then
     apt-get update -qq
     apt-get install -y -qq docker-ce docker-ce-cli containerd.io docker-compose-plugin
     systemctl enable docker
+
+    # Docker Hub is blocked domestically — configure registry mirrors.
+    # Written unconditionally: on foreign VPSes the mirrors are simply
+    # unreachable and the daemon falls back to docker.io transparently.
+    cat > /etc/docker/daemon.json <<'DOCKEREOF'
+{
+  "registry-mirrors": [
+    "https://docker.m.daocloud.io",
+    "https://docker.mirrors.ustc.edu.cn"
+  ]
+}
+DOCKEREOF
+    systemctl restart docker
 fi
 
 # ===========================================================================

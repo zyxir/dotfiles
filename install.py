@@ -777,12 +777,23 @@ class VpsHost(HostTask):
         if not domains:
             return "⚠ No domain blocks found in Caddyfile."
 
-        # Discover public IP (this runs on the VPS, so it IS the VPS IP)
-        try:
-            with urllib.request.urlopen("https://api.ipify.org", timeout=10) as resp:
-                public_ip = resp.read().decode().strip()
-        except OSError as e:
-            return f"⚠ Could not determine public IP: {e}"
+        # Discover public IP — try multiple services, first to respond wins.
+        IP_SERVICES = [
+            "http://ip.3322.net",        # domestic
+            "https://api.ipify.org",     # foreign
+        ]
+        public_ip = None
+        last_error = None
+        for url in IP_SERVICES:
+            try:
+                with urllib.request.urlopen(url, timeout=5) as resp:
+                    public_ip = resp.read().decode().strip()
+                    if public_ip:
+                        break
+            except OSError as e:
+                last_error = e
+        if not public_ip:
+            return f"⚠ Could not determine public IP: {last_error}"
 
         # Cache zone IDs so we don't re-fetch for subdomains of the same zone
         zone_cache: dict[str, str] = {}
