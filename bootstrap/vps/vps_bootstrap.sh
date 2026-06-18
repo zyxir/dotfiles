@@ -43,17 +43,18 @@ if id linuxuser &>/dev/null; then
 else
     useradd -m -s /bin/bash -G sudo linuxuser
     echo "   linuxuser created"
+
+    # Sync SSH keys from root so the new user can log in.
+    mkdir -p ~linuxuser/.ssh
+    if [ -f ~root/.ssh/authorized_keys ]; then
+        cp ~root/.ssh/authorized_keys ~linuxuser/.ssh/authorized_keys
+        chmod 700 ~linuxuser/.ssh
+        chmod 600 ~linuxuser/.ssh/authorized_keys
+        chown -R linuxuser:linuxuser ~linuxuser/.ssh
+        echo "   SSH keys synced from root"
+    fi
 fi
-# Sync SSH keys from root so linuxuser can log in with the same keys.
-mkdir -p ~linuxuser/.ssh
-if [ -f ~root/.ssh/authorized_keys ]; then
-    cp ~root/.ssh/authorized_keys ~linuxuser/.ssh/authorized_keys
-    chmod 700 ~linuxuser/.ssh
-    chmod 600 ~linuxuser/.ssh/authorized_keys
-    chown -R linuxuser:linuxuser ~linuxuser/.ssh
-    echo "   SSH keys synced from root"
-fi
-# Passwordless sudo — same as Vultr's default linuxuser config.
+# Passwordless sudo — always apply (may have been missing).
 cat > /etc/sudoers.d/linuxuser <<'SUDOEOF'
 linuxuser ALL=(ALL:ALL) NOPASSWD: ALL
 SUDOEOF
