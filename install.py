@@ -655,8 +655,13 @@ class VpsHost(HostTask):
         if not (host_dir / "docker-compose.yml").exists():
             return "❗No docker-compose.yml found."
 
+        required = [".env"]
+        # Only require subconv.env if this host actually has a subconv service.
+        if (host_dir / "subconv" / "subconv.py").exists():
+            required.append("subconv/subconv.env")
+
         missing = []
-        for name in (".env", "subconv/subconv.env"):
+        for name in required:
             if not (host_dir / name).exists():
                 example = f"{name}.example"
                 missing.append(f"  {name} (copy from {example})")
