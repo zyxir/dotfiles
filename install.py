@@ -700,7 +700,7 @@ class VpsHost(HostTask):
             line = line.strip()
             if not line or line.startswith("#"):
                 continue
-            m = re.match(r"^(\S+)\s*\{", line)
+            m = re.match(r"^(\S+\.\S+)\s*\{", line)
             if m:
                 domain = m.group(1)
                 # Resolve {$VAR:default} placeholders
