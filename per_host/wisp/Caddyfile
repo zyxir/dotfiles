@@ -15,16 +15,3 @@ mirror.{$DOMAIN:localhost} {
     header Cache-Control "no-store"
 }
 
-# GitHub proxy — serves zyxir repos to domestic VPSes that can't reach
-# GitHub directly.  Path-scoped so only personal repos pass through.
-github.{$DOMAIN:localhost} {
-    handle /zyxir/* {
-        reverse_proxy https://github.com {
-            header_up Host github.com
-        }
-    }
-    handle {
-        error 404
-    }
-    header Cache-Control "no-store"
-}

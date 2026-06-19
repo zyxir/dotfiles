@@ -5,9 +5,6 @@
 # Idempotent -- delete /etc/.vps-setup-done to force re-run.
 #
 # Works on any provider (Vultr, Aliyun, Hetzner, etc.).
-# Docker repo detection: probes the official repo first; if unreachable
-# (e.g., from within China), falls back to domestic mirrors automatically.
-#
 # Usage -- provider startup script:
 #   Paste into the "Startup Script" / "User Data" field when creating
 #   a Debian 12 instance.
@@ -15,10 +12,6 @@
 # Usage -- manual run (e.g., provider without startup-script support):
 #   ssh root@<ip> 'bash -s' < vps_bootstrap.sh
 #
-# Environment detection is automatic: probes google.com reachability
-# to decide between domestic and foreign configuration (Docker mirrors,
-# etc.).  Override with DNS_MODE=domestic or DNS_MODE=foreign if needed.
-
 set -euo pipefail
 
 SENTINEL="/etc/.vps-setup-done"
@@ -33,22 +26,6 @@ echo "==> Updating system packages..."
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq
 apt-get upgrade -y -qq
-
-# ===========================================================================
-# Environment detection -- probe once, used by all downstream sections.
-# ===========================================================================
-# Detect whether we're inside China (google.com unreachable).
-# Sets DNS_MODE=domestic or DNS_MODE=foreign.
-# Override with DNS_MODE=domestic or DNS_MODE=foreign if needed.
-if [ -z "${DNS_MODE:-}" ]; then
-    echo "==> Detecting environment..."
-    if curl -fsSL --connect-timeout 3 --max-time 5 https://www.google.com >/dev/null 2>&1; then
-        DNS_MODE=foreign
-    else
-        DNS_MODE=domestic
-    fi
-fi
-echo "   Environment: $DNS_MODE"
 
 # ===========================================================================
 # User setup -- ensure linuxuser exists (Vultr creates it, Aliyun doesn't)
@@ -84,29 +61,12 @@ if ! command -v docker &>/dev/null; then
     apt-get install -y -qq ca-certificates curl
     install -m 0755 -d /etc/apt/keyrings
 
-    # Probe Docker mirrors -- try official first; if unreachable (e.g.,
-    # GFW blocks download.docker.com), fall back to domestic mirrors.
-    # The GPG key is a small, reliable canary for mirror reachability.
-    MIRRORS=(
-        "official|https://download.docker.com/linux/debian"
-        "Tsinghua|https://mirrors.tuna.tsinghua.edu.cn/docker-ce/linux/debian"
-        "Aliyun|https://mirrors.aliyun.com/docker-ce/linux/debian"
-    )
-    DOCKER_BASE=""
-    for entry in "${MIRRORS[@]}"; do
-        label="${entry%%|*}"
-        base="${entry#*|}"
-        if curl -fsSL --connect-timeout 5 --max-time 10 "${base}/gpg" -o /dev/null 2>/dev/null; then
-            DOCKER_BASE="$base"
-            echo "   Using $label mirror"
-            break
-        fi
-    done
-
-    if [ -z "$DOCKER_BASE" ]; then
-        echo "!! Cannot reach any Docker mirror (official or domestic)."
+    if ! curl -fsSL --connect-timeout 5 --max-time 10 \
+        "https://download.docker.com/linux/debian/gpg" -o /dev/null 2>/dev/null; then
+        echo "!! Cannot reach download.docker.com."
         exit 1
     fi
+    DOCKER_BASE="https://download.docker.com/linux/debian"
 
     curl -fsSL "${DOCKER_BASE}/gpg" -o /etc/apt/keyrings/docker.asc
     chmod a+r /etc/apt/keyrings/docker.asc
@@ -116,48 +76,6 @@ if ! command -v docker &>/dev/null; then
     apt-get install -y -qq docker-ce docker-ce-cli containerd.io docker-compose-plugin
     systemctl enable docker
     fi
-
-# Docker Hub is blocked domestically -- configure registry mirrors.
-# Only applied when DNS_MODE=domestic (set by the early environment probe).
-# Probe a list of known mirrors; only keep the ones that respond.
-if [ "$DNS_MODE" = "domestic" ]; then
-    echo "==> Probing Docker registry mirrors..."
-    DOCKER_MIRRORS=(
-        "https://docker.m.daocloud.io"
-        "https://docker.1panel.live"
-        "https://docker.1ms.run"
-        "https://docker.xuanyuan.me"
-        "https://hub.rat.dev"
-        "https://dockerpull.org"
-        "https://dockerhub.icu"
-    )
-
-    WORKING=()
-    for mirror in "${DOCKER_MIRRORS[@]}"; do
-        if curl -fsSL --connect-timeout 5 --max-time 10 "${mirror}/v2/" -o /dev/null 2>/dev/null; then
-            WORKING+=("\"$mirror\"")
-            echo "   + $mirror"
-        else
-            echo "   - $mirror (unreachable)"
-        fi
-    done
-
-    if [ ${#WORKING[@]} -gt 0 ]; then
-        # Build JSON array with comma separators
-        MIRROR_LIST=$(IFS=,; echo "${WORKING[*]}")
-        cat > /etc/docker/daemon.json <<DOCKEREOF
-{
-  "registry-mirrors": [${MIRROR_LIST}]
-}
-DOCKEREOF
-        systemctl restart docker
-        echo "   Configured ${#WORKING[@]} registry mirror(s)"
-    else
-        echo "   !! No working mirrors found -- Docker Hub may be unreachable"
-    fi
-else
-    echo "==> Skipping Docker registry mirrors (foreign VPS)"
-fi
 
 # ===========================================================================
 # SSH hardening --- port 9906, key-only, no password auth

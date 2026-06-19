@@ -777,10 +777,9 @@ class VpsHost(HostTask):
         if not domains:
             return "⚠ No domain blocks found in Caddyfile."
 
-        # Discover public IP — try multiple services, first to respond wins.
+        # Discover public IP.
         IP_SERVICES = [
-            "http://ip.3322.net",        # domestic
-            "https://api.ipify.org",     # foreign
+            "https://api.ipify.org",
         ]
         public_ip = None
         last_error = None
