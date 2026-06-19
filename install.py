@@ -15,11 +15,6 @@ import shutil
 import socket
 import ssl
 import subprocess
-
-try:
-    import yaml
-except ImportError:
-    yaml = None
 import sys
 import tempfile
 import urllib.parse
@@ -633,19 +628,6 @@ class PowerToys(AppTask):
             return SKIPPED
 
 
-def _parse_docker_port(entry: str) -> tuple[str, str]:
-    """Parse a docker-compose port string like '8443:443/tcp' -> ('8443', 'tcp')."""
-    host_port = entry.split(":")[0].strip('"')
-    if "/" in host_port:
-        # e.g. '33478/udp' (bare host port with protocol)
-        parts = host_port.split("/")
-        return parts[0], parts[1]
-    # Protocol defaults to tcp, may be specified after the container port
-    rest = entry.split(":")[1] if ":" in entry else ""
-    proto = rest.split("/")[1] if "/" in rest else "tcp"
-    return host_port, proto
-
-
 class VpsHost(HostTask):
     """VPS host config (per_host/<hostname>/)."""
 
@@ -661,8 +643,6 @@ class VpsHost(HostTask):
             Step("Start Docker services", self._docker_up),
             Step("Setup cron jobs", self._setup_crons),
             Step("Check Tailscale", self._tailscale_check),
-            Step("Check cloud firewall", self._cloud_firewall_hint),
-            Step("Tailscale DERP ACL", self._derp_acl_hint),
         ]
 
     @property
@@ -972,74 +952,6 @@ class VpsHost(HostTask):
             "every 30 min": "*/30 * * * *",
             "daily": "0 3 * * *",
         }[schedule]
-
-    def _cloud_firewall_hint(self) -> str | _Skipped | None:
-        """Parse docker-compose.yml for non-standard host ports and remind
-        the user to open them in the cloud provider's firewall pane.
-        """
-        compose_file = self._host_dir / "docker-compose.yml"
-        if not compose_file.is_file():
-            return SKIPPED
-
-        ports: list[tuple[str, str]] = []  # (host_port, protocol)
-
-        if yaml is not None:
-            try:
-                with compose_file.open() as f:
-                    doc = yaml.safe_load(f)
-                for _svc_name, svc in (doc.get("services") or {}).items():
-                    for entry in svc.get("ports") or []:
-                        ports.append(_parse_docker_port(entry))
-            except (yaml.YAMLError, AttributeError, KeyError):
-                pass
-        else:
-            # Fallback: simple regex for 'ports:' sections
-            text = compose_file.read_text(encoding="utf-8")
-            for m in re.finditer(
-                r'^\s*-\s+"?(\d+):\d+/(tcp|udp)"?', text, re.MULTILINE
-            ):
-                ports.append((m.group(1), m.group(2)))
-
-        # 80 and 443 are assumed already open for the web server
-        nonstandard = [
-            (p, proto) for p, proto in ports if p not in {"80", "443"}
-        ]
-        if not nonstandard:
-            return SKIPPED
-
-        lines = [
-            "Remember to open these ports in your cloud provider's firewall:"
-        ]
-        for port, proto in nonstandard:
-            lines.append(f"  - {port}/{proto}")
-        return "\n".join(lines)
-
-    def _derp_acl_hint(self) -> str | _Skipped | None:
-        """If a derper service is configured, point to the Tailscale ACL docs."""
-        compose_file = self._host_dir / "docker-compose.yml"
-        if not compose_file.is_file():
-            return SKIPPED
-
-        # Check whether derper service exists
-        if yaml is not None:
-            try:
-                with compose_file.open() as f:
-                    doc = yaml.safe_load(f)
-                if "derper" not in (doc.get("services") or {}):
-                    return SKIPPED
-            except (yaml.YAMLError, AttributeError):
-                return SKIPPED
-        else:
-            text = compose_file.read_text(encoding="utf-8")
-            if "derper:" not in text:
-                return SKIPPED
-
-        return (
-            "DERP detected (IP-only, ports 8443/33478). "
-            "Configure your Tailscale ACL:\n"
-            "  Sample: per_host/conduit/derp-acl.json\n"
-            "  Docs:   https://tailscale.com/kb/1118/custom-derp-servers"
-        )
 
     def _tailscale_check(self) -> str | _Skipped | None:
         """If Tailscale is installed but not authenticated, print a hint."""
