@@ -12,7 +12,6 @@
           {
             "Name": "1",
             "RegionID": 900,
-            "//": "IP-only DERP — no HostName.  Set IPv4 to Conduit's public IP.",
             "IPv4": "<YOUR_VPS_IP>",
             "DERPPort": 8443,
             "STUNPort": 33478,
