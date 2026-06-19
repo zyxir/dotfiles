@@ -693,10 +693,6 @@ class VpsHost(HostTask):
 
     # ----- DNS helpers -------------------------------------------------
 
-    # Domain prefixes that must bypass Cloudflare proxying because they
-    # serve on non-standard ports (Cloudflare only proxies 80/443).
-    _BYPASS_PROXY_PREFIXES = {"derp."}
-
     @staticmethod
     def _read_env(host_dir: Path) -> dict[str, str]:
         """Parse KEY=VALUE from a .env file (no shell expansion)."""
@@ -851,13 +847,9 @@ class VpsHost(HostTask):
                 continue
 
             records = resp.get("result", [])
-            desired_proxied = not any(
-                domain.startswith(p) for p in self._BYPASS_PROXY_PREFIXES
-            )
             if records:
                 existing = records[0]
-                if (existing.get("content") == public_ip
-                        and existing.get("proxied") == desired_proxied):
+                if existing.get("content") == public_ip:
                     unchanged += 1
                     continue
                 # Update
@@ -866,7 +858,7 @@ class VpsHost(HostTask):
                     "name": domain,
                     "content": public_ip,
                     "ttl": 1,
-                    "proxied": desired_proxied,
+                    "proxied": True,
                 }
                 try:
                     self._cf_api(
@@ -882,7 +874,7 @@ class VpsHost(HostTask):
                     "name": domain,
                     "content": public_ip,
                     "ttl": 1,
-                    "proxied": desired_proxied,
+                    "proxied": True,
                 }
                 try:
                     self._cf_api(token, zone_id, "POST", "dns_records", body)
@@ -1042,10 +1034,11 @@ class VpsHost(HostTask):
             if "derper:" not in text:
                 return SKIPPED
 
-        domain = self._read_env(self._host_dir).get("DOMAIN", "<YOUR_DOMAIN>")
         return (
-            f"DERP detected at derp.{domain} — configure your Tailscale ACL:\n"
-            "  https://tailscale.com/kb/1118/custom-derp-servers"
+            "DERP detected (IP-only, ports 8443/33478). "
+            "Configure your Tailscale ACL:\n"
+            "  Sample: per_host/conduit/derp-acl.json\n"
+            "  Docs:   https://tailscale.com/kb/1118/custom-derp-servers"
         )
 
     def _tailscale_check(self) -> str | _Skipped | None:
