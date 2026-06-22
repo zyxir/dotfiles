@@ -28,7 +28,7 @@ winget install astral-sh.uv
 
 # --- Input & knowledge ---
 winget install Rime.Weasel
-winget install Logseq.Logseq
+winget install Obsidian.Obsidian
 
 # --- Windows essentials ---
 winget install Microsoft.PowerToys --exact --version 0.95.0

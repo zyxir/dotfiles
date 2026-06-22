@@ -20,7 +20,7 @@ brew "uv"
 
 # --- Input & knowledge ---
 cask "squirrel-app"
-cask "logseq"
+cask "obsidian"
 
 # --- Connectivity ---
 cask "tailscale-app"
