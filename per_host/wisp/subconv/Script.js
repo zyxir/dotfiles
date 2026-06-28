@@ -453,6 +453,8 @@ const RULE_PROVIDERS = {
 // Custom rules (prepended before non-IP rules)
 const CUSTOM_RULES = [
   "DST-PORT,22/2222/9906,DIRECT",  // SSH — always direct, no proxy
+  "DOMAIN-SUFFIX,myqnapcloud.cn,DIRECT",   // QNAP Cloud Link (China)
+  "DOMAIN-SUFFIX,qnap.com.cn,DIRECT",      // QNAP China portal
 ];
 
 // Non-IP rules — checked first (domain/classical matching)
