@@ -184,7 +184,7 @@ class HostTask(Task):
 
     @property
     def is_active(self) -> bool:
-        return socket.gethostname() == self.hostname
+        return socket.gethostname().split(".")[0] == self.hostname
 
 
 class Git(AppTask):
@@ -1079,15 +1079,12 @@ def _supports_ansi() -> bool:
 
 
 def _environment() -> str:
-    """Detect the environment based on username and OS."""
-    user = getpass.getuser()
+    """Detect the environment based on OS."""
     system = platform.system()
-    if user == "zyxir":
-        return "personal"
-    if user == "linuxuser" and system == "Linux":
-        return "vps"
     if system == "Windows":
         return "corporate"
+    if system == "Linux":
+        return "vps"
     return "personal"
 
 
