@@ -4,7 +4,7 @@
 # unattended-upgrades.
 # Idempotent -- delete /etc/.vps-setup-done to force re-run.
 #
-# Works on any provider (Vultr, Aliyun, Hetzner, etc.).
+# Works on any provider (Aliyun, Vultr, Hetzner, etc.).
 # Usage -- provider startup script:
 #   Paste into the "Startup Script" / "User Data" field when creating
 #   a Debian 12 instance.
@@ -26,32 +26,6 @@ echo "==> Updating system packages..."
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq
 apt-get upgrade -y -qq
-
-# ===========================================================================
-# User setup -- ensure linuxuser exists (Vultr creates it, Aliyun doesn't)
-# ===========================================================================
-echo "==> Ensuring linuxuser user..."
-if id linuxuser &>/dev/null; then
-    echo "   linuxuser already exists"
-else
-    useradd -m -s /bin/bash -G sudo linuxuser
-    echo "   linuxuser created"
-
-    # Sync SSH keys from root so the new user can log in.
-    mkdir -p ~linuxuser/.ssh
-    if [ -f ~root/.ssh/authorized_keys ]; then
-        cp ~root/.ssh/authorized_keys ~linuxuser/.ssh/authorized_keys
-        chmod 700 ~linuxuser/.ssh
-        chmod 600 ~linuxuser/.ssh/authorized_keys
-        chown -R linuxuser:linuxuser ~linuxuser/.ssh
-        echo "   SSH keys synced from root"
-    fi
-fi
-# Passwordless sudo -- always apply (may have been missing).
-cat > /etc/sudoers.d/linuxuser <<'SUDOEOF'
-linuxuser ALL=(ALL:ALL) NOPASSWD: ALL
-SUDOEOF
-chmod 440 /etc/sudoers.d/linuxuser
 
 # ===========================================================================
 # Docker Engine + Compose plugin
@@ -124,7 +98,7 @@ fi
 # Runtime dependencies for per-host scripts
 # ===========================================================================
 echo "==> Installing runtime dependencies..."
-apt-get install -y -qq nodejs python3-yaml rsync
+apt-get install -y -qq git nodejs python3-yaml rsync
 
 # ===========================================================================
 # UFW firewall --- allow SSH (9906), HTTP, HTTPS
@@ -183,22 +157,42 @@ APT::Periodic::Unattended-Upgrade "1";
 UEOF
 
 # ===========================================================================
+# Interactive hostname prompt
+# ===========================================================================
+HOSTNAME_SET=0
+if [[ -t 0 ]]; then
+    CURRENT_HOSTNAME=$(hostname)
+    echo
+    read -rp "Enter hostname for this VPS [$CURRENT_HOSTNAME]: " NEW_HOSTNAME
+    if [[ -n "$NEW_HOSTNAME" ]]; then
+        hostnamectl set-hostname "$NEW_HOSTNAME"
+        CURRENT_HOSTNAME="$NEW_HOSTNAME"
+        HOSTNAME_SET=1
+        echo "Hostname set to $CURRENT_HOSTNAME."
+    else
+        echo "Keeping hostname: $CURRENT_HOSTNAME"
+    fi
+fi
+
+# ===========================================================================
 # Done
 # ===========================================================================
 date > "$SENTINEL"
 echo "==> VPS setup complete."
 echo
+if [[ "$HOSTNAME_SET" -eq 1 ]]; then
+    echo "    Hostname: $CURRENT_HOSTNAME"
+    echo
+fi
 echo "    +==========================================================+"
-echo "    |  Set hostname so install.py activates the right config: |"
-echo "    |                                                        |"
-echo "    |  hostnamectl set-hostname wisp                           |"
-echo "    |                                                        |"
+if [[ "$HOSTNAME_SET" -eq 0 ]]; then
+    echo "    |  Set hostname so install.py activates the right config: |"
+    echo "    |                                                        |"
+    echo "    |  hostnamectl set-hostname wisp                           |"
+    echo "    |                                                        |"
+fi
 echo "    |  Then clone and install:                                |"
 echo "    |  git clone https://github.com/<you>/dotfiles.git        |"
-echo "    |                                                        |"
-echo "    |  If GitHub is unreachable, scp the repo from your       |"
-echo "    |  local machine.  After install.py runs, a mirror will   |"
-echo "    |  be available at githubmirror.<domain> for future use.  |"
 echo "    |                                                        |"
 echo "    |  cd dotfiles && cp per_host/wisp/.env.example \\          |"
 echo "    |    per_host/wisp/.env   # then fill from Bitwarden      |"
