@@ -72,7 +72,7 @@ Files for cold-starting a machine — referenced by setup docs, not used by `ins
 | macOS | `bootstrap/macos/Brewfile` | Minimal package list (`brew bundle install --file=...`) |
 | Windows | `bootstrap/windows/install-packages.ps1` | Minimal package list (`powershell -ExecutionPolicy Bypass -File ...`) |
 | Windows | `bootstrap/windows/disable-ctrl-space.reg` | Disable Ctrl+Space IME shortcut (conflicts with editor hotkeys) |
-| VPS | `bootstrap/vps/vps_bootstrap.sh` | Shared Vultr startup script for Debian 12 — installs Docker and Tailscale, hardens SSH (port 9906, key-only), configures UFW (including tailscale0 interface), fail2ban, unattended-upgrades. Paste into Vultr's "Startup Script" field when creating an instance. |
+| VPS | `bootstrap/vps/vps_bootstrap.sh` | Shared startup script for Debian 12 — installs Docker (skipped if download.docker.com is unreachable, e.g., behind GFW), Tailscale, git, nodejs, python3-yaml, rsync; hardens SSH (port 9906, key-only); configures UFW (including tailscale0 interface), fail2ban, unattended-upgrades. Paste into provider's "Startup Script" / "User Data" field when creating an instance. |
 
 The Brewfile and PowerShell script are minimal, audited lists — not a full dump of every installed package. They contain only what's essential on any machine.
 
@@ -89,3 +89,5 @@ Fonts are installed by `AppTask` subclasses (`Fonts`) rather than symlinked. Onl
 - **subconv (wisp)**: Subscription converter under `per_host/wisp/subconv/`. `subconv.py` reuses `Script.js` directly — reads it at runtime, appends a stdin/stdout CLI wrapper, runs it via `node`. Python handles YAML/HTTP; Script.js handles transform logic. Reads `subconv/subconv.env` for the subscription URL (separate from `.env` — changes more often). Outputs to `subconv/srv/<secret>/ZyProxy`, served as a static file by Caddy at `subconv.<domain>/<secret>/ZyProxy`. Run via cron every 30 min. Depends on `nodejs` and `python3-yaml` (installed by `bootstrap/vps/vps_bootstrap.sh`). `Script.js` can also be copied manually into Clash Verge Rev as a backup when the VPS is unavailable.
 
 - **mirror (wisp)**: Download mirror under `per_host/wisp/mirror/`. `mirror.py` fetches files (e.g., font zips) from upstream sources into `mirror/srv/`, served by Caddy at `mirror.<domain>/`. Run via cron weekly (Sunday 3am). Add new download targets in `mirror.py` as needed.
+
+- **githubmirror (wisp)**: Reverse proxy to GitHub at `githubmirror.<domain>/`. Caddy forwards requests to `github.com` with `Host: github.com` so `git clone https://githubmirror.<domain>/zyxir/dotfiles.git` works transparently. The VPS reaches GitHub via its configured proxy. No cron, no local storage, no extra dependencies.

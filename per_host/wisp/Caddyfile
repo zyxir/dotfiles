@@ -15,3 +15,9 @@ mirror.{$DOMAIN:localhost} {
     header Cache-Control "no-store"
 }
 
+githubmirror.{$DOMAIN:localhost} {
+    reverse_proxy https://github.com {
+        header_up Host github.com
+    }
+}
+
