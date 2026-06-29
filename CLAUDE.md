@@ -91,4 +91,4 @@ Fonts are installed by `AppTask` subclasses (`Fonts`) rather than symlinked. Onl
 
 - **mirror (wisp)**: Download mirror under `per_host/wisp/mirror/`. `mirror.py` fetches files (e.g., font zips) from upstream sources into `mirror/srv/`, served by Caddy at `mirror.<domain>/`. Run via cron weekly (Sunday 3am). Add new download targets in `mirror.py` as needed.
 
-- **githubmirror (wisp)**: Reverse proxy to GitHub at `githubmirror.<domain>/`. Caddy forwards requests to `github.com` with `Host: github.com` so `git clone https://githubmirror.<domain>/zyxir/dotfiles.git` works transparently. The VPS reaches GitHub via its configured proxy. No cron, no local storage, no extra dependencies.
+- **ghmirror (wisp)**: Git-only reverse proxy at `ghmirror.<domain>/`. Caddy uses a `path_regexp` matcher to only forward git smart-HTTP protocol paths (`info/refs`, `git-upload-pack`, `git-receive-pack`) to `github.com`. All other paths (web UI, login, API) return 403 — this avoids the phishing alerts the old `githubmirror` triggered by serving the GitHub login page on a custom domain. No cron, no local storage. Clone with `git clone https://ghmirror.<domain>/zyxir/dotfiles.git`.

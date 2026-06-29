@@ -15,9 +15,15 @@ mirror.{$DOMAIN:localhost} {
     header Cache-Control "no-store"
 }
 
-githubmirror.{$DOMAIN:localhost} {
-    reverse_proxy https://github.com {
+ghmirror.{$DOMAIN:localhost} {
+    # Only proxy git smart-HTTP protocol paths.  Everything else (web UI,
+    # login, API) returns 403 — this prevents the phishing false-positive
+    # that the old githubmirror reverse-proxy triggered.
+    @git path_regexp git ^/(.+)/(info/refs|git-upload-pack|git-receive-pack)$
+    reverse_proxy @git https://github.com {
         header_up Host github.com
     }
+    respond "forbidden" 403
 }
+
 
