@@ -924,7 +924,7 @@ class VpsHost(HostTask):
     def _setup_crons(self) -> str | _Skipped | None:
         """Create cron entries for scripts that exist under this host dir."""
         candidates: list[tuple[str, str, Path]] = [
-            ("tailscale_host", "every 1 min",  self._host_dir / "subconv" / "refresh_hosts.py"),
+            ("refresh_host", "every 1 min",  self._host_dir / "subconv" / "refresh_hosts.py"),
             ("subconv",  "every 60 min", self._host_dir / "subconv" / "subconv.py"),
             ("mirror",   "daily",        self._host_dir / "mirror" / "mirror.py"),
         ]

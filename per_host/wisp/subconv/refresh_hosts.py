@@ -72,14 +72,17 @@ self_host = status.get("Self", {})
 _self_dns = self_host.get("DNSName", "").rstrip(".")
 _self_ips = self_host.get("TailscaleIPs", [])
 if _self_dns and _self_ips:
-    hosts[_self_dns] = _self_ips[0]
+    # Prefer IPv4 — services often bind only on IPv4.
+    _v4 = [ip for ip in _self_ips if ":" not in ip]
+    hosts[_self_dns] = _v4[0] if _v4 else _self_ips[0]
 
 # Peers
 for peer in status.get("Peer", {}).values():
     dns_name = peer.get("DNSName", "").rstrip(".")
     ips = peer.get("TailscaleIPs", [])
     if dns_name and ips:
-        hosts[dns_name] = ips[0]
+        _v4 = [ip for ip in ips if ":" not in ip]
+        hosts[dns_name] = _v4[0] if _v4 else ips[0]
 
 # --- Update the YAML -----------------------------------------------------
 

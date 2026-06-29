@@ -12,7 +12,7 @@ function main(config, profileName) {
 
   overwriteDns(config, ts);
 
-  overwriteTun(config);
+  overwriteTun(config, ts);
 
   overwriteProxyGroups(config);
 
@@ -47,6 +47,31 @@ const BOOTSTRAP_RESOLVERS = [
   "101.226.4.6",             // 360
 ];
 
+// Extract the Tailscale IPv6 ULA /48 prefix from peer IPs.
+// Returns "fdxx:xxxx:xxxx::/48" or null if no IPv6 address is found.
+function tailscaleIPv6ULA(ts) {
+  if (!ts) return null;
+  // Find the first IPv6 address from any peer (all share the same /48).
+  for (var i = 0; i < ts.peers.length; i++) {
+    var ips = ts.peers[i].ips;
+    for (var j = 0; j < ips.length; j++) {
+      if (ips[j].indexOf(":") !== -1) {
+        // fd7a:115c:a1e0::6b35:926d → fd7a:115c:a1e0::/48
+        var parts = ips[j].split(":");
+        // Collect first three non-empty segments (skip :: gaps).
+        var segs = [];
+        for (var k = 0; k < parts.length && segs.length < 3; k++) {
+          if (parts[k] !== "") segs.push(parts[k]);
+        }
+        if (segs.length === 3) {
+          return segs[0] + ":" + segs[1] + ":" + segs[2] + "::/48";
+        }
+      }
+    }
+  }
+  return null;
+}
+
 function overwriteDns(config, ts) {
 
   // Dynamic MagicDNS suffix — auto-detected from tailscale, fall back to ts.net
@@ -58,7 +83,12 @@ function overwriteDns(config, ts) {
   if (ts) {
     ts.peers.forEach(function (peer) {
       if (peer.dnsName && peer.ips.length > 0) {
-        hosts[peer.dnsName] = peer.ips[0];
+        // Prefer IPv4 for hosts — services often bind only on IPv4.
+        var v4 = null, v6 = null;
+        peer.ips.forEach(function (ip) {
+          if (ip.indexOf(":") === -1) { v4 = v4 || ip; } else { v6 = v6 || ip; }
+        });
+        hosts[peer.dnsName] = v4 || v6;
       }
     });
   }
@@ -127,15 +157,17 @@ function overwriteDns(config, ts) {
 
 const TUN_OPTIONS = {
   // TUN mode itself is activated in the app GUI (requires privileged service).
+  // device is intentionally omitted — mihomo auto-detects the correct
+  // utunX (macOS) / tunX (Linux) name per platform.
   stack: "system",
-  device: "tun0",
   "dns-hijack": ["any:53", "tcp://any:53"],
   "auto-route": true,
   "auto-detect-interface": true,
   "strict-route": true,
   "route-exclude-address": [
     // Tailscale CGNAT — bypass TUN so DNS (MagicDNS at 100.100.100.100)
-    // and tailnet traffic go through the OS route via tailscale0
+    // and tailnet traffic go through the OS route via tailscale0 / utunX.
+    // IPv6 ULA prefix is appended dynamically in overwriteTun().
     "100.64.0.0/10",
     // Windows mobile hotspot
     "192.168.137.0/24",
@@ -149,9 +181,19 @@ const TUN_OPTIONS = {
   ],
 };
 
-function overwriteTun(config) {
+function overwriteTun(config, ts) {
 
-  config.tun = Object.assign({}, config.tun, TUN_OPTIONS);
+  // Build route-exclude-address: start with the static list, then append
+  // the tailnet's IPv6 ULA /48 if detected.
+  var excludeAddr = TUN_OPTIONS["route-exclude-address"].slice();
+  if (ts) {
+    var v6ula = tailscaleIPv6ULA(ts);
+    if (v6ula) excludeAddr.push(v6ula);
+  }
+
+  var tun = Object.assign({}, config.tun, TUN_OPTIONS);
+  tun["route-exclude-address"] = excludeAddr;
+  config.tun = tun;
 
 }
 
@@ -550,9 +592,22 @@ function overwriteRules(config, ts) {
         tsDomainRules.push("DOMAIN-SUFFIX," + peer.dnsName + ",DIRECT");
       }
       peer.ips.forEach(function (ip) {
-        tsIpRules.push("IP-CIDR," + ip + "/32,DIRECT,no-resolve");
+        if (ip.indexOf(":") !== -1) {
+          tsIpRules.push("IP-CIDR6," + ip + "/128,DIRECT,no-resolve");
+        } else {
+          tsIpRules.push("IP-CIDR," + ip + "/32,DIRECT,no-resolve");
+        }
       });
     });
+  }
+
+  // Blanket Tailscale IPv6 ULA rule (if detected) — safety net below
+  // the per-peer rules, above the IP rule-sets.
+  if (ts) {
+    var v6ula = tailscaleIPv6ULA(ts);
+    if (v6ula) {
+      tsIpRules.push("IP-CIDR6," + v6ula + ",DIRECT");
+    }
   }
 
   config.rules = [].concat(
@@ -560,7 +615,7 @@ function overwriteRules(config, ts) {
     tsDomainRules,
     tsIpRules,
     NON_IP_RULES,
-    IP_RULES   // contains IP-CIDR,100.64.0.0/10,DIRECT as safety net
+    IP_RULES   // contains IP-CIDR,100.64.0.0/10,DIRECT as IPv4 safety net
   );
 
 }
