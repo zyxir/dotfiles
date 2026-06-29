@@ -9,7 +9,8 @@ pick up the change.
 Requires: python3-yaml, nodejs   (installed by bootstrap/vps/vps_bootstrap.sh)
 Output:  ./srv/<secret>/ZyProxy (served by Caddy from subconv/ root)
 
-The installer creates a cron job that runs this script every 30 min.
+The installer creates a cron job that runs this script every 60 min.
+Tailscale hosts are refreshed separately every 2 min by refresh_hosts.py.
 """
 
 import json

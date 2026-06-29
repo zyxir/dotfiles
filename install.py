@@ -924,8 +924,9 @@ class VpsHost(HostTask):
     def _setup_crons(self) -> str | _Skipped | None:
         """Create cron entries for scripts that exist under this host dir."""
         candidates: list[tuple[str, str, Path]] = [
-            ("subconv", "every 30 min", self._host_dir / "subconv" / "subconv.py"),
-            ("mirror",  "daily",         self._host_dir / "mirror" / "mirror.py"),
+            ("tailscale_host", "every 1 min",  self._host_dir / "subconv" / "refresh_hosts.py"),
+            ("subconv",  "every 60 min", self._host_dir / "subconv" / "subconv.py"),
+            ("mirror",   "daily",        self._host_dir / "mirror" / "mirror.py"),
         ]
         jobs = [(name, schedule, path) for name, schedule, path in candidates if path.is_file()]
 
@@ -948,7 +949,8 @@ class VpsHost(HostTask):
     def _schedule_to_cron(schedule: str) -> str:
         """Convert a human schedule label to a cron expression."""
         return {
-            "every 30 min": "*/30 * * * *",
+            "every 1 min":  "* * * * *",
+            "every 60 min": "17 * * * *",
             "daily": "0 3 * * *",
         }[schedule]
 
