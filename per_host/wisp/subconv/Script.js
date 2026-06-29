@@ -5,13 +5,20 @@ function main(config, profileName) {
 
   if (!config) return config;
 
-  overwriteDns(config);
+  // Pre-extract _tailscale so transforms can use it; clean up before return.
+  // _tailscale is injected by subconv.py from `tailscale status --json`.
+  // When null, transforms fall back to static MagicDNS config.
+  var ts = config._tailscale || null;
+
+  overwriteDns(config, ts);
 
   overwriteTun(config);
 
   overwriteProxyGroups(config);
 
-  overwriteRules(config);
+  overwriteRules(config, ts);
+
+  delete config._tailscale;
 
   return config;
 
@@ -40,48 +47,57 @@ const BOOTSTRAP_RESOLVERS = [
   "101.226.4.6",             // 360
 ];
 
-const NAMESERVER_POLICY = {
-  "+.ts.net": ["100.100.100.100"],  // Tailscale MagicDNS
-  "geosite:gfw": PROXY_DOH,         // GFW-blocked domains → foreign DNS, bypass domestic poisoning
-};
+function overwriteDns(config, ts) {
 
-function overwriteDns(config) {
+  // Dynamic MagicDNS suffix — auto-detected from tailscale, fall back to ts.net
+  var suffix = (ts && ts.suffix) ? ts.suffix : "ts.net";
+
+  // nameserver-policy: route MagicDNS domains to Tailscale's 100.100.100.100
+  var nameserverPolicy = {};
+  nameserverPolicy["+." + suffix] = ["100.100.100.100"];
+  nameserverPolicy["geosite:gfw"] = PROXY_DOH;
+
+  // fake-ip-filter: tailnet domains must resolve to real IPs
+  var fakeIpFilter = [
+    "+.local",
+    "+.lan",
+    "+.internal",
+    "+.localdomain",
+    "home.arpa",
+    "+.bogon",
+    "+.m2m",
+    "+.ts.net",         // always keep the default — covers any tailnet using ts.net
+    "injections.adguard.org",
+    "local.adguard.org",
+    "stun.*",
+    "*.stun.*",
+    "*.turn.*",
+    "*.srv.nintendo.net",
+    "*.stun.playstation.net",
+    "xbox.*.microsoft.com",
+    "*.xboxlive.com",
+    "lancache.steamcontent.com",
+    "dns.msftncsi.com",
+    "+.push.apple.com",
+  ];
+  // Add the detected suffix if it differs from the static default
+  if (suffix !== "ts.net") {
+    fakeIpFilter.push("+." + suffix);
+  }
 
   config.dns = Object.assign({}, config.dns, {
     "default-nameserver": BOOTSTRAP_RESOLVERS,
     nameserver: DIRECT_DOH,
     "proxy-server-nameserver": PROXY_DOH,
     fallback: PROXY_DOH,
-    "nameserver-policy": NAMESERVER_POLICY,
+    "nameserver-policy": nameserverPolicy,
 
     "prefer-h3": true,
     "ipv6": false,
     "use-hosts": false,
     "use-system-hosts": false,
 
-    // Domains excluded from the fake-ip range — must resolve to real IPs
-    "fake-ip-filter": [
-      "+.local",
-      "+.lan",
-      "+.internal",
-      "+.localdomain",
-      "home.arpa",
-      "+.bogon",
-      "+.m2m",
-      "+.ts.net",
-      "injections.adguard.org",
-      "local.adguard.org",
-      "stun.*",
-      "*.stun.*",
-      "*.turn.*",
-      "*.srv.nintendo.net",
-      "*.stun.playstation.net",
-      "xbox.*.microsoft.com",
-      "*.xboxlive.com",
-      "lancache.steamcontent.com",
-      "dns.msftncsi.com",
-      "+.push.apple.com",
-    ],
+    "fake-ip-filter": fakeIpFilter,
   });
 
 }
@@ -488,14 +504,41 @@ const IP_RULES = [
   "MATCH,🎯 节点选择",
 ];
 
-function overwriteRules(config) {
+function overwriteRules(config, ts) {
 
   config["rule-providers"] = RULE_PROVIDERS;
 
+  // --- Tailscale MagicDNS rules (dynamic, prepended for priority) ---
+  //
+  // Generated from `tailscale status --json` by subconv.py.
+  // When ts is null (tailscale not installed / not running), the arrays
+  // are empty and the static blanket IP-CIDR in IP_RULES handles tailnet
+  // traffic.  Per-device rules are capped to avoid config bloat.
+  var tsDomainRules = [];
+  var tsIpRules = [];
+
+  if (ts) {
+    // Blanket domain rule for the entire tailnet suffix
+    tsDomainRules.push("DOMAIN-SUFFIX," + ts.suffix + ",DIRECT");
+
+    // Per-peer rules — specific domains and IPs for each device
+    var MAX_PEERS = 100;
+    ts.peers.slice(0, MAX_PEERS).forEach(function (peer) {
+      if (peer.dnsName) {
+        tsDomainRules.push("DOMAIN-SUFFIX," + peer.dnsName + ",DIRECT");
+      }
+      peer.ips.forEach(function (ip) {
+        tsIpRules.push("IP-CIDR," + ip + "/32,DIRECT,no-resolve");
+      });
+    });
+  }
+
   config.rules = [].concat(
     CUSTOM_RULES,
+    tsDomainRules,
+    tsIpRules,
     NON_IP_RULES,
-    IP_RULES
+    IP_RULES   // contains IP-CIDR,100.64.0.0/10,DIRECT as safety net
   );
 
 }

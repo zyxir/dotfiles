@@ -167,6 +167,69 @@ if base_config is None:
 base_config["proxies"] = all_proxies
 print(f"Total: {len(all_proxies)} proxies from {len(SUBSCRIPTION_URLS)} subscription(s)")
 
+# --- Query Tailscale MagicDNS state ----------------------------------
+
+def _get_tailscale_state():
+    """Query tailscale status and extract MagicDNS information.
+
+    Returns dict with 'suffix' and 'peers' keys, or None if tailscale
+    is unreachable, unauthenticated, or not installed.
+    """
+    try:
+        result = subprocess.run(
+            ["tailscale", "status", "--json"],
+            capture_output=True, text=True, timeout=5,
+        )
+    except FileNotFoundError:
+        print("Tailscale: not installed, using static MagicDNS config", file=sys.stderr)
+        return None
+    except subprocess.TimeoutExpired:
+        print("Tailscale: status timed out, using static MagicDNS config", file=sys.stderr)
+        return None
+
+    if result.returncode != 0:
+        print(f"Tailscale: status failed (exit {result.returncode}),"
+              f" using static MagicDNS config", file=sys.stderr)
+        return None
+
+    try:
+        status = json.loads(result.stdout)
+    except json.JSONDecodeError as e:
+        print(f"Tailscale: invalid JSON from status: {e},"
+              f" using static MagicDNS config", file=sys.stderr)
+        return None
+
+    # Extract MagicDNS suffix from Self.DNSName
+    # e.g. "wisp.tail18gs3.ts.net." → "tail18gs3.ts.net"
+    self_dns = status.get("Self", {}).get("DNSName", "")
+    if not self_dns or "." not in self_dns:
+        print("Tailscale: MagicDNS not configured, using static MagicDNS config",
+              file=sys.stderr)
+        return None
+
+    suffix = self_dns.split(".", 1)[1].rstrip(".")
+    if not suffix:
+        print("Tailscale: empty MagicDNS suffix, using static MagicDNS config",
+              file=sys.stderr)
+        return None
+
+    peers = []
+    for peer_id, peer in status.get("Peer", {}).items():
+        dns_name = peer.get("DNSName", "").rstrip(".")
+        ips = peer.get("TailscaleIPs", [])
+        peers.append({
+            "hostName": peer.get("HostName", ""),
+            "dnsName": dns_name,
+            "ips": ips,
+            "online": peer.get("Online", False),
+        })
+
+    print(f"Tailscale: MagicDNS suffix={suffix}, {len(peers)} peer(s)")
+    return {"suffix": suffix, "peers": peers}
+
+
+base_config["_tailscale"] = _get_tailscale_state()
+
 config_json = json.dumps(base_config, ensure_ascii=False)
 
 # --- Load Script.js (the canonical transform logic) -------------------
