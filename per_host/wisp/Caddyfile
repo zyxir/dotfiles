@@ -16,11 +16,14 @@ mirror.{$DOMAIN:localhost} {
 }
 
 ghmirror.{$DOMAIN:localhost} {
-    # Only proxy git smart-HTTP protocol paths.  Everything else (web UI,
-    # login, API) returns 403 — this prevents the phishing false-positive
-    # that the old githubmirror reverse-proxy triggered.
-    @git path_regexp git info/refs|git-upload-pack|git-receive-pack
-    reverse_proxy @git https://github.com {
+    # Git-only reverse proxy.  Only repos matching the prefix pattern below
+    # are proxied to GitHub — everything else returns 403.  No web UI, no
+    # login page (avoids phishing false-positives from Netcraft).
+    #
+    # To add a repo, append |owner/repo inside the parens:
+    #   ^/(zyxir/dotfiles|owner2/repo2|owner3/repo3)
+    @repos path_regexp repos ^/(zyxir/dotfiles)
+    reverse_proxy @repos https://github.com {
         header_up Host github.com
     }
     respond "forbidden" 403
