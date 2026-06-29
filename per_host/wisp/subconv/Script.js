@@ -52,7 +52,18 @@ function overwriteDns(config, ts) {
   // Dynamic MagicDNS suffix — auto-detected from tailscale, fall back to ts.net
   var suffix = (ts && ts.suffix) ? ts.suffix : "ts.net";
 
-  // nameserver-policy: route MagicDNS domains to Tailscale's 100.100.100.100
+  // Hardwire tailnet hostnames → IPs so MagicDNS works without routing
+  // through 100.100.100.100.  Uses data from subconv.py's `tailscale status --json`.
+  var hosts = {};
+  if (ts) {
+    ts.peers.forEach(function (peer) {
+      if (peer.dnsName && peer.ips.length > 0) {
+        hosts[peer.dnsName] = peer.ips[0];
+      }
+    });
+  }
+
+  // nameserver-policy: route MagicDNS domains to 100.100.100.100 as fallback
   var nameserverPolicy = {};
   nameserverPolicy["+." + suffix] = ["100.100.100.100"];
   nameserverPolicy["geosite:gfw"] = PROXY_DOH;
@@ -89,6 +100,9 @@ function overwriteDns(config, ts) {
     // Listen on :53 is required for dns-hijack to intercept queries
     // that would otherwise bypass TUN via scoped resolvers (macOS DHCP).
     listen: ":53",
+
+    // Static hosts for tailnet devices — resolved locally, no MagicDNS query needed
+    hosts: hosts,
 
     "default-nameserver": BOOTSTRAP_RESOLVERS,
     nameserver: DIRECT_DOH,
