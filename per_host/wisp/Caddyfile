@@ -16,13 +16,13 @@ mirror.{$DOMAIN:localhost} {
 }
 
 ghmirror.{$DOMAIN:localhost} {
-    # Git-only reverse proxy.  Only repos matching the prefix pattern below
-    # are proxied to GitHub — everything else returns 403.  No web UI, no
-    # login page (avoids phishing false-positives from Netcraft).
+    # Git-only reverse proxy.  Only paths under the repos listed below are
+    # proxied to GitHub — everything else returns 403.  No web UI, no login
+    # page (avoids phishing false-positives from Netcraft).
     #
-    # To add a repo, append |owner/repo inside the parens:
-    #   ^/(zyxir/dotfiles|owner2/repo2|owner3/repo3)
-    @repos path_regexp repos ^/(zyxir/dotfiles)
+    # To add a repo, append || {path}.startsWith('/owner/repo'):
+    #   {path}.startsWith('/zyxir/dotfiles') || {path}.startsWith('/owner2/repo2')
+    @repos expression `{path}.startsWith('/zyxir/dotfiles')`
     reverse_proxy @repos https://github.com {
         header_up Host github.com
     }
