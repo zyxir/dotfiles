@@ -63,9 +63,8 @@ function overwriteDns(config, ts) {
     });
   }
 
-  // nameserver-policy: route MagicDNS domains to 100.100.100.100 as fallback
+  // nameserver-policy: route GFW domains to foreign DoH for accuracy
   var nameserverPolicy = {};
-  nameserverPolicy["+." + suffix] = ["100.100.100.100"];
   nameserverPolicy["geosite:gfw"] = PROXY_DOH;
 
   // fake-ip-filter: tailnet domains must resolve to real IPs
