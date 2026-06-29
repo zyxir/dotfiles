@@ -96,13 +96,15 @@ function overwriteDns(config, ts) {
     fakeIpFilter.push("+." + suffix);
   }
 
+  // Top-level hosts: tailnet device DNS → IP mappings, resolved locally
+  // without querying MagicDNS at 100.100.100.100.
+  // Placed at config top-level per mihomo convention (not under dns:).
+  config.hosts = Object.assign({}, config.hosts || {}, hosts);
+
   config.dns = Object.assign({}, config.dns, {
     // Listen on :53 is required for dns-hijack to intercept queries
     // that would otherwise bypass TUN via scoped resolvers (macOS DHCP).
     listen: ":53",
-
-    // Static hosts for tailnet devices — resolved locally, no MagicDNS query needed
-    hosts: hosts,
 
     "default-nameserver": BOOTSTRAP_RESOLVERS,
     nameserver: DIRECT_DOH,
@@ -112,7 +114,7 @@ function overwriteDns(config, ts) {
 
     "prefer-h3": true,
     "ipv6": false,
-    "use-hosts": false,
+    "use-hosts": true,
     "use-system-hosts": false,
 
     "fake-ip-filter": fakeIpFilter,
