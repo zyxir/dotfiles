@@ -214,17 +214,31 @@ def _get_tailscale_state():
         return None
 
     peers = []
+
+    # Include self (the VPS) — not listed under Peer
+    self_host = status.get("Self", {})
+    self_dns = self_host.get("DNSName", "").rstrip(".")
+    self_ips = self_host.get("TailscaleIPs", [])
+    if self_dns and self_ips:
+        peers.append({
+            "hostName": self_host.get("HostName", ""),
+            "dnsName": self_dns,
+            "ips": self_ips,
+            "online": True,
+        })
+
     for peer_id, peer in status.get("Peer", {}).items():
         dns_name = peer.get("DNSName", "").rstrip(".")
         ips = peer.get("TailscaleIPs", [])
-        peers.append({
-            "hostName": peer.get("HostName", ""),
-            "dnsName": dns_name,
-            "ips": ips,
-            "online": peer.get("Online", False),
-        })
+        if dns_name and ips:
+            peers.append({
+                "hostName": peer.get("HostName", ""),
+                "dnsName": dns_name,
+                "ips": ips,
+                "online": peer.get("Online", False),
+            })
 
-    print(f"Tailscale: MagicDNS suffix={suffix}, {len(peers)} peer(s)")
+    print(f"Tailscale: MagicDNS suffix={suffix}, {len(peers)} devices(s)")
     return {"suffix": suffix, "peers": peers}
 
 
