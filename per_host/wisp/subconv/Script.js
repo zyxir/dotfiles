@@ -86,6 +86,10 @@ function overwriteDns(config, ts) {
   }
 
   config.dns = Object.assign({}, config.dns, {
+    // Listen on :53 is required for dns-hijack to intercept queries
+    // that would otherwise bypass TUN via scoped resolvers (macOS DHCP).
+    listen: ":53",
+
     "default-nameserver": BOOTSTRAP_RESOLVERS,
     nameserver: DIRECT_DOH,
     "proxy-server-nameserver": PROXY_DOH,
@@ -115,6 +119,9 @@ const TUN_OPTIONS = {
   "auto-detect-interface": true,
   "strict-route": true,
   "route-exclude-address": [
+    // Tailscale CGNAT — bypass TUN so DNS (MagicDNS at 100.100.100.100)
+    // and tailnet traffic go through the OS route via tailscale0
+    "100.64.0.0/10",
     // Windows mobile hotspot
     "192.168.137.0/24",
     // macOS Internet Sharing
