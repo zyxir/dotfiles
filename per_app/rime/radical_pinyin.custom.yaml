@@ -1,0 +1,5 @@
+# 此文件使拆字反查支持自然碼雙拼。
+
+patch:
+  speller/algebra:
+    __include: radical_pinyin.schema.yaml:/algebra_double_pinyin

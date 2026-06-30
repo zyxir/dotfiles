@@ -7,6 +7,7 @@ import argparse
 import configparser
 import getpass
 import json
+import fnmatch
 import logging
 import os
 import platform
@@ -200,15 +201,48 @@ class Git(AppTask):
             return SKIPPED
 
 
-PLUM_URL = "https://github.com/rime/plum.git"
-# (plum schema name, sentinel file installed by plum)
-PLUM_SCHEMAS: list[tuple[list[str], str, str | None]] = [
-    (["cangjie"], "cangjie5.schema.yaml", None),
-    (["quick"], "quick5.schema.yaml", None),
+# Schema sources downloaded directly from GitHub (no plum dependency).
+# Each entry: (zip_url, zip_prefix, file_patterns, sentinel, display_name)
+# Patterns use fnmatch against paths relative to the repo root.
+_SCHEMA_SOURCES: list[tuple[str, str, list[str], str, str | None]] = [
     (
+        "https://github.com/rime/rime-cangjie/archive/refs/heads/master.zip",
+        "rime-cangjie-master/",
+        ["*.yaml", "*.txt"],
+        "cangjie5.schema.yaml",
+        None,
+    ),
+    (
+        "https://github.com/rime/rime-quick/archive/refs/heads/master.zip",
+        "rime-quick-master/",
+        ["*.yaml", "*.txt"],
+        "quick5.schema.yaml",
+        None,
+    ),
+    (
+        "https://github.com/iDvel/rime-ice/archive/refs/heads/main.zip",
+        "rime-ice-main/",
         [
-            "iDvel/rime-ice:others/recipes/full",
-            "iDvel/rime-ice:others/recipes/config:schema=double_pinyin",
+            "build/.gitkeep",
+            "cn_dicts/*",
+            "custom_phrase.txt",
+            "default.yaml",
+            "double_pinyin*.schema.yaml",
+            "en_dicts/*",
+            "lua/*",
+            "lua/cold_word_drop/*",
+            "melt_eng.dict.yaml",
+            "melt_eng.schema.yaml",
+            "opencc/*",
+            "radical_pinyin.dict.yaml",
+            "radical_pinyin.schema.yaml",
+            "rime_ice.dict.yaml",
+            "rime_ice.schema.yaml",
+            "squirrel.yaml",
+            "symbols_caps_v.yaml",
+            "symbols_v.yaml",
+            "t9.schema.yaml",
+            "weasel.yaml",
         ],
         "rime_ice.schema.yaml",
         "rime-ice",
@@ -223,59 +257,70 @@ def _rime_dir() -> Path:
     return pathify("~/AppData/Roaming/Rime")
 
 
+def _install_schema_zip(
+    url: str, prefix: str, patterns: list[str], sentinel: str, rime_dir: Path
+) -> str | _Skipped | None:
+    """Download a GitHub repo zip and extract schema files to *rime_dir*."""
+    if (rime_dir / sentinel).exists():
+        return SKIPPED
+
+    with tempfile.NamedTemporaryFile(suffix=".zip", delete=False) as tmp:
+        tmp_path = Path(tmp.name)
+
+    try:
+        logging.debug("downloading %s", url)
+        req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+        with urllib.request.urlopen(req) as resp, open(str(tmp_path), "wb") as f:
+            shutil.copyfileobj(resp, f)
+
+        with zipfile.ZipFile(tmp_path, "r") as zf:
+            for member in zf.namelist():
+                if member.endswith("/"):
+                    continue
+                if not member.startswith(prefix):
+                    continue
+                rel = member[len(prefix):]
+                if not any(fnmatch.fnmatch(rel, p) for p in patterns):
+                    continue
+                target = rime_dir / rel
+                target.parent.mkdir(parents=True, exist_ok=True)
+                with zf.open(member) as src, open(target, "wb") as dst:
+                    shutil.copyfileobj(src, dst)
+                logging.debug("extracted %s", rel)
+    finally:
+        tmp_path.unlink()
+
+
 class Rime(AppTask):
     """Install rime config."""
 
     skip_envs = {"vps"}
 
     def steps(self) -> list[Step]:
+        rime_dir = _rime_dir()
         return [
-            Step("Clone plum into Rime directory", self._install_plum),
             *[
                 Step(
-                    f"Install schema: {name or pkgs[0]}",
-                    self._schema_installer(pkgs, sentinel),
+                    f"Install schema: {name or url.split('/')[4]}",
+                    self._schema_step(url, prefix, patterns, sentinel, rime_dir),
                 )
-                for pkgs, sentinel, name in PLUM_SCHEMAS
+                for url, prefix, patterns, sentinel, name in _SCHEMA_SOURCES
             ],
             Step("Link config", self._run),
         ]
 
-    def _schema_installer(
-        self, packages: list[str], sentinel: str
+    def _schema_step(
+        self,
+        url: str,
+        prefix: str,
+        patterns: list[str],
+        sentinel: str,
+        rime_dir: Path,
     ) -> Callable[[], str | _Skipped | None]:
         def _install() -> str | _Skipped | None:
-            rime_dir = _rime_dir()
-            if (rime_dir / sentinel).exists():
-                return SKIPPED
-            if platform.system() == "Windows":
-                rime_install = rime_dir / "plum" / "rime-install.bat"
-                shell = ["cmd", "/c", str(rime_install)]
-            else:
-                rime_install = rime_dir / "plum" / "rime-install"
-                shell = ["bash", str(rime_install)]
-            for pkg in packages:
-                logging.debug("installing schema: %s", pkg)
-                subprocess.run(
-                    shell + [pkg],
-                    check=True,
-                    capture_output=True,
-                    env={**os.environ, "rime_dir": str(rime_dir)},
-                )
+            return _install_schema_zip(url, prefix, patterns, sentinel, rime_dir)
 
         return _install
-
-    def _install_plum(self) -> str | _Skipped | None:
-        dst = _rime_dir() / "plum"
-        if dst.exists():
-            return SKIPPED
-        logging.debug("cloning plum into %s", dst)
-        cmd = ["git", "clone", "--depth", "1"]
-        proxy = _proxy_url()
-        if proxy:
-            cmd += ["-c", f"http.proxy={proxy}", "-c", f"https.proxy={proxy}"]
-        cmd += [PLUM_URL, str(dst)]
-        subprocess.run(cmd, check=True, capture_output=True)
 
     def _run(self) -> str | _Skipped | None:
         rime_dir = _rime_dir()

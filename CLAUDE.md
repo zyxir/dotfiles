@@ -24,7 +24,7 @@ python3 install.py --skip-sudo     # skip docker compose operations
 ```
 
 The script symlinks config files on all platforms. On Windows, symlinks require Developer Mode or Administrator privileges.
-On macOS, the Rime task uses plum (`~/Library/Rime/plum/`) to install schemas (rime-ice, cangjie5, quick5) if missing.
+On macOS, the Rime task downloads schema files directly from GitHub (rime-ice, cangjie5, quick5) if missing — no external package manager needed.
 
 Proxy detection order: `--proxy` flag > `https_proxy`/`http_proxy` env vars > auto-probe `127.0.0.1:7897`. All network operations (font downloads, git clone, schema install, extension install) route through the configured proxy. The active proxy is displayed alongside environment and platform at startup.
 

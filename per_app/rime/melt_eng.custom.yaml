@@ -1,0 +1,5 @@
+# 此文件使英文派生規則支持自然碼雙拼。
+
+patch:
+  speller/algebra:
+    __include: melt_eng.schema.yaml:/algebra_double_pinyin
