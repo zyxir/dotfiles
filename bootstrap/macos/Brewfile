@@ -2,6 +2,7 @@
 # Usage: brew bundle install --file=bootstrap/macos/Brewfile
 
 # --- Terminal & shell tools ---
+brew "coreutils"
 brew "ripgrep"
 brew "fd"
 cask "ghostty"
@@ -24,3 +25,6 @@ cask "obsidian"
 
 # --- Connectivity ---
 cask "tailscale-app"
+
+# --- Utilities ---
+cask "caffeine"

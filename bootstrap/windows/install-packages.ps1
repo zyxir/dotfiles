@@ -9,6 +9,7 @@
 Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
 
 # --- Terminal & shell tools ---
+winget install Microsoft.Coreutils
 winget install BurntSushi.ripgrep.MSVC
 winget install sharkdp.fd
 winget install Git.Git
