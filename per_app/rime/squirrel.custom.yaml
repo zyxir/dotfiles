@@ -1,0 +1,5 @@
+# 此文件覆蓋鼠鬚管的前端配置。
+
+patch:
+  # 將 US Intl without dead keys 設爲默認鍵盤佈局，避免選項鍵產生死鍵干擾
+  keyboard_layout: "org.sil.ukelele.keyboardlayout.usintlpcwithoutdeadkeys"
