@@ -49,19 +49,21 @@ Config files live under `per_app/<app>/` (cross-platform) or `per_host/<hostname
 ### Per-host configs (`HostTask`)
 
 Each subdirectory under `per_host/` is named after a machine's hostname.
-The matching `VpsHost` task activates only when `socket.gethostname()` matches.
+Each host has its own task class (`WispHost`, `ZyxirNasHost`) — the
+task activates only when `socket.gethostname()` matches.
 
 | Host | Source |
 |------|--------|
 | wisp | `per_host/wisp/{docker-compose.yml,Caddyfile,.env.example,mirror/,subconv/}` |
+| zyxir-nas | `per_host/zyxir-nas/{docker-compose.yml,.env.example}` |
 
-`install.py` uses two task types: `AppTask` (gated by `skip_envs`) and `HostTask` (gated by hostname match). To add a new app, subclass `AppTask` and append it to the platform's task list. To add a new host, create `per_host/<hostname>/` and the Linux task list auto-discovers it.
+`install.py` uses two task types: `AppTask` (gated by `skip_envs`) and `HostTask` (gated by hostname match). To add a new app, subclass `AppTask` and append it to the platform's task list. To add a new host, create `per_host/<hostname>/`, subclass `HostTask`, and explicitly register it in the per-host section of `main()`.
 
-`VpsHost` expects `.env` at `per_host/<hostname>/.env`. Copy it to the VPS manually (e.g., `scp .env wisp:~/dotfiles/per_host/wisp/.env`). The file is gitignored.
+`WispHost` expects `.env` at `per_host/wisp/.env`. Copy it to the VPS manually (e.g., `scp .env wisp:~/dotfiles/per_host/wisp/.env`). The file is gitignored.
 
-`VpsHost` also expects `subconv/subconv.env` alongside `.env` and reads `CLOUDFLARE_API_TOKEN` from `.env` for automatic DNS record management (zone IDs are looked up via the API). When configured, the installer upserts A records on Cloudflare for every domain in the Caddyfile before starting Docker services. DNS records are created with proxying enabled (orange cloud). Caddy sends `Cache-Control: no-store` on all responses so Cloudflare does not cache any content. SSL/TLS mode should be set to Full (strict) in the Cloudflare dashboard (one-time).
+`WispHost` also expects `subconv/subconv.env` alongside `.env` and reads `CLOUDFLARE_API_TOKEN` from `.env` for automatic DNS record management (zone IDs are looked up via the API). When configured, the installer upserts A records on Cloudflare for every domain in the Caddyfile before starting Docker services. DNS records are created with proxying enabled (orange cloud). Caddy sends `Cache-Control: no-store` on all responses so Cloudflare does not cache any content. SSL/TLS mode should be set to Full (strict) in the Cloudflare dashboard (one-time).
 
-`VpsHost` includes a Tailscale check step. If Tailscale is installed but not authenticated, it prints a hint to run `sudo tailscale up --ssh`. Auth is manual (OAuth via browser) — no secrets needed in `.env`.
+`WispHost` includes a Tailscale check step. If Tailscale is installed but not authenticated, it prints a hint to run `sudo tailscale up --ssh`. Auth is manual (OAuth via browser) — no secrets needed in `.env`.
 
 ### Bootstrap assets (`bootstrap/`)
 

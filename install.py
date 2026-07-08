@@ -673,13 +673,13 @@ class PowerToys(AppTask):
             return SKIPPED
 
 
-class VpsHost(HostTask):
-    """VPS host config (per_host/<hostname>/)."""
+class WispHost(HostTask):
+    """VPS host config (per_host/wisp/)."""
 
-    def __init__(self, hostname: str, skip_sudo: bool = False):
-        super().__init__(hostname)
+    def __init__(self, skip_sudo: bool = False):
+        super().__init__("wisp")
         self.skip_sudo = skip_sudo
-        self.__doc__ = f"VPS host config (per_host/{hostname}/)"
+        self.__doc__ = "VPS host config (per_host/wisp/)"
 
     def steps(self) -> list[Step]:
         return [
@@ -1024,6 +1024,17 @@ class VpsHost(HostTask):
         )
 
 
+class ZyxirNasHost(HostTask):
+    """NAS host config (per_host/zyxir-nas/)."""
+
+    def __init__(self):
+        super().__init__("zyxir-nas")
+        self.__doc__ = "NAS host config (per_host/zyxir-nas/)"
+
+    def steps(self) -> list[Step]:
+        return []
+
+
 
 _ELEVATE_PS1 = """\
 param(
@@ -1256,9 +1267,10 @@ if __name__ == "__main__":
             VSCodium(),
             Fonts(),
         ]
-        for host_dir in sorted(Path("./per_host").iterdir()):
-            if host_dir.is_dir():
-                tasks.append(VpsHost(host_dir.name, skip_sudo=args.skip_sudo))
+
+    # Per-host tasks — hostname match is the sole gate, no OS check.
+    tasks.append(WispHost(skip_sudo=args.skip_sudo))
+    tasks.append(ZyxirNasHost())
 
     # Perform the tasks
     for task in tasks:
