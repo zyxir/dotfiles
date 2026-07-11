@@ -2,11 +2,13 @@ anthropic.claude-code
 charliermarsh.ruff
 codesmith.markdown-inline-editor-vscode
 james-yu.latex-workshop
+jeanp413.open-remote-ssh
 ms-python.debugpy
 ms-python.python
 ms-python.vscode-python-envs
 rust-lang.rust-analyzer
 scala-lang.scala
 scalameta.metals
+tamasfe.even-better-toml
 yutengjing.open-in-external-app
 yzhang.markdown-all-in-one
