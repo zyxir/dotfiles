@@ -4,11 +4,7 @@ services:
     container_name: forgejo
     restart: unless-stopped
     environment:
-      - FORGEJO__database__DB_TYPE=postgres
-      - FORGEJO__database__HOST=db:5432
-      - FORGEJO__database__NAME=${FORGEJO_DB_NAME}
-      - FORGEJO__database__USER=${FORGEJO_DB_USER}
-      - FORGEJO__database__PASSWD=${FORGEJO_DB_PASS}
+      - FORGEJO__database__DB_TYPE=sqlite3
       - FORGEJO__server__DOMAIN=${FORGEJO_DOMAIN}
       - FORGEJO__server__ROOT_URL=https://${FORGEJO_DOMAIN}/
       - FORGEJO__server__SSH_DOMAIN=${FORGEJO_DOMAIN}
@@ -16,36 +12,6 @@ services:
       - "3000:3000"
       - "2222:22"
     volumes:
-      - forgejo_data:/data
+      - ${FORGEJO_DATA:-./data}:/data
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-    depends_on:
-      db:
-        condition: service_healthy
-    networks:
-      - forgejo
-
-  db:
-    image: postgres:17-alpine
-    container_name: forgejo-db
-    restart: unless-stopped
-    environment:
-      - POSTGRES_DB=${FORGEJO_DB_NAME}
-      - POSTGRES_USER=${FORGEJO_DB_USER}
-      - POSTGRES_PASSWORD=${FORGEJO_DB_PASS}
-    volumes:
-      - forgejo_db:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${FORGEJO_DB_USER} -d ${FORGEJO_DB_NAME}"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    networks:
-      - forgejo
-
-volumes:
-  forgejo_data:
-  forgejo_db:
-
-networks:
-  forgejo:
