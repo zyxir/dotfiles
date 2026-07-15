@@ -55,7 +55,7 @@ task activates only when `socket.gethostname()` matches.
 | Host | Source |
 |------|--------|
 | wisp | `per_host/wisp/{docker-compose.yml,Caddyfile,.env.example,mirror/,subconv/}` |
-| zyxir-nas | `per_host/zyxir-nas/{forgejo.yml,.env.example}` |
+| zyxir-nas | `per_host/zyxir-nas/{docker-compose.yml,.env.example}` |
 
 `install.py` uses two task types: `AppTask` (gated by `skip_envs`) and `HostTask` (gated by hostname match). To add a new app, subclass `AppTask` and append it to the platform's task list. To add a new host, create `per_host/<hostname>/`, subclass `HostTask`, and explicitly register it in the per-host section of `main()`.
 
