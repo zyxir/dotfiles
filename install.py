@@ -126,6 +126,17 @@ def link(
     return created
 
 
+def deep_merge(base: dict, overlay: dict) -> dict:
+    """Deep-merge overlay into base. Overlay values win on conflicts."""
+    merged = base.copy()
+    for key, value in overlay.items():
+        if key in merged and isinstance(merged[key], dict) and isinstance(value, dict):
+            merged[key] = deep_merge(merged[key], value)
+        else:
+            merged[key] = value
+    return merged
+
+
 class _Skipped:
     pass
 
@@ -658,19 +669,50 @@ class VSCodium(AppTask):
 
 
 class PowerToys(AppTask):
-    """Install PowerToys config."""
+    """Install PowerToys config.
+
+    Keyboard Manager config is symlinked (PowerToys doesn't rewrite it).
+    settings.json is deep-merged: our values win, but PowerToys-owned fields
+    (e.g. powertoys_version) are preserved across installs.
+    """
 
     skip_envs = {"vps", "corporate"}
 
     def steps(self) -> list[Step]:
-        return [Step("Link config", self._run)]
+        return [Step("Install config", self._run)]
 
     def _run(self) -> str | _Skipped | None:
-        if not link(
-            "./per_app/powertoys",
-            "~/AppData/Local/Microsoft/PowerToys",
-        ):
-            return SKIPPED
+        src_dir = pathify("./per_app/powertoys")
+        dst_dir = pathify("~/AppData/Local/Microsoft/PowerToys")
+        dst_dir.mkdir(parents=True, exist_ok=True)
+
+        # Keyboard Manager: symlink (PowerToys doesn't rewrite this file)
+        kb_src = src_dir / "Keyboard Manager" / "default.json"
+        kb_dst = dst_dir / "Keyboard Manager" / "default.json"
+        link(str(kb_src), str(kb_dst))
+
+        # Settings: deep-merge (PowerToys owns this file and rewrites it)
+        settings_src = src_dir / "settings.json"
+        settings_dst = dst_dir / "settings.json"
+
+        with open(settings_src, encoding="utf-8") as f:
+            ours = json.load(f)
+
+        if settings_dst.is_symlink():
+            # Break symlink from a previous install
+            settings_dst.unlink()
+            existing: dict = {}
+        elif settings_dst.exists():
+            existing = json.loads(settings_dst.read_text(encoding="utf-8"))
+        else:
+            existing = {}
+
+        merged = deep_merge(existing, ours)
+
+        settings_dst.write_text(
+            json.dumps(merged, indent=2) + "\n", encoding="utf-8"
+        )
+        return None
 
 
 class WispHost(HostTask):
