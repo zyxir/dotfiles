@@ -535,6 +535,28 @@ const CUSTOM_RULES = [
   "DST-PORT,22/2222/9906,DIRECT",  // SSH — always direct, no proxy
   "DOMAIN-SUFFIX,myqnapcloud.cn,DIRECT",   // QNAP Cloud Link (China)
   "DOMAIN-SUFFIX,qnap.com.cn,DIRECT",      // QNAP China portal
+
+  // Rockstar Games — auth/login rejects proxied traffic
+  "DOMAIN-SUFFIX,rockstargames.com,DIRECT",
+  "DOMAIN-SUFFIX,rockstarnorth.com,DIRECT",
+  "DOMAIN-SUFFIX,rockstarwarehouse.com,DIRECT",
+  "DOMAIN-SUFFIX,rgsc.com,DIRECT",
+  "PROCESS-NAME,SocialClubHelper.exe,DIRECT",
+  "PROCESS-NAME,RockstarService.exe,DIRECT",
+
+  // GTA Online — route directly so UU accelerator handles it
+  "PROCESS-NAME,GTA5.exe,DIRECT",
+  "PROCESS-NAME,PlayGTAV.exe,DIRECT",
+
+  // NetEase UU accelerator — bypass proxy so acceleration tunnel works
+  // while Clash TUN mode is active (TUN has no process bypass; use rules)
+  "DOMAIN-SUFFIX,163.com,DIRECT",
+  "DOMAIN-SUFFIX,netease.com,DIRECT",
+  "DOMAIN-KEYWORD,neteasuu,DIRECT",
+  "PROCESS-NAME,uu.exe,DIRECT",
+  "PROCESS-NAME,uu_agent.exe,DIRECT",
+  "PROCESS-NAME,uu_neths_helper.exe,DIRECT",
+  "PROCESS-NAME,uu_neth_helper.exe,DIRECT",
 ];
 
 // Non-IP rules — checked first (domain/classical matching)
