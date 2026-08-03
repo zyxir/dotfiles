@@ -5,9 +5,8 @@ from __future__ import annotations
 
 import argparse
 import configparser
-import getpass
-import json
 import fnmatch
+import json
 import logging
 import os
 import platform
@@ -24,7 +23,9 @@ import zipfile
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from pathlib import Path
-from typing import Union
+from typing import ClassVar
+
+logger = logging.getLogger(__name__)
 
 
 class _DebugTracker(logging.Handler):
@@ -51,7 +52,7 @@ def setup_logging(debug: bool = False) -> _DebugTracker:
     return tracker
 
 
-def pathify(s: Union[str, os.PathLike]) -> Path:
+def pathify(s: str | os.PathLike) -> Path:
     """Convert `s` to an absolute `Path` object.
 
     Expand "~" (user home) and env vars in the process.
@@ -66,7 +67,7 @@ def already_linked(src: Path, dst: Path) -> bool:
     if dst.is_symlink():
         try:
             return dst.resolve().samefile(src)
-        except Exception:
+        except OSError:
             return False
     return False
 
@@ -75,12 +76,12 @@ def link_rec(src: Path, dst: Path) -> bool:
     """Symlink `dst` to `src` recursively without checking. Returns True if any symlink was created."""
     if src.is_file():
         if already_linked(src, dst):
-            logging.debug("skip existing '%s'", dst)
+            logger.debug("skip existing '%s'", dst)
             return False
         elif dst.is_symlink() or dst.exists():
-            logging.debug("remove incorrect '%s'", dst)
+            logger.debug("remove incorrect '%s'", dst)
             dst.unlink()
-        logging.debug("creating symlink '%s'", dst)
+        logger.debug("creating symlink '%s'", dst)
         try:
             dst.symlink_to(src)
         except OSError as e:
@@ -104,12 +105,12 @@ def cleanup_dead_symlinks(path: Path) -> None:
         return
     for entry in path.rglob("*"):
         if entry.is_symlink() and not entry.exists():
-            logging.debug("remove dead symlink '%s'", entry)
+            logger.debug("remove dead symlink '%s'", entry)
             entry.unlink()
 
 
 def link(
-    src: Union[str, os.PathLike], dst: Union[str, os.PathLike], mkdir: bool = False
+    src: str | os.PathLike, dst: str | os.PathLike, mkdir: bool = False
 ) -> bool:
     """Symlink `dst` to `src`. Returns True if any symlink was created.
 
@@ -180,7 +181,7 @@ class AppTask(Task):
     Uses `skip_envs` to opt out of specific environments.
     """
 
-    skip_envs: set[str] = set()
+    skip_envs: ClassVar[set[str]] = set()
 
 
 class HostTask(Task):
@@ -202,7 +203,7 @@ class HostTask(Task):
 class Git(AppTask):
     """Install git config."""
 
-    skip_envs = {"corporate"}
+    skip_envs: ClassVar[set[str]] = {"corporate"}
 
     def steps(self) -> list[Step]:
         return [Step("Link ~/.gitconfig", self._run)]
@@ -279,7 +280,7 @@ def _install_schema_zip(
         tmp_path = Path(tmp.name)
 
     try:
-        logging.debug("downloading %s", url)
+        logger.debug("downloading %s", url)
         req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
         with urllib.request.urlopen(req) as resp, open(str(tmp_path), "wb") as f:
             shutil.copyfileobj(resp, f)
@@ -290,14 +291,14 @@ def _install_schema_zip(
                     continue
                 if not member.startswith(prefix):
                     continue
-                rel = member[len(prefix):]
+                rel = member[len(prefix) :]
                 if not any(fnmatch.fnmatch(rel, p) for p in patterns):
                     continue
                 target = rime_dir / rel
                 target.parent.mkdir(parents=True, exist_ok=True)
                 with zf.open(member) as src, open(target, "wb") as dst:
                     shutil.copyfileobj(src, dst)
-                logging.debug("extracted %s", rel)
+                logger.debug("extracted %s", rel)
     finally:
         tmp_path.unlink()
 
@@ -305,7 +306,7 @@ def _install_schema_zip(
 class Rime(AppTask):
     """Install rime config."""
 
-    skip_envs = {"vps"}
+    skip_envs: ClassVar[set[str]] = {"vps"}
 
     def steps(self) -> list[Step]:
         rime_dir = _rime_dir()
@@ -343,7 +344,7 @@ class Rime(AppTask):
 class Zsh(AppTask):
     """Install zsh config."""
 
-    skip_envs = {"vps"}
+    skip_envs: ClassVar[set[str]] = {"vps"}
 
     def steps(self) -> list[Step]:
         return [Step("Link config files", self._run)]
@@ -407,7 +408,7 @@ def install_fonts_from_zip(
     font_dir.mkdir(parents=True, exist_ok=True)
 
     if filenames is not None and all((font_dir / f).exists() for f in filenames):
-        logging.debug("all fonts already installed, skipping download")
+        logger.debug("all fonts already installed, skipping download")
         return []
 
     def _pwsh_download(src: str, dest: str) -> None:
@@ -416,23 +417,26 @@ def install_fonts_from_zip(
         PowerShell uses the Windows HTTP stack, which supports integrated
         proxy authentication (NTLM/Kerberos) and trusts the corporate CA.
         """
-        logging.debug("downloading via PowerShell: %s", src)
+        logger.debug("downloading via PowerShell: %s", src)
         subprocess.run(
             [
                 "powershell",
                 "-NoProfile",
                 "-Command",
                 "Invoke-WebRequest",
-                "-Uri", src,
-                "-OutFile", dest,
-                "-UserAgent", USER_AGENT,
+                "-Uri",
+                src,
+                "-OutFile",
+                dest,
+                "-UserAgent",
+                USER_AGENT,
             ],
             check=True,
             capture_output=True,
         )
 
     def _download(src: str, dest: str, verify_ssl: bool = True) -> None:
-        logging.debug("downloading %s", src)
+        logger.debug("downloading %s", src)
         if _CORPORATE_PROXY and platform.system() == "Windows":
             _pwsh_download(src, dest)
             return
@@ -453,15 +457,15 @@ def install_fonts_from_zip(
     with tempfile.NamedTemporaryFile(suffix=".zip", delete=False) as tmp:
         try:
             _download(url, tmp.name)
-        except Exception:
+        except OSError:
             try:
                 _download(url, tmp.name, verify_ssl=False)
-            except Exception:
+            except OSError:
                 if fallback:
-                    logging.debug("mirror failed, trying fallback: %s", fallback)
+                    logger.debug("mirror failed, trying fallback: %s", fallback)
                     try:
                         _download(fallback, tmp.name)
-                    except Exception:
+                    except OSError:
                         _download(fallback, tmp.name, verify_ssl=False)
                 else:
                     raise
@@ -479,9 +483,9 @@ def install_fonts_from_zip(
                         continue
                     dst = font_dir / src.name
                     if dst.exists():
-                        logging.debug("font already installed: %s", src.name)
+                        logger.debug("font already installed: %s", src.name)
                         continue
-                    logging.debug("installing font: %s", src.name)
+                    logger.debug("installing font: %s", src.name)
                     shutil.copy2(src, dst)
                     installed.append(src.name)
     finally:
@@ -493,7 +497,7 @@ def install_fonts_from_zip(
 class Fonts(AppTask):
     """Install fonts."""
 
-    skip_envs = {"vps"}
+    skip_envs: ClassVar[set[str]] = {"vps"}
 
     def steps(self) -> list[Step]:
         return [
@@ -554,7 +558,7 @@ class Vim(AppTask):
 class Ghostty(AppTask):
     """Install Ghostty config."""
 
-    skip_envs = {"vps"}
+    skip_envs: ClassVar[set[str]] = {"vps"}
 
     def steps(self) -> list[Step]:
         return [Step("Link ~/.config/ghostty", self._run)]
@@ -567,7 +571,7 @@ class Ghostty(AppTask):
 class Firefox(AppTask):
     """Install Firefox user.js."""
 
-    skip_envs = {"corporate"}
+    skip_envs: ClassVar[set[str]] = {"corporate"}
 
     def steps(self) -> list[Step]:
         return [Step("Link user.js into profile", self._run)]
@@ -617,7 +621,7 @@ class Firefox(AppTask):
 class VSCodium(AppTask):
     """Install VSCodium config and extensions."""
 
-    skip_envs = {"vps", "corporate"}
+    skip_envs: ClassVar[set[str]] = {"vps", "corporate"}
 
     def steps(self) -> list[Step]:
         return [
@@ -656,7 +660,7 @@ class VSCodium(AppTask):
         if not missing:
             return SKIPPED
         for ext in missing:
-            logging.debug("installing extension %s", ext)
+            logger.debug("installing extension %s", ext)
             subprocess.run(
                 [codium, "--install-extension", ext, "--force"],
                 capture_output=True,
@@ -676,7 +680,7 @@ class PowerToys(AppTask):
     (e.g. powertoys_version) are preserved across installs.
     """
 
-    skip_envs = {"vps", "corporate"}
+    skip_envs: ClassVar[set[str]] = {"vps", "corporate"}
 
     def steps(self) -> list[Step]:
         return [Step("Install config", self._run)]
@@ -709,9 +713,7 @@ class PowerToys(AppTask):
 
         merged = deep_merge(existing, ours)
 
-        settings_dst.write_text(
-            json.dumps(merged, indent=2) + "\n", encoding="utf-8"
-        )
+        settings_dst.write_text(json.dumps(merged, indent=2) + "\n", encoding="utf-8")
         return None
 
 
@@ -975,16 +977,17 @@ class WispHost(HostTask):
         )
         return "Docker services started."
 
-    def _ensure_cron(
-        self, keyword: str, entry: str
-    ) -> str | _Skipped | None:
+    def _ensure_cron(self, keyword: str, entry: str) -> str | _Skipped | None:
         """Ensure *entry* is present in the user's crontab.
 
         Uses *keyword* to find an existing entry (matched by substring).
         Returns SKIPPED if the entry is already present, or a status string.
         """
         result = subprocess.run(
-            ["crontab", "-l"], capture_output=True, text=True,
+            ["crontab", "-l"],
+            capture_output=True,
+            text=True,
+            check=False,
         )
         current = result.stdout if result.returncode == 0 else ""
 
@@ -996,32 +999,44 @@ class WispHost(HostTask):
                     return SKIPPED
                 lines[i] = entry
                 subprocess.run(
-                    ["crontab", "-"], input="\n".join(lines) + "\n",
-                    text=True, check=True,
+                    ["crontab", "-"],
+                    input="\n".join(lines) + "\n",
+                    text=True,
+                    check=True,
                 )
                 return "updated"
 
         lines.append(entry)
         subprocess.run(
-            ["crontab", "-"], input="\n".join(lines) + "\n",
-            text=True, check=True,
+            ["crontab", "-"],
+            input="\n".join(lines) + "\n",
+            text=True,
+            check=True,
         )
         return "added"
 
     def _setup_crons(self) -> str | _Skipped | None:
         """Create cron entries for scripts that exist under this host dir."""
         candidates: list[tuple[str, str, Path]] = [
-            ("refresh_host", "every 1 min",  self._host_dir / "subconv" / "refresh_hosts.py"),
-            ("subconv",  "every 60 min", self._host_dir / "subconv" / "subconv.py"),
-            ("mirror",   "daily",        self._host_dir / "mirror" / "mirror.py"),
+            (
+                "refresh_host",
+                "every 1 min",
+                self._host_dir / "subconv" / "refresh_hosts.py",
+            ),
+            ("subconv", "every 60 min", self._host_dir / "subconv" / "subconv.py"),
+            ("mirror", "daily", self._host_dir / "mirror" / "mirror.py"),
         ]
-        jobs = [(name, schedule, path) for name, schedule, path in candidates if path.is_file()]
+        jobs = [
+            (name, schedule, path)
+            for name, schedule, path in candidates
+            if path.is_file()
+        ]
 
         for name, schedule, script in jobs:
             entry = self._schedule_to_cron(schedule) + f" python3 {script.resolve()}"
             status = self._ensure_cron(name, entry)
             action = status  # "added", "updated", or SKIPPED
-            logging.debug("cron %s: %s", name, "ok" if action == SKIPPED else action)
+            logger.debug("cron %s: %s", name, "ok" if action == SKIPPED else action)
 
         if not jobs:
             return SKIPPED
@@ -1036,7 +1051,7 @@ class WispHost(HostTask):
     def _schedule_to_cron(schedule: str) -> str:
         """Convert a human schedule label to a cron expression."""
         return {
-            "every 1 min":  "* * * * *",
+            "every 1 min": "* * * * *",
             "every 60 min": "17 * * * *",
             "daily": "0 3 * * *",
         }[schedule]
@@ -1047,7 +1062,7 @@ class WispHost(HostTask):
             return "⚠ Tailscale not installed — run bootstrap script first."
 
         result = subprocess.run(
-            ["tailscale", "status", "--json"], capture_output=True, text=True
+            ["tailscale", "status", "--json"], capture_output=True, text=True, check=False
         )
         if result.returncode != 0:
             return "⚠ tailscaled not running (check systemctl status tailscaled)."
@@ -1061,9 +1076,7 @@ class WispHost(HostTask):
         if backend != "NeedsLogin":
             return SKIPPED
 
-        return (
-            "⚠ Tailscale not authenticated — run: sudo tailscale up --ssh"
-        )
+        return "⚠ Tailscale not authenticated — run: sudo tailscale up --ssh"
 
 
 class ZyxirNasHost(HostTask):
@@ -1075,7 +1088,6 @@ class ZyxirNasHost(HostTask):
 
     def steps(self) -> list[Step]:
         return []
-
 
 
 _ELEVATE_PS1 = """\
@@ -1209,7 +1221,7 @@ if __name__ == "__main__":
             f.write(_ELEVATE_PS1)
             ps1_path = f.name
         print("Elevating via PowerShell wrapper...")
-        subprocess.run(
+        subprocess.run(  # noqa: PLW1510 — handoff, exit follows
             [
                 "powershell",
                 "-ExecutionPolicy",
@@ -1251,7 +1263,7 @@ if __name__ == "__main__":
             req = urllib.request.Request("https://github.com", method="HEAD")
             urllib.request.urlopen(req, timeout=5)
             proxy_status = " (reachable)"
-        except Exception:
+        except OSError:
             proxy_status = " (unreachable)"
 
     # Setup logging
@@ -1341,5 +1353,5 @@ if __name__ == "__main__":
                 if hint:
                     print_indented(hint, 2)
                 indent -= 2
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 — top-level safety net
             print_indented(f"{C_FAIL}FAILED{C_RESET} {C_WARN}{e}{C_RESET}", 2)
