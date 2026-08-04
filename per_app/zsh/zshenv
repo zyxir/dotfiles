@@ -21,6 +21,7 @@ fi
 # Populate PATH
 export PATH="/opt/homebrew/bin:${HOME}/.local/bin:${PATH}"
 [ -d "${HOME}/.cargo/bin" ] && export PATH="${HOME}/.cargo/bin:${PATH}"
+[ -d "${HOME}/Library/Application Support/Coursier/bin" ] && export PATH="${HOME}/Library/Application Support/Coursier/bin:${PATH}"
 
 # Keep more history
 export HISTSIZE=100_000
