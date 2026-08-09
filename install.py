@@ -501,7 +501,7 @@ class Fonts(AppTask):
 
     def steps(self) -> list[Step]:
         return [
-            Step("JetBrainsMono Nerd Font", self._jetbrains_mono),
+            Step("JetBrainsMonoNL Nerd Font Propo", self._jetbrains_mono),
             Step("Source Han Sans", self._source_han_sans),
         ]
 
@@ -510,10 +510,10 @@ class Fonts(AppTask):
         installed = install_fonts_from_zip(
             _mirror_url("fonts/JetBrainsMono.zip"),
             [
-                "JetBrainsMonoNerdFontMono-Regular.ttf",
-                "JetBrainsMonoNerdFontMono-Bold.ttf",
-                "JetBrainsMonoNerdFontMono-Italic.ttf",
-                "JetBrainsMonoNerdFontMono-BoldItalic.ttf",
+                "JetBrainsMonoNLNerdFontPropo-Regular.ttf",
+                "JetBrainsMonoNLNerdFontPropo-Bold.ttf",
+                "JetBrainsMonoNLNerdFontPropo-Italic.ttf",
+                "JetBrainsMonoNLNerdFontPropo-BoldItalic.ttf",
             ],
             fallback=upstream,
         )
