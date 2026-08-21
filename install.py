@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import configparser
 import fnmatch
+import getpass
 import json
 import logging
 import os
@@ -109,9 +110,7 @@ def cleanup_dead_symlinks(path: Path) -> None:
             entry.unlink()
 
 
-def link(
-    src: str | os.PathLike, dst: str | os.PathLike, mkdir: bool = False
-) -> bool:
+def link(src: str | os.PathLike, dst: str | os.PathLike, mkdir: bool = False) -> bool:
     """Symlink `dst` to `src`. Returns True if any symlink was created.
 
     On Windows, this requires Developer Mode or Administrator privileges.
@@ -430,6 +429,7 @@ def install_fonts_from_zip(
                 dest,
                 "-UserAgent",
                 USER_AGENT,
+                "-UseBasicParsing",
             ],
             check=True,
             capture_output=True,
@@ -455,6 +455,10 @@ def install_fonts_from_zip(
                 shutil.copyfileobj(resp, f)
 
     with tempfile.NamedTemporaryFile(suffix=".zip", delete=False) as tmp:
+        # Close the handle now: on Windows an open file locks the path,
+        # so the downloader (Invoke-WebRequest -OutFile / urlretrieve)
+        # cannot write to it.
+        tmp.close()
         try:
             _download(url, tmp.name)
         except OSError:
@@ -1062,7 +1066,10 @@ class WispHost(HostTask):
             return "⚠ Tailscale not installed — run bootstrap script first."
 
         result = subprocess.run(
-            ["tailscale", "status", "--json"], capture_output=True, text=True, check=False
+            ["tailscale", "status", "--json"],
+            capture_output=True,
+            text=True,
+            check=False,
         )
         if result.returncode != 0:
             return "⚠ tailscaled not running (check systemctl status tailscaled)."
@@ -1193,7 +1200,8 @@ def _supports_ansi() -> bool:
 def _environment() -> str:
     """Detect the environment based on OS."""
     system = platform.system()
-    if system == "Windows":
+    username = getpass.getuser()
+    if system == "Windows" and username != "zyxir":
         return "corporate"
     if system == "Linux":
         return "vps"
