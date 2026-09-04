@@ -622,6 +622,13 @@ class Firefox(AppTask):
             return SKIPPED
 
 
+# Extensions to install but disable globally by default. Metals
+# (`scalameta.metals`) rewrites the user's `files.watcherExclude` on every
+# activation — including in non-Scala projects (it activates on Java files
+# too) — so it stays off unless enabled per-project from the Extensions view.
+_DISABLED_EXTENSIONS: list[str] = ["scalameta.metals"]
+
+
 class VSCodium(AppTask):
     """Install VSCodium config and extensions."""
 
@@ -631,6 +638,7 @@ class VSCodium(AppTask):
         return [
             Step("Link settings.json", self._link_settings),
             Step("Install extensions", self._install_extensions),
+            Step("Disable extensions by default", self._disable_extensions),
         ]
 
     def _link_settings(self) -> str | _Skipped | None:
@@ -674,6 +682,31 @@ class VSCodium(AppTask):
             return (
                 f"Installed {len(missing)} VSCodium extension(s): {', '.join(missing)}"
             )
+
+    def _disable_extensions(self) -> str | _Skipped | None:
+        codium = shutil.which("codium")
+        if codium is None:
+            return SKIPPED
+
+        installed = set(
+            subprocess.run(
+                [codium, "--list-extensions"],
+                capture_output=True,
+                text=True,
+                check=True,
+            ).stdout.split()
+        )
+        to_disable = [ext for ext in _DISABLED_EXTENSIONS if ext in installed]
+        if not to_disable:
+            return SKIPPED
+        for ext in to_disable:
+            logger.debug("disabling extension %s", ext)
+            subprocess.run(
+                [codium, "--disable-extension", ext],
+                capture_output=True,
+                check=True,
+            )
+        return f"Disabled {len(to_disable)} extension(s): {', '.join(to_disable)}"
 
 
 class PowerToys(AppTask):

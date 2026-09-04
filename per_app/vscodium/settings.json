@@ -24,9 +24,5 @@
             ]
         }
     ],
-    "git.confirmSync": false,
-    "files.watcherExclude": {
-        "**/.bloop": true,
-        "**/.metals": true
-    }
+    "git.confirmSync": false
 }
