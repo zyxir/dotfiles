@@ -24,5 +24,7 @@
             ]
         }
     ],
-    "git.confirmSync": false
+    "git.confirmSync": false,
+    "claudeCode.hideOnboarding": true,
+    "hediet.vscode-drawio.resizeImages": null
 }
