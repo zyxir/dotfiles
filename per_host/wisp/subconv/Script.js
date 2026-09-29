@@ -201,9 +201,10 @@ function overwriteTun(config, ts) {
 // Proxy groups
 // ===========================================================================
 
-// Exclusion terms — nodes with these in the name are discarded (expired,
-// promotional, informational, etc.)
-const EXCLUDE_TERMS = "剩余|到期|主页|官网|游戏|关注|网站|地址|有效|网址|禁止|邮箱|发布|客服|订阅|问题|联系";
+// Informational terms — nodes with these in the name (balance, expiry,
+// promotional, subconv.py's "⚠ … FAILED" warnings, etc.) are kept out of
+// every auto/region group and collected into a display-only info group.
+const EXCLUDE_TERMS = "⚠|剩余|到期|主页|官网|游戏|关注|网站|地址|有效|网址|禁止|邮箱|发布|客服|订阅|问题|联系";
 
 // Country/region keywords used to classify proxy nodes
 const REGIONS = {
@@ -223,7 +224,7 @@ const ALL_REGIONS = Object.values(REGIONS).join("|");
 // Build a regex that matches nodes for a region while excluding junk
 function regionRegex(regionKey) {
   return new RegExp(
-    `^(?=.*${REGIONS[regionKey]})(?!.*${EXCLUDE_TERMS}).*$`, "i"
+    `^(?=.*${REGIONS[regionKey]})(?!.*(?:${EXCLUDE_TERMS})).*$`, "i"
   );
 }
 
@@ -242,7 +243,11 @@ function proxiesMatching(config, regex) {
 
 function overwriteProxyGroups(config) {
 
-  var allProxies = config.proxies.map(function (p) { return p.name; });
+  var infoRegex = new RegExp(EXCLUDE_TERMS, "i");
+  var names = config.proxies.map(function (p) { return p.name; });
+  var infoProxies = names.filter(function (n) { return infoRegex.test(n); });
+  var allProxies = names.filter(function (n) { return !infoRegex.test(n); });
+  if (allProxies.length === 0) allProxies = ["COMPATIBLE"];
 
   // --- Auto-select groups (one per region, url-test picks fastest) ---
   var autoGroups = [];
@@ -314,6 +319,7 @@ function overwriteProxyGroups(config) {
 
   // Manual: the user picks a region then a specific node
   var manualProxies = manualGroups.map(function (g) { return g.name; });
+  if (manualProxies.length === 0) manualProxies = ["COMPATIBLE"];
 
   // Service group proxies: node-select first, then fallback to each region
   var serviceProxies = ["🎯 节点选择"].concat(autoGroupNames);
@@ -380,6 +386,15 @@ function overwriteProxyGroups(config) {
       icon: "https://raw.githubusercontent.com/Orz-3/mini/master/Color/Microsoft.png",
     },
   ];
+
+  // Display-only: no rule targets this group, so its nodes are never used.
+  if (infoProxies.length > 0) {
+    groups.push({
+      name: "ℹ️ 订阅信息",
+      type: "select",
+      proxies: infoProxies,
+    });
+  }
 
   // Append per-region groups
   groups = groups.concat(autoGroups);
@@ -610,12 +625,25 @@ function overwriteRules(config, ts) {
     }
   }
 
-  config.rules = [].concat(
+  var rules = [].concat(
     CUSTOM_RULES,
     tsDomainRules,
     tsIpRules,
     NON_IP_RULES,
     IP_RULES   // contains IP-CIDR,100.64.0.0/10,DIRECT as IPv4 safety net
   );
+
+  // Stream rules target the US group, which only exists when the
+  // subscription has US nodes — fall back to node-select otherwise.
+  var hasUS = config["proxy-groups"].some(function (g) {
+    return g.name === "US - 自动选择";
+  });
+  if (!hasUS) {
+    rules = rules.map(function (r) {
+      return r.replace(/,US - 自动选择$/, ",🎯 节点选择");
+    });
+  }
+
+  config.rules = rules;
 
 }

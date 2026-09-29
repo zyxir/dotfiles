@@ -151,7 +151,8 @@ for idx, url in enumerate(SUBSCRIPTION_URLS, start=1):
 
 for label, reason in fetch_warnings:
     # Prepend as 'direct' proxies — visible in the node list but harmless.
-    # '⚠' prefix sorts them to the top in most Clash clients.
+    # Script.js matches the '⚠' prefix and keeps them out of every
+    # auto/region group (they land in the display-only info group).
     name = f"⚠ {label} FAILED: {reason}"
     all_proxies.insert(0, {"name": name, "type": "direct"})
 
