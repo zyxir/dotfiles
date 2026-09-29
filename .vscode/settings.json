@@ -3,6 +3,6 @@
         "gitconfig": "ini"
     },
     "files.watcherExclude": {
-        "**/target": true
+        "**/target/**": true
     }
 }
