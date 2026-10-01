@@ -130,6 +130,15 @@ function overwriteDns(config, ts) {
   // Placed at config top-level per mihomo convention (not under dns:).
   config.hosts = Object.assign({}, config.hosts || {}, hosts);
 
+  // Preserve upstream nameservers for proxy-server resolution.
+  // Providers often use internal domains (*.babyqq.cloud, etc.) that
+  // only their own DNS can resolve.  Put them first so they take
+  // precedence for proxy hostname lookups.
+  var upstreamNs = [];
+  if (config.dns && Array.isArray(config.dns.nameserver)) {
+    upstreamNs = config.dns.nameserver;
+  }
+
   config.dns = Object.assign({}, config.dns, {
     // Listen on :53 is required for dns-hijack to intercept queries
     // that would otherwise bypass TUN via scoped resolvers (macOS DHCP).
@@ -137,7 +146,7 @@ function overwriteDns(config, ts) {
 
     "default-nameserver": BOOTSTRAP_RESOLVERS,
     nameserver: DIRECT_DOH,
-    "proxy-server-nameserver": PROXY_DOH,
+    "proxy-server-nameserver": upstreamNs.concat(PROXY_DOH),
     fallback: PROXY_DOH,
     "nameserver-policy": nameserverPolicy,
 
