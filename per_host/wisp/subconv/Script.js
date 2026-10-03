@@ -146,7 +146,7 @@ function overwriteDns(config, ts) {
 
     "default-nameserver": BOOTSTRAP_RESOLVERS,
     nameserver: DIRECT_DOH,
-    "proxy-server-nameserver": upstreamNs.concat(PROXY_DOH),
+    "proxy-server-nameserver": upstreamNs.concat(BOOTSTRAP_RESOLVERS).concat(PROXY_DOH),
     fallback: PROXY_DOH,
     "nameserver-policy": nameserverPolicy,
 
