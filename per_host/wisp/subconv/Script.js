@@ -93,9 +93,12 @@ function overwriteDns(config, ts) {
     });
   }
 
+  // Foreign DoH is unreachable directly — dial it through the proxy.
+  var proxiedDoh = PROXY_DOH.map(function (url) { return url + "#🎯 节点选择"; });
+
   // nameserver-policy: route GFW domains to foreign DoH for accuracy
   var nameserverPolicy = {};
-  nameserverPolicy["geosite:gfw"] = PROXY_DOH;
+  nameserverPolicy["geosite:gfw"] = proxiedDoh;
 
   // fake-ip-filter: tailnet domains must resolve to real IPs
   var fakeIpFilter = [
@@ -130,10 +133,12 @@ function overwriteDns(config, ts) {
   // Placed at config top-level per mihomo convention (not under dns:).
   config.hosts = Object.assign({}, config.hosts || {}, hosts);
 
-  // Preserve upstream nameservers for proxy-server resolution.
-  // Providers often use internal domains (*.babyqq.cloud, etc.) that
-  // only their own DNS can resolve.  Put them first so they take
-  // precedence for proxy hostname lookups.
+  // Proxy hostnames resolve only through the upstream's own nameservers.
+  // Providers steer node hostnames per resolver (their DNS returns a
+  // reachable relay, public DNS an IP that is blocked directly), and
+  // mihomo races every listed server, so mixing in public resolvers
+  // lets the wrong answer win.  Domestic bootstrap only when the
+  // subscription has no nameservers of its own.
   var upstreamNs = [];
   if (config.dns && Array.isArray(config.dns.nameserver)) {
     upstreamNs = config.dns.nameserver;
@@ -146,11 +151,12 @@ function overwriteDns(config, ts) {
 
     "default-nameserver": BOOTSTRAP_RESOLVERS,
     nameserver: DIRECT_DOH,
-    "proxy-server-nameserver": upstreamNs.concat(BOOTSTRAP_RESOLVERS).concat(PROXY_DOH),
-    fallback: PROXY_DOH,
+    "proxy-server-nameserver": upstreamNs.length > 0 ? upstreamNs : BOOTSTRAP_RESOLVERS,
+    fallback: proxiedDoh,
     "nameserver-policy": nameserverPolicy,
 
-    "prefer-h3": true,
+    // prefer-h3 is left to the upstream value: DoH over QUIC is often
+    // throttled in mainland China.
     "ipv6": false,
     "use-hosts": true,
     "use-system-hosts": false,
