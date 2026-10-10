@@ -96,9 +96,22 @@ function overwriteDns(config, ts) {
   // Foreign DoH is unreachable directly — dial it through the proxy.
   var proxiedDoh = PROXY_DOH.map(function (url) { return url + "#🎯 节点选择"; });
 
-  // nameserver-policy: route GFW domains to foreign DoH for accuracy
+  // Keep the subscription's nameserver-policy. Providers pin their own
+  // node hostnames here so they resolve through the provider's DNS
+  // (public resolvers return a different, unreachable address), and a
+  // specific match outranks geosite:gfw. Only fill geosite:gfw when the
+  // upstream did not set it.
   var nameserverPolicy = {};
-  nameserverPolicy["geosite:gfw"] = proxiedDoh;
+  if (config.dns && config.dns["nameserver-policy"] &&
+      typeof config.dns["nameserver-policy"] === "object") {
+    var upstreamPolicy = config.dns["nameserver-policy"];
+    Object.keys(upstreamPolicy).forEach(function (key) {
+      nameserverPolicy[key] = upstreamPolicy[key];
+    });
+  }
+  if (!Object.prototype.hasOwnProperty.call(nameserverPolicy, "geosite:gfw")) {
+    nameserverPolicy["geosite:gfw"] = proxiedDoh;
+  }
 
   // fake-ip-filter: tailnet domains must resolve to real IPs
   var fakeIpFilter = [
@@ -133,12 +146,9 @@ function overwriteDns(config, ts) {
   // Placed at config top-level per mihomo convention (not under dns:).
   config.hosts = Object.assign({}, config.hosts || {}, hosts);
 
-  // Proxy hostnames resolve only through the upstream's own nameservers.
-  // Providers steer node hostnames per resolver (their DNS returns a
-  // reachable relay, public DNS an IP that is blocked directly), and
-  // mihomo races every listed server, so mixing in public resolvers
-  // lets the wrong answer win.  Domestic bootstrap only when the
-  // subscription has no nameservers of its own.
+  // Fallback for proxy hostnames that the upstream policy does not pin.
+  // Prefer the subscription's own nameservers; domestic bootstrap only
+  // when it has none. Do not mix resolvers — mihomo races the list.
   var upstreamNs = [];
   if (config.dns && Array.isArray(config.dns.nameserver)) {
     upstreamNs = config.dns.nameserver;
