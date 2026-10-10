@@ -505,7 +505,7 @@ class Fonts(AppTask):
 
     def steps(self) -> list[Step]:
         return [
-            Step("JetBrainsMono Nerd Font", self._jetbrains_mono),
+            Step("JetBrainsMonoNL Nerd Font Propo", self._jetbrains_mono),
             Step("Source Han Sans", self._source_han_sans),
         ]
 
@@ -514,10 +514,10 @@ class Fonts(AppTask):
         installed = install_fonts_from_zip(
             _mirror_url("fonts/JetBrainsMono.zip"),
             [
-                "JetBrainsMonoNerdFontMono-Regular.ttf",
-                "JetBrainsMonoNerdFontMono-Bold.ttf",
-                "JetBrainsMonoNerdFontMono-Italic.ttf",
-                "JetBrainsMonoNerdFontMono-BoldItalic.ttf",
+                "JetBrainsMonoNLNerdFontPropo-Regular.ttf",
+                "JetBrainsMonoNLNerdFontPropo-Bold.ttf",
+                "JetBrainsMonoNLNerdFontPropo-Italic.ttf",
+                "JetBrainsMonoNLNerdFontPropo-BoldItalic.ttf",
             ],
             fallback=upstream,
         )
@@ -622,6 +622,13 @@ class Firefox(AppTask):
             return SKIPPED
 
 
+# Extensions to install but disable globally by default. Metals
+# (`scalameta.metals`) rewrites the user's `files.watcherExclude` on every
+# activation — including in non-Scala projects (it activates on Java files
+# too) — so it stays off unless enabled per-project from the Extensions view.
+_DISABLED_EXTENSIONS: list[str] = ["scalameta.metals"]
+
+
 class VSCodium(AppTask):
     """Install VSCodium config and extensions."""
 
@@ -631,6 +638,7 @@ class VSCodium(AppTask):
         return [
             Step("Link settings.json", self._link_settings),
             Step("Install extensions", self._install_extensions),
+            Step("Disable extensions by default", self._disable_extensions),
         ]
 
     def _link_settings(self) -> str | _Skipped | None:
@@ -674,6 +682,31 @@ class VSCodium(AppTask):
             return (
                 f"Installed {len(missing)} VSCodium extension(s): {', '.join(missing)}"
             )
+
+    def _disable_extensions(self) -> str | _Skipped | None:
+        codium = shutil.which("codium")
+        if codium is None:
+            return SKIPPED
+
+        installed = set(
+            subprocess.run(
+                [codium, "--list-extensions"],
+                capture_output=True,
+                text=True,
+                check=True,
+            ).stdout.split()
+        )
+        to_disable = [ext for ext in _DISABLED_EXTENSIONS if ext in installed]
+        if not to_disable:
+            return SKIPPED
+        for ext in to_disable:
+            logger.debug("disabling extension %s", ext)
+            subprocess.run(
+                [codium, "--disable-extension", ext],
+                capture_output=True,
+                check=True,
+            )
+        return f"Disabled {len(to_disable)} extension(s): {', '.join(to_disable)}"
 
 
 class PowerToys(AppTask):
@@ -984,7 +1017,8 @@ class WispHost(HostTask):
     def _ensure_cron(self, keyword: str, entry: str) -> str | _Skipped | None:
         """Ensure *entry* is present in the user's crontab.
 
-        Uses *keyword* to find an existing entry (matched by substring).
+        Uses *keyword* to find existing entries (matched by substring); the
+        first match is replaced and any duplicates are dropped.
         Returns SKIPPED if the entry is already present, or a status string.
         """
         result = subprocess.run(
@@ -997,27 +1031,29 @@ class WispHost(HostTask):
 
         lines = [ln for ln in current.splitlines() if ln.strip()]
 
-        for i, line in enumerate(lines):
-            if keyword in line and not line.strip().startswith("#"):
-                if line.strip() == entry:
-                    return SKIPPED
-                lines[i] = entry
-                subprocess.run(
-                    ["crontab", "-"],
-                    input="\n".join(lines) + "\n",
-                    text=True,
-                    check=True,
-                )
-                return "updated"
+        matches = [
+            i
+            for i, line in enumerate(lines)
+            if keyword in line and not line.strip().startswith("#")
+        ]
+        if len(matches) == 1 and lines[matches[0]].strip() == entry:
+            return SKIPPED
 
-        lines.append(entry)
+        if matches:
+            lines[matches[0]] = entry
+            lines = [ln for i, ln in enumerate(lines) if i not in matches[1:]]
+            status = "updated"
+        else:
+            lines.append(entry)
+            status = "added"
+
         subprocess.run(
             ["crontab", "-"],
             input="\n".join(lines) + "\n",
             text=True,
             check=True,
         )
-        return "added"
+        return status
 
     def _setup_crons(self) -> str | _Skipped | None:
         """Create cron entries for scripts that exist under this host dir."""
@@ -1038,7 +1074,9 @@ class WispHost(HostTask):
 
         for name, schedule, script in jobs:
             entry = self._schedule_to_cron(schedule) + f" python3 {script.resolve()}"
-            status = self._ensure_cron(name, entry)
+            # Match on the script filename: "subconv" alone would also
+            # match refresh_hosts.py, which lives in subconv/.
+            status = self._ensure_cron(script.name, entry)
             action = status  # "added", "updated", or SKIPPED
             logger.debug("cron %s: %s", name, "ok" if action == SKIPPED else action)
 

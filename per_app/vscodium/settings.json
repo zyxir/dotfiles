@@ -25,8 +25,10 @@
         }
     ],
     "git.confirmSync": false,
+    "claudeCode.hideOnboarding": true,
+    "hediet.vscode-drawio.resizeImages": null,
     "files.watcherExclude": {
-        "**/.bloop": true,
-        "**/.metals": true
+        "**/.bloop/**": true,
+        "**/.metals/**/*.{java,scala}": true
     }
 }
