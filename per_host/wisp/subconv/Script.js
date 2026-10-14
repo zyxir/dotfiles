@@ -146,12 +146,20 @@ function overwriteDns(config, ts) {
   // Placed at config top-level per mihomo convention (not under dns:).
   config.hosts = Object.assign({}, config.hosts || {}, hosts);
 
-  // Fallback for proxy hostnames that the upstream policy does not pin.
-  // Prefer the subscription's own nameservers; domestic bootstrap only
-  // when it has none. Do not mix resolvers — mihomo races the list.
-  var upstreamNs = [];
-  if (config.dns && Array.isArray(config.dns.nameserver)) {
-    upstreamNs = config.dns.nameserver;
+  // Proxy hostnames are resolved only through proxy-server-nameserver.
+  // Keep the subscription's list when it has one: providers steer their
+  // node hostnames there, and public resolvers return a different,
+  // unreachable address. Otherwise use its general nameservers, then
+  // domestic bootstrap. Do not mix lists — mihomo races every entry.
+  var proxyNs = [];
+  if (config.dns && Array.isArray(config.dns["proxy-server-nameserver"]) &&
+      config.dns["proxy-server-nameserver"].length > 0) {
+    proxyNs = config.dns["proxy-server-nameserver"];
+  } else if (config.dns && Array.isArray(config.dns.nameserver) &&
+             config.dns.nameserver.length > 0) {
+    proxyNs = config.dns.nameserver;
+  } else {
+    proxyNs = BOOTSTRAP_RESOLVERS;
   }
 
   config.dns = Object.assign({}, config.dns, {
@@ -161,7 +169,7 @@ function overwriteDns(config, ts) {
 
     "default-nameserver": BOOTSTRAP_RESOLVERS,
     nameserver: DIRECT_DOH,
-    "proxy-server-nameserver": upstreamNs.length > 0 ? upstreamNs : BOOTSTRAP_RESOLVERS,
+    "proxy-server-nameserver": proxyNs,
     fallback: proxiedDoh,
     "nameserver-policy": nameserverPolicy,
 
