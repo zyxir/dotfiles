@@ -242,14 +242,26 @@ const EXCLUDE_TERMS = "⚠|剩余|到期|主页|官网|游戏|关注|网站|地�
 // Country/region keywords used to classify proxy nodes
 const REGIONS = {
   HK: "(香港|HK|Hong|🇭🇰)",
+  MO: "(澳门|澳門|MO|Macao|Macau|🇲🇴)",
   TW: "(台湾|TW|Taiwan|Wan|🇹🇼|🇨🇳)",
   SG: "(新加坡|狮城|SG|Singapore|🇸🇬)",
+  MY: "(马来西亚|马来|\\bMY\\b|Malaysia|🇲🇾)",
+  TH: "(泰国|\\bTH\\b|Thailand|🇹🇭)",
+  VN: "(越南|\\bVN\\b|Vietnam|🇻🇳)",
+  PH: "(菲律宾|\\bPH\\b|Philippines|🇵🇭)",
+  ID: "(印尼|印度尼西亚|\\bID\\b|Indonesia|🇮🇩)",
+  IN: "(印度(?!尼)|\\bIN\\b|India|🇮🇳)",
   JP: "(日本|JP|Japan|🇯🇵)",
   KR: "(韩国|韓|KR|Korea|🇰🇷)",
   US: "(美国|🇺🇸|United\\s*States|\\bUS(\\b|[\\_\\d]))",
+  CA: "(加拿大|\\bCA\\b|Canada|🇨🇦)",
   UK: "(英国|UK|United Kingdom|🇬🇧)",
   FR: "(法国|FR|France|🇫🇷)",
   DE: "(德国|DE|Germany|🇩🇪)",
+  NL: "(荷兰|\\bNL\\b|Netherlands|🇳🇱)",
+  RU: "(俄罗斯|俄国|\\bRU\\b|Russia|🇷🇺)",
+  TR: "(土耳其|\\bTR\\b|Turkey|🇹🇷)",
+  AU: "(澳大利亚|澳洲|\\bAU\\b|Australia|🇦🇺)",
 };
 
 const ALL_REGIONS = Object.values(REGIONS).join("|");
@@ -318,14 +330,26 @@ function overwriteProxyGroups(config) {
   // --- Manual-select groups (one per region, user picks a specific node) ---
   var icons = {
     HK: "https://raw.githubusercontent.com/Orz-3/mini/master/Color/HK.png",
+    MO: "https://raw.githubusercontent.com/Orz-3/mini/master/Color/MO.png",
+    TW: "https://raw.githubusercontent.com/Orz-3/mini/master/Color/TW.png",
+    SG: "https://raw.githubusercontent.com/Orz-3/mini/master/Color/SG.png",
+    MY: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f1f2-1f1fe.png",
+    TH: "https://raw.githubusercontent.com/Orz-3/mini/master/Color/TH.png",
+    VN: "https://raw.githubusercontent.com/Orz-3/mini/master/Color/VN.png",
+    PH: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f1f5-1f1ed.png",
+    ID: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f1ee-1f1e9.png",
+    IN: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f1ee-1f1f3.png",
     JP: "https://raw.githubusercontent.com/Orz-3/mini/master/Color/JP.png",
     KR: "https://raw.githubusercontent.com/Orz-3/mini/master/Color/KR.png",
-    SG: "https://raw.githubusercontent.com/Orz-3/mini/master/Color/SG.png",
     US: "https://raw.githubusercontent.com/Orz-3/mini/master/Color/US.png",
+    CA: "https://raw.githubusercontent.com/Orz-3/mini/master/Color/CA.png",
     UK: "https://raw.githubusercontent.com/Orz-3/mini/master/Color/UK.png",
     FR: "https://raw.githubusercontent.com/Orz-3/mini/master/Color/FR.png",
     DE: "https://raw.githubusercontent.com/Orz-3/mini/master/Color/DE.png",
-    TW: "https://raw.githubusercontent.com/Orz-3/mini/master/Color/TW.png",
+    NL: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f1f3-1f1f1.png",
+    RU: "https://raw.githubusercontent.com/Orz-3/mini/master/Color/RU.png",
+    TR: "https://raw.githubusercontent.com/Orz-3/mini/master/Color/TR.png",
+    AU: "https://raw.githubusercontent.com/Orz-3/mini/master/Color/AU.png",
   };
 
   var manualGroups = [];
