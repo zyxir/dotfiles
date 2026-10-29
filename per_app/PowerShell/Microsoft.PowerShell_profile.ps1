@@ -28,8 +28,10 @@ try {
 if ($proxyAvailable) {
     $env:http_proxy = "http://127.0.0.1:${proxyPort}"
     $env:https_proxy = "http://127.0.0.1:${proxyPort}"
-    $env:no_proxy = "localhost,127.0.0.1,::1"
+    # Tailnet names and CGNAT must not go through Clash. Git follows
+    # http_proxy, and mihomo returns 502 for 100.64.0.0/10.
+    $env:no_proxy = "localhost,127.0.0.1,::1,.ts.net,100.64.0.0/10"
     $env:HTTP_PROXY = "http://127.0.0.1:${proxyPort}"
     $env:HTTPS_PROXY = "http://127.0.0.1:${proxyPort}"
-    $env:NO_PROXY = "localhost,127.0.0.1,::1"
+    $env:NO_PROXY = "localhost,127.0.0.1,::1,.ts.net,100.64.0.0/10"
 }
