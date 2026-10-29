@@ -123,6 +123,10 @@ function overwriteDns(config, ts) {
     "+.bogon",
     "+.m2m",
     "+.ts.net",         // always keep the default — covers any tailnet using ts.net
+    // Coordination, login, and DERP are tailscale.com, not ts.net.
+    // Fake-IP here makes tailscaled dial 198.18.x and never reach control.
+    "+.tailscale.com",
+    "+.tailscale.io",
     "injections.adguard.org",
     "local.adguard.org",
     "stun.*",
