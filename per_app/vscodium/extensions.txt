@@ -1,6 +1,5 @@
 anthropic.claude-code
 charliermarsh.ruff
-codesmith.markdown-inline-editor-vscode
 hediet.vscode-drawio
 james-yu.latex-workshop
 jeanp413.open-remote-ssh
