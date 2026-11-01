@@ -11,3 +11,5 @@ quotepath = false
 [init]
 defaultBranch = main
 
+[credential "http://zyxir-nas.tail2b5f2.ts.net:3000"]
+	provider = generic
