@@ -611,6 +611,30 @@ const CUSTOM_RULES = [
   "DST-PORT,22/2222/9906,DIRECT",  // SSH — always direct, no proxy
   "DOMAIN-SUFFIX,myqnapcloud.cn,DIRECT",   // QNAP Cloud Link (China)
   "DOMAIN-SUFFIX,qnap.com.cn,DIRECT",      // QNAP China portal
+  // Douyin. stream_non_ip matches byteoversea.com, ibytedtos.com, and
+  // the ByteDance SDK hosts before domestic_non_ip can send them direct,
+  // so playback is hairpinned through the US group. These must stay above
+  // NON_IP_RULES. Domestic names are listed too so a later ruleset change
+  // cannot send them out again.
+  "DOMAIN-SUFFIX,douyin.com,DIRECT",
+  "DOMAIN-SUFFIX,douyincdn.com,DIRECT",
+  "DOMAIN-SUFFIX,douyinliving.com,DIRECT",
+  "DOMAIN-SUFFIX,douyinpic.com,DIRECT",
+  "DOMAIN-SUFFIX,douyinstatic.com,DIRECT",
+  "DOMAIN-SUFFIX,douyinvod.com,DIRECT",
+  "DOMAIN-SUFFIX,iesdouyin.com,DIRECT",
+  "DOMAIN-SUFFIX,amemv.com,DIRECT",
+  "DOMAIN-SUFFIX,snssdk.com,DIRECT",
+  "DOMAIN-SUFFIX,isnssdk.com,DIRECT",
+  "DOMAIN-SUFFIX,ipstatp.com,DIRECT",
+  "DOMAIN-SUFFIX,pstatp.com,DIRECT",
+  "DOMAIN-SUFFIX,bytecdn.cn,DIRECT",
+  "DOMAIN-SUFFIX,bytecdntp.com,DIRECT",
+  "DOMAIN-SUFFIX,byteimg.com,DIRECT",
+  "DOMAIN-SUFFIX,byteoversea.com,DIRECT",
+  "DOMAIN-SUFFIX,ibytedtos.com,DIRECT",
+  "DOMAIN-SUFFIX,byteeffecttos.com,DIRECT",
+  "DOMAIN-SUFFIX,bytedance.com,DIRECT",
 ];
 
 // Non-IP rules — checked first (domain/classical matching)
