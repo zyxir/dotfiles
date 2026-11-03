@@ -641,7 +641,7 @@ const CUSTOM_RULES = [
 const NON_IP_RULES = [
   "RULE-SET,cdn_domainset,🎯 节点选择",
   "RULE-SET,cdn_non_ip,🎯 节点选择",
-  "RULE-SET,stream_non_ip,US - 自动选择",
+  "RULE-SET,stream_non_ip,🎯 节点选择",
   "RULE-SET,telegram_non_ip,✈️ 电报信息",
   "RULE-SET,apple_cdn,DIRECT",
   "RULE-SET,download_domainset,🎯 节点选择",
@@ -661,7 +661,7 @@ const NON_IP_RULES = [
 const IP_RULES = [
   "IP-CIDR,100.64.0.0/10,DIRECT",  // Tailscale — bypass proxy for all tailnet traffic
   "RULE-SET,telegram_ip,✈️ 电报信息",
-  "RULE-SET,stream_ip,US - 自动选择",
+  "RULE-SET,stream_ip,🎯 节点选择",
   "RULE-SET,lan_ip,DIRECT",
   "RULE-SET,domestic_ip,DIRECT",
   "RULE-SET,china_ip,DIRECT",
@@ -710,25 +710,12 @@ function overwriteRules(config, ts) {
     }
   }
 
-  var rules = [].concat(
+  config.rules = [].concat(
     CUSTOM_RULES,
     tsDomainRules,
     tsIpRules,
     NON_IP_RULES,
     IP_RULES   // contains IP-CIDR,100.64.0.0/10,DIRECT as IPv4 safety net
   );
-
-  // Stream rules target the US group, which only exists when the
-  // subscription has US nodes — fall back to node-select otherwise.
-  var hasUS = config["proxy-groups"].some(function (g) {
-    return g.name === "US - 自动选择";
-  });
-  if (!hasUS) {
-    rules = rules.map(function (r) {
-      return r.replace(/,US - 自动选择$/, ",🎯 节点选择");
-    });
-  }
-
-  config.rules = rules;
 
 }
